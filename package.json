@@ -1,0 +1,10 @@
+{
+  "name": "docking-sim",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @docking/web dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test"
+  },
+  "packageManager": "pnpm@9.12.0"
+}
