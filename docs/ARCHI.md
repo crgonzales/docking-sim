@@ -38,12 +38,14 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
 ## Stack
 
 TypeScript + Vite + pnpm workspace. Web: React 18, react-three-fiber, drei,
-zustand, uPlot (Phase 1+). Tests: Vitest. QP: quadprog now, OSQP-WASM if
-needed. CI: GitHub Actions (install + `pnpm -r test`).
+@react-three/postprocessing (bloom), zustand; uPlot planned. Tests: Vitest.
+QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
+`pnpm -r test`). Web telemetry seam: zustand bus in `apps/web/src/telemetry/`
+(stub emitter in Phase 1; the real sim loop replaces one file in Phase 2).
 
 ## Roadmap
 
-1. Restructure + cinematic visual pass (Earth, starfield, glTF craft, HUD)
+1. ~~Restructure + cinematic visual pass (Earth, starfield, craft, HUD)~~ ✅ v0.2.0 (primitive craft; normalized glTF models are a documented follow-up — see `apps/web/public/assets/ASSETS.md`)
 2. Discrete RCS thrusters + allocator, sensor models, EKF
 3. 6-DOF attitude + MEKF + docking camera + manual fly
 4. MPC terminal approach + passive abort safety
