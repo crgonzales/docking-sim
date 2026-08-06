@@ -5,6 +5,9 @@
  *   q_BI rotates vectors from inertial (I) to body (B).
  * - SI units, sim-time seconds.
  */
+import type { NavDiag } from './ekf.js';
+
+export type { NavDiag } from './ekf.js';
 export type Vec3 = [number, number, number];
 /** Scalar-first unit quaternion [w, x, y, z]. */
 export type Quat = [number, number, number, number];
@@ -33,7 +36,9 @@ export type ThrusterCommand = Record<string, number>;
 
 /** The single FSW entry point. Pure: sensors in, commands + telemetry out. */
 export interface FswTick {
-  (sensors: SensorFrame): { thrusters: ThrusterCommand; telemetry: TelemetryFrame };
+  (sensors: SensorFrame): { thrusters: ThrusterCommand; telemetry: TelemetryFrame; nav_diag: NavDiag };
+  setController(controller: 'PID' | 'LQR'): void;
+  setJetAvailability(id: string, available: boolean): void;
 }
 
 /** What the UI, scenario director, and Monte Carlo harness observe. */
@@ -45,4 +50,7 @@ export interface TelemetryFrame {
   corridor_err_m: number | null;
   controller: 'PID' | 'LQR' | 'MPC';
   control_mode: 'AUTO' | 'MANUAL';
+  prop_kg: number;
+  thruster_duty: Record<string, number>;
+  sat_flag: boolean;
 }

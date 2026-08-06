@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { Hud } from './hud/Hud';
 import { SceneRoot } from './scene/SceneRoot';
-import { startStubEmitter, stopStubEmitter } from './telemetry/stubEmitter';
+import { startSimEmitter, stopSimEmitter } from './telemetry/simEmitter';
 
 export function App() {
   useEffect(() => {
-    startStubEmitter();
-    return stopStubEmitter;
+    startSimEmitter();
+    return stopSimEmitter;
   }, []);
 
   return (

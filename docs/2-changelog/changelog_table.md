@@ -2,10 +2,18 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.3.0` | 1    | feat: Phase 2 real GNC — RK4 truth dynamics, 16-jet RCS + NNLS allocator, EKF navigation, PID/LQR closed loop |
 | `0.2.0` | 1    | feat: Phase 1 cinematic visual base — Earth terminator scene, HUD skeleton, stub telemetry bus |
 | `0.1.1` | 1    | chore: initialize project docs structure for docking-sim |
 
 # Changelog Summary
+
+- **v0.3.0 (Phase 2: Real GNC - Week 1, 06-08-2026)**:
+  - **Physics**: RK4 CW truth propagator (oracle-verified), 16-jet canted RCS with min-impulse/quantization/depletion/failure states
+  - **FSW**: seeded sensors with degrade hooks, 6-state EKF (ANEES-gated at the honest 95% band), V-bar glideslope guidance, PID + LQR, bounded NNLS allocator, pure FswTick closure
+  - **Seam**: SimLoop public command/injection APIs (honesty split for Phase 5); web emitter swapped to the real loop — the scene now flies actual closed-loop GNC
+  - **Review**: review loop, 3 rounds → APPROVED with observations (`CR_w1_v0.3.0.md`); two Majors caught and regression-locked; web Vitest added, coverage ledger cleared
+  - **Files**: 10 new sim-core modules + tests, linalg consolidation, web emitter/HUD/test changes
 
 - **v0.2.0 (Phase 1: Cinematic Visual Base - Week 1, 06-08-2026)**:
   - **Scene**: shader Earth with day/night terminator + fresnel atmosphere (scaled group, log depth), clamped ESO starfield, sun-aligned lighting, half-res bloom under an HDR contract, primitive craft on the ±ŷ docking axis with damped bus-driven approach motion

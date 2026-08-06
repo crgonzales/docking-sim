@@ -46,7 +46,7 @@ QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
 ## Roadmap
 
 1. ~~Restructure + cinematic visual pass (Earth, starfield, craft, HUD)~~ ✅ v0.2.0 (primitive craft; normalized glTF models are a documented follow-up — see `apps/web/public/assets/ASSETS.md`)
-2. Discrete RCS thrusters + allocator, sensor models, EKF
+2. ~~Discrete RCS thrusters + allocator, sensor models, EKF~~ ✅ v0.3.0 (16-jet canted RCS, NNLS allocator, seeded sensors + degrade hooks, 6-state EKF, PID/LQR, `SimLoop` command/injection seam; attitude = kinematic LVLH hold pending Phase 3)
 3. 6-DOF attitude + MEKF + docking camera + manual fly
 4. MPC terminal approach + passive abort safety
 5. Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`) + video
@@ -55,7 +55,12 @@ QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
 
 - CW closed form: identity at t=0, composition, cross-track SHM invariant
   (implemented: `packages/sim-core/src/cw.test.ts`)
-- Numeric propagator vs. `propagateCW` at small separations
-- Quaternion norm drift bound; torque-free momentum conservation
-- Filter consistency: NEES within chi-square bounds on seeded runs
+- Numeric propagator vs. `propagateCW` at small separations (implemented:
+  `dynamics.test.ts`, multi-orbit)
+- Filter consistency: 50-run ANEES within the 95% χ²₆ₙ/N band, ≥90% of epochs
+  + window mean (implemented: `ekf.test.ts`)
+- End-to-end determinism + FSW purity grep + failure-injection honesty
+  (implemented: `sim.test.ts`, `fsw.test.ts`)
+- Quaternion norm drift bound; torque-free momentum conservation (Phase 3)
 - Scenario mode: determinism, zero-input never docks, perfect-operator docks
+  (Phase 5)
