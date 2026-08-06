@@ -47,6 +47,13 @@ export interface FswConfig {
   mekfConfig?: MekfConfig;
   attitudeControllerConfig?: AttitudeControllerConfig;
   massModel: FswMassModel;
+  /**
+   * Ceiling on MANUAL-mode commanded translation force (N). Manual velocity
+   * steps otherwise drive the translational controller into demands that
+   * saturate every jet, leaving the allocator no torque authority — the
+   * v0.4.0 tumble. 60 N leaves the canted 16-jet set comfortable headroom.
+   */
+  manualForceLimit_N?: number;
 }
 
 const DEFAULT_GUIDANCE_STATE: [number, number, number, number, number, number] = [0, -250, 12, 0, 0, 0];
@@ -152,6 +159,10 @@ export function createFsw(config: FswConfig): FswTick {
   const operatorAvailability: Record<string, boolean> = {};
   specs.forEach((spec) => { operatorAvailability[spec.id] = true; });
 
+  const manualForceLimit_N = config.manualForceLimit_N ?? 60;
+  if (!(manualForceLimit_N > 0) || !Number.isFinite(manualForceLimit_N)) {
+    throw new RangeError('manualForceLimit_N must be finite and positive');
+  }
   let selectedController: 'PID' | 'LQR' = config.controller;
   let propEstimate_kg = config.massModel.initialProp_kg;
   let lastSensorTime_s: number | null = null;
@@ -238,7 +249,32 @@ export function createFsw(config: FswConfig): FswTick {
     } else {
       const pulse = attitudeController.shapePulse(manualCommand);
       commandedForce_hill_N = rotateVector(conjugateQuaternion(q_BH), pulse.force_body_N);
-      commandedTorque_body_Nm = pulse.torque_body_Nm;
+      // PULSE is direct translation/torque with no attitude or position HOLD,
+      // but it keeps rate DAMPING (like real direct-RCS modes): stepping the
+      // PD with the current attitude as its own target yields zero attitude
+      // error, leaving pure -Kd(omega - omega_LVLH) on top of the pilot's
+      // torque command. Without it, canted-jet quantization residue
+      // integrates unopposed and tumbles the vehicle.
+      const rateDamping_Nm = attitudeController.step(
+        q_BH,
+        omega_est_body_rps,
+        q_BH,
+        rotateVector(q_BH, [0, 0, meanMotionRadS]),
+      );
+      commandedTorque_body_Nm = [
+        pulse.torque_body_Nm[0] + rateDamping_Nm[0],
+        pulse.torque_body_Nm[1] + rateDamping_Nm[1],
+        pulse.torque_body_Nm[2] + rateDamping_Nm[2],
+      ];
+    }
+    if (controlMode === 'MANUAL') {
+      // Cap manual translation demand so the allocator always retains torque
+      // authority (see FswConfig.manualForceLimit_N).
+      const forceNorm_N = Math.hypot(...commandedForce_hill_N);
+      if (forceNorm_N > manualForceLimit_N) {
+        const scale = manualForceLimit_N / forceNorm_N;
+        commandedForce_hill_N = commandedForce_hill_N.map((value) => value * scale) as Vec3;
+      }
     }
     const commandedForce_body_N = rotateVector(q_BH, commandedForce_hill_N);
     const allocation = allocator.allocate(

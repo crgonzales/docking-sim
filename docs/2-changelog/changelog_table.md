@@ -2,12 +2,18 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.4.1` | 1    | hotfix: manual-translation tumble — allocator force back-off, min-impulse accumulators, PULSE rate damping |
 | `0.4.0` | 1    | feat: Phase 3 6-DOF attitude, MEKF, docking camera & manual fly |
 | `0.3.0` | 1    | feat: Phase 2 real GNC — RK4 truth dynamics, 16-jet RCS + NNLS allocator, EKF navigation, PID/LQR closed loop |
 | `0.2.0` | 1    | feat: Phase 1 cinematic visual base — Earth terminator scene, HUD skeleton, stub telemetry bus |
 | `0.1.1` | 1    | chore: initialize project docs structure for docking-sim |
 
 # Changelog Summary
+
+- **v0.4.1 (Hotfix - Week 1, 06-08-2026)**:
+  - **Issue**: pressing W in MANUAL tumbled the vehicle 175 deg instead of translating (user-reported)
+  - **Fix**: lexicographic force back-off in the allocator (torque tracking always wins), per-jet min-impulse accumulators (PWM across FSW cycles - also restores fine control that the deadband had silently zeroed since v0.3.0), PULSE-mode rate damping, 60 N manual force ceiling
+  - **Root cause**: force/torque unit mismatch made torque cheap to sacrifice under saturation; see docs/6-memo/v0.4.1-manual-tumble-postmortem.md
 
 - **v0.4.0 (Phase 3: 6-DOF + Manual Fly - Week 1, 06-08-2026)**:
   - **Attitude**: real rigid-body dynamics with thruster torques (momentum/spin/norm oracles), MEKF with gyro-bias estimation (honest ANEES gate), quaternion-error attitude control, 6-target NNLS allocation

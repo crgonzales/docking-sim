@@ -3,7 +3,6 @@ import { solveLinearSystem } from './linalg.js';
 import {
   DEFAULT_MIN_ON_TIME_S,
   DRACO_THRUSTER_SPECS,
-  quantizeOnTime,
 } from './thrusters.js';
 import type { ThrusterSpec } from './thrusters.js';
 import type { ThrusterCommand, Vec3 } from './types.js';
@@ -17,6 +16,16 @@ export interface AllocatorConfig {
   forceWeight?: number;
   /** Weight applied to torque rows; defaults from characteristicArm_m. */
   torqueWeight?: number;
+  /**
+   * Maximum force back-off halvings when torque tracking is being sacrificed
+   * (default 6, i.e. force may shrink to 1/64). Attitude authority must win
+   * under saturation: an unmet force command just translates slower, but an
+   * unmet torque command tumbles the vehicle (the v0.4.0 manual-translation
+   * tumble). Implemented as lexicographic back-off rather than skewed row
+   * weights because the active-set solve is only exactness-proven at
+   * comparable row scales.
+   */
+  maxForceBackoffs?: number;
   /** Optional per-axis force row weights. */
   forceWeights?: Vec3;
   /** Optional per-axis torque row weights. */
@@ -274,6 +283,9 @@ function validateAllocatorConfig(config: AllocatorConfig): void {
     .every((value) => Number.isFinite(value) && value > 0)) {
     throw new RangeError('allocator configuration must be finite and positive');
   }
+  if (config.maxForceBackoffs !== undefined && (!Number.isInteger(config.maxForceBackoffs) || config.maxForceBackoffs < 0)) {
+    throw new RangeError('maxForceBackoffs must be a non-negative integer');
+  }
   if (config.forceWeights?.length !== undefined && config.forceWeights.length !== 3) throw new RangeError('forceWeights must have three axes');
   if (config.torqueWeights?.length !== undefined && config.torqueWeights.length !== 3) throw new RangeError('torqueWeights must have three axes');
 }
@@ -286,18 +298,46 @@ function makeAllocator(config: AllocatorConfig): ThrusterAllocator {
   const forceWeight = config.forceWeight ?? 1;
   const characteristicArm_m = config.characteristicArm_m ?? 1;
   const torqueWeight = config.torqueWeight ?? forceWeight / characteristicArm_m;
+  const maxForceBackoffs = config.maxForceBackoffs ?? 6;
   const forceWeights = config.forceWeights ?? [forceWeight, forceWeight, forceWeight];
   const torqueWeights = config.torqueWeights ?? [torqueWeight, torqueWeight, torqueWeight];
   const forceResidualFloor_N = config.forceResidualFloor_N ?? 0.05;
   const torqueResidualFloor_Nm = config.torqueResidualFloor_Nm ?? 0.05;
   const window_s = 1 / fswHz;
   const maxIterations = config.maxIterations ?? 256;
+  // FSW-side min-impulse accumulator state (like a PID integrator): carries
+  // sub-min-impulse on-time demand across ticks so average thrust is honored.
+  const impulseCarry_s: Record<string, number> = {};
   return {
     allocate(commandedForce_N, commandedTorque_Nm, availableMask) {
       const specs = resolveAvailableSpecs(config, availableMask);
-      const system = buildSystem(commandedForce_N, commandedTorque_Nm, specs, window_s, forceWeights, torqueWeights);
-      const solvedOnTimes = boundedActiveSetSolve(system, window_s, maxIterations);
-      const preResult = forceTorqueForTimes(specs, solvedOnTimes, window_s);
+      // Lexicographic torque priority via force back-off: solve at balanced
+      // weights (the regime the active-set solve is exactness-proven in); if
+      // torque tracking was sacrificed to chase an infeasible force demand,
+      // halve the force command and re-solve. An unmet force command just
+      // translates slower — an unmet torque command tumbles the vehicle.
+      const torqueTolerance_Nm = Math.max(torqueResidualFloor_Nm, 0.05 * norm(commandedTorque_Nm));
+      let forceScale = 1;
+      let solvedOnTimes = boundedActiveSetSolve(
+        buildSystem(commandedForce_N, commandedTorque_Nm, specs, window_s, forceWeights, torqueWeights),
+        window_s,
+        maxIterations,
+      );
+      let preResult = forceTorqueForTimes(specs, solvedOnTimes, window_s);
+      for (let backoff = 0; backoff < maxForceBackoffs; backoff += 1) {
+        const torqueResidual_Nm = norm(subtract(commandedTorque_Nm, preResult.torque_Nm));
+        if (torqueResidual_Nm <= torqueTolerance_Nm) break;
+        forceScale /= 2;
+        const scaledForce_N = commandedForce_N.map((value) => value * forceScale) as Vec3;
+        solvedOnTimes = boundedActiveSetSolve(
+          buildSystem(scaledForce_N, commandedTorque_Nm, specs, window_s, forceWeights, torqueWeights),
+          window_s,
+          maxIterations,
+        );
+        preResult = forceTorqueForTimes(specs, solvedOnTimes, window_s);
+      }
+      // Residuals report against the ORIGINAL command so sat_flag correctly
+      // reflects any back-off as unmet force demand.
       const solveResidual_N = subtract(commandedForce_N, preResult.force_N);
       const solveTorqueResidual_Nm = subtract(commandedTorque_Nm, preResult.torque_Nm);
       const forceThreshold_N = Math.max(forceResidualFloor_N, 0.05 * norm(commandedForce_N));
@@ -306,14 +346,28 @@ function makeAllocator(config: AllocatorConfig): ThrusterAllocator {
       const preQuantizedOnTimes_s: ThrusterCommand = {};
       const onTimes: ThrusterCommand = {};
       const quantizedValues: number[] = [];
+      const tick_s = 1 / truthHz;
       for (const spec of config.specs ?? DRACO_THRUSTER_SPECS) {
         const availableIndex = specs.findIndex((availableSpec) => availableSpec.id === spec.id);
         const solved = availableIndex >= 0 ? solvedOnTimes[availableIndex] ?? 0 : 0;
-        const deadbanded = solved < minOnTime_s ? 0 : solved;
-        const quantized = quantizeOnTime(deadbanded, truthHz, minOnTime_s);
-        preQuantizedOnTimes_s[spec.id] = deadbanded;
-        onTimes[spec.id] = quantized;
-        quantizedValues.push(quantized);
+        preQuantizedOnTimes_s[spec.id] = solved;
+        // Min-impulse handling via a per-jet impulse ACCUMULATOR (PWM across
+        // FSW cycles, the standard real-RCS approach): sub-minimum demand is
+        // carried to later ticks instead of being deadbanded away. A naive
+        // per-tick deadband silently zeroed every torque-balanced (spread-out)
+        // or fine-control solution — the vehicle got NO thrust at all from
+        // small commands, which is what let attitude drift unopposed.
+        const accumulated = (impulseCarry_s[spec.id] ?? 0) + solved;
+        const fireable = Math.min(window_s, Math.floor(accumulated / tick_s + 1e-9) * tick_s);
+        if (availableIndex >= 0 && fireable >= minOnTime_s) {
+          onTimes[spec.id] = fireable;
+          impulseCarry_s[spec.id] = accumulated - fireable;
+        } else {
+          onTimes[spec.id] = 0;
+          // Carry decays instead of accumulating forever on masked/idle jets.
+          impulseCarry_s[spec.id] = availableIndex >= 0 ? accumulated : 0;
+        }
+        quantizedValues.push(onTimes[spec.id]!);
       }
       const quantizedResult = forceTorqueForTimes(config.specs ?? DRACO_THRUSTER_SPECS, quantizedValues, window_s);
       return {
