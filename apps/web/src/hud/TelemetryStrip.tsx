@@ -26,6 +26,8 @@ export function TelemetryStrip() {
   let range: number | null = null;
   let closing: number | null = null;
   let navSigma: number | null = null;
+  let attitudeSigma: number | null = null;
+  let bodyRate: number | null = null;
   let clock = PLACEHOLDER;
 
   if (frame) {
@@ -34,6 +36,8 @@ export function TelemetryStrip() {
     navSigma = Math.sqrt(
       frame.nav_cov_pos_m2[0] + frame.nav_cov_pos_m2[1] + frame.nav_cov_pos_m2[2],
     );
+    attitudeSigma = frame.att_sigma_deg;
+    bodyRate = Math.hypot(...frame.body_rate_dps_est);
 
     closing = closingRate.current.push(frame.t_s, range);
 
@@ -46,6 +50,8 @@ export function TelemetryStrip() {
     ['range', fmt(range, 1, ' m')],
     ['closing', fmt(closing, 2, ' m/s')],
     ['nav σ (rss)', fmt(navSigma, 2, ' m')],
+    ['att σ', fmt(attitudeSigma, 2, '°')],
+    ['rate', fmt(bodyRate, 2, '°/s')],
     ['prop', frame ? `${frame.prop_kg.toFixed(1)} kg` : PLACEHOLDER],
     ['met', clock],
   ];

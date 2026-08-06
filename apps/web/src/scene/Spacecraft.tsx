@@ -1,8 +1,9 @@
 import { Component, Suspense, useRef, type ReactNode } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { Group, MathUtils } from 'three';
-import { getLatestFrame } from '../telemetry/bus';
+import { Group, MathUtils, Quaternion } from 'three';
+import { conjugateQuaternion } from '@docking/sim-core';
+import { useTelemetryBus } from '../telemetry/bus';
 
 /**
  * Target station (origin) and chaser (bus-driven) in the Hill frame:
@@ -71,6 +72,26 @@ function PrimitiveStation() {
         <cylinderGeometry args={[1.0, 1.4, 1.6, 16]} />
         <meshStandardMaterial color="#6f7480" metalness={0.8} roughness={0.3} />
       </mesh>
+      <DockingTarget />
+    </group>
+  );
+}
+
+function DockingTarget() {
+  return (
+    <group position={[0, -8.7, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh>
+        <ringGeometry args={[0.65, 0.85, 24]} />
+        <meshStandardMaterial color="#f0b429" emissive="#f0b429" emissiveIntensity={1.5} />
+      </mesh>
+      <mesh position={[0, 0, 0.03]}>
+        <boxGeometry args={[0.12, 1.35, 0.04]} />
+        <meshStandardMaterial color="#fff3bd" emissive="#f0b429" emissiveIntensity={2} />
+      </mesh>
+      <mesh position={[0, 0, 0.04]} rotation={[0, 0, Math.PI / 2]}>
+        <boxGeometry args={[0.12, 1.35, 0.04]} />
+        <meshStandardMaterial color="#fff3bd" emissive="#f0b429" emissiveIntensity={2} />
+      </mesh>
     </group>
   );
 }
@@ -110,17 +131,21 @@ if (USE_GLTF_MODELS) {
 
 function Chaser() {
   const ref = useRef<Group>(null);
+  const targetQuaternion = useRef(new Quaternion());
+  const renderState = useTelemetryBus((state) => state.renderState);
 
   useFrame((_, dt) => {
     const group = ref.current;
-    const frame = getLatestFrame();
-    if (!group || !frame) return;
-    // The 10 Hz bus frame is the authoritative target; damp at render rate
-    // so approach motion neither steps nor amplifies the seeded nav noise.
-    const [x, y, z] = frame.nav_r_hill_m;
+    if (!group || !renderState) return;
+    // Truth render state is authoritative for visuals; damp at render rate so
+    // the 10 Hz pose channel remains smooth without changing telemetry.
+    const [x, y, z] = renderState.r_hill_m;
     group.position.x = MathUtils.damp(group.position.x, x, POSITION_DAMP_LAMBDA, dt);
     group.position.y = MathUtils.damp(group.position.y, y, POSITION_DAMP_LAMBDA, dt);
     group.position.z = MathUtils.damp(group.position.z, z, POSITION_DAMP_LAMBDA, dt);
+    const q_HB = conjugateQuaternion(renderState.q_BH);
+    targetQuaternion.current.set(q_HB[1], q_HB[2], q_HB[3], q_HB[0]);
+    group.quaternion.slerp(targetQuaternion.current, 1 - Math.exp(-4 * dt));
   });
 
   return (

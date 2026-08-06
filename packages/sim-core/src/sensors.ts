@@ -1,4 +1,5 @@
 import { createRng, type SeededRng } from './rng.js';
+import { hillToBody, multiplyQuaternion, normalizeQuaternion, rotateVector, smallAngleExp } from './attitude.js';
 import type { Quat, SensorFrame, TruthState, Vec3 } from './types.js';
 
 export interface SensorBiasRamp {
@@ -36,12 +37,18 @@ export interface SensorModelConfig {
   range_sigma_scale?: number;
   bearing_sigma_rad?: number | [number, number];
   gyro_sigma_rps?: number | Vec3;
+  /** Gyro bias random-walk rate in rad/s per sqrt(s). */
+  gyro_bias_random_walk_rps_sqrt_s?: number | Vec3;
+  /** @deprecated Use gyro_bias_random_walk_rps_sqrt_s. */
+  gyro_bias_rw_rps_sqrt_s?: number | Vec3;
   attitude_sigma_rad?: number;
   degrade?: SensorDegradeConfig | null;
 }
 
 export interface SensorModel {
   sample(truth: TruthState): SensorFrame;
+  /** Truth-privileged current gyro bias, including configured bias ramps. */
+  getTrueGyroBias(): Vec3;
   setDegrade(degrade: SensorDegradeConfig | null): void;
   clearDegrade(): void;
 }
@@ -51,35 +58,10 @@ const DEFAULT_CONFIG: Required<Omit<SensorModelConfig, 'degrade'>> = {
   range_sigma_scale: 0.001,
   bearing_sigma_rad: 0.0005,
   gyro_sigma_rps: [1e-5, 1e-5, 1e-5],
+  gyro_bias_random_walk_rps_sqrt_s: [1e-6, 1e-6, 1e-6],
+  gyro_bias_rw_rps_sqrt_s: [1e-6, 1e-6, 1e-6],
   attitude_sigma_rad: 0.0005,
 };
-
-function normalizeQuaternion(q: Quat): Quat {
-  const norm = Math.hypot(q[0], q[1], q[2], q[3]);
-  if (norm === 0) return [1, 0, 0, 0];
-  return [q[0] / norm, q[1] / norm, q[2] / norm, q[3] / norm];
-}
-
-function multiplyQuaternion(a: Quat, b: Quat): Quat {
-  return [
-    a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3],
-    a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
-    a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1],
-    a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0],
-  ];
-}
-
-function rotationVectorQuaternion(rotationVector_rad: Vec3): Quat {
-  const angle_rad = Math.hypot(...rotationVector_rad);
-  if (angle_rad < 1e-15) return [1, 0, 0, 0];
-  const scale = Math.sin(angle_rad / 2) / angle_rad;
-  return [
-    Math.cos(angle_rad / 2),
-    rotationVector_rad[0] * scale,
-    rotationVector_rad[1] * scale,
-    rotationVector_rad[2] * scale,
-  ];
-}
 
 function wrapPi(angle_rad: number): number {
   const wrapped = (angle_rad + Math.PI) % (2 * Math.PI);
@@ -119,10 +101,7 @@ export function bearingToLosUnit(bearing_body_rad: [number, number]): Vec3 {
   ];
 }
 
-/**
- * Convert a Hill-frame chaser-to-target LOS into the sensor bearing pair.
- * The body frame is coincident with Hill in Phase 2 and boresight is +y.
- */
+/** Convert a body-frame chaser-to-target LOS into the sensor bearing pair. */
 export function losToBearing(los_unit: Vec3): [number, number] {
   const norm = Math.hypot(...los_unit);
   if (norm === 0) throw new RangeError('LOS must be non-zero');
@@ -130,7 +109,7 @@ export function losToBearing(los_unit: Vec3): [number, number] {
   return [wrapPi(Math.atan2(l[0], l[1])), Math.asin(clamp(l[2], -1, 1))];
 }
 
-/** Convert relative position to the chaser-to-target bearing convention. */
+/** Convert Hill-relative position to a chaser-to-target Hill-frame bearing. */
 export function relativePositionToBearing(r_hill_m: Vec3): [number, number] {
   const norm = Math.hypot(...r_hill_m);
   if (norm === 0) throw new RangeError('relative position must be non-zero');
@@ -157,8 +136,13 @@ function validateConfig(config: SensorModelConfig): void {
   const rangeScale = config.range_sigma_scale ?? DEFAULT_CONFIG.range_sigma_scale;
   const bearingSigma = bearingSigmaConfig(config.bearing_sigma_rad);
   const gyroSigma = vec3Config(config.gyro_sigma_rps, DEFAULT_CONFIG.gyro_sigma_rps as Vec3);
+  const biasRandomWalk = vec3Config(
+    config.gyro_bias_random_walk_rps_sqrt_s ?? config.gyro_bias_rw_rps_sqrt_s,
+    DEFAULT_CONFIG.gyro_bias_random_walk_rps_sqrt_s as Vec3,
+  );
   const attitudeSigma = config.attitude_sigma_rad ?? DEFAULT_CONFIG.attitude_sigma_rad;
-  if ([rangeFloor, rangeScale, ...bearingSigma, ...gyroSigma, attitudeSigma].some((value) => value < 0 || !Number.isFinite(value))) {
+  if ([rangeFloor, rangeScale, ...bearingSigma, ...gyroSigma, ...biasRandomWalk, attitudeSigma]
+    .some((value) => value < 0 || !Number.isFinite(value))) {
     throw new RangeError('sensor noise values must be finite and non-negative');
   }
 }
@@ -169,15 +153,46 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
   const rangeRng = rng.substream('sensors.range');
   const bearingRng = rng.substream('sensors.bearing');
   const gyroRng = rng.substream('sensors.gyro');
+  const gyroBiasRng = rng.substream('sensors.gyro-bias');
   const attitudeRng = rng.substream('sensors.attitude');
   const rangeFloor_m = config.range_sigma_floor_m ?? DEFAULT_CONFIG.range_sigma_floor_m;
   const rangeScale = config.range_sigma_scale ?? DEFAULT_CONFIG.range_sigma_scale;
   const [bearingSigmaAz_rad, bearingSigmaEl_rad] = bearingSigmaConfig(config.bearing_sigma_rad);
   const gyroSigma_rps = vec3Config(config.gyro_sigma_rps, DEFAULT_CONFIG.gyro_sigma_rps as Vec3);
+  const gyroBiasRandomWalk_rps_sqrt_s = vec3Config(
+    config.gyro_bias_random_walk_rps_sqrt_s ?? config.gyro_bias_rw_rps_sqrt_s,
+    DEFAULT_CONFIG.gyro_bias_random_walk_rps_sqrt_s as Vec3,
+  );
   const attitudeSigma_rad = config.attitude_sigma_rad ?? DEFAULT_CONFIG.attitude_sigma_rad;
   let degrade = config.degrade ?? null;
+  let gyroBias_rps: Vec3 = [0, 0, 0];
+  let lastSampleTime_s: number | null = null;
+
+  const advanceGyroBias = (t_s: number): void => {
+    if (lastSampleTime_s !== null) {
+      const dt_s = t_s - lastSampleTime_s;
+      if (dt_s < 0 || !Number.isFinite(dt_s)) throw new RangeError('sensor timestamps must be finite and non-decreasing');
+      if (dt_s > 0) {
+        gyroBias_rps = gyroBias_rps.map((value, axis) => value + gyroBiasRng.gaussian(
+          0,
+          gyroBiasRandomWalk_rps_sqrt_s[axis]! * Math.sqrt(dt_s),
+        )) as Vec3;
+      }
+    }
+    lastSampleTime_s = t_s;
+  };
+
+  const currentGyroBias = (t_s: number): Vec3 => {
+    const active = activeDegradeAt(degrade, t_s);
+    const ramp = active?.ramp ?? 0;
+    const biasRamp = active?.degrade.biasRamp?.gyro_rps ?? [0, 0, 0];
+    return gyroBias_rps.map((value, axis) => value + (biasRamp[axis] ?? 0) * ramp) as Vec3;
+  };
 
   return {
+    getTrueGyroBias() {
+      return [...currentGyroBias(lastSampleTime_s ?? 0)];
+    },
     setDegrade(nextDegrade) {
       if (nextDegrade?.noiseMultiplier !== undefined && (nextDegrade.noiseMultiplier < 0 || !Number.isFinite(nextDegrade.noiseMultiplier))) {
         throw new RangeError('noiseMultiplier must be finite and non-negative');
@@ -188,20 +203,28 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
       degrade = null;
     },
     sample(truth) {
+      advanceGyroBias(truth.t_s);
       const active = activeDegradeAt(degrade, truth.t_s);
       const currentDegrade = active?.degrade;
       const ramp = active?.ramp ?? 0;
       const noiseMultiplier = currentDegrade?.noiseMultiplier ?? 1;
       const range_m = Math.hypot(...truth.r_hill_m);
       const rangeSigma_m = (rangeFloor_m + rangeScale * range_m) * noiseMultiplier;
-      const [trueAzimuth_rad, trueElevation_rad] = relativePositionToBearing(truth.r_hill_m);
+      if (range_m === 0) throw new RangeError('relative position must be non-zero');
+      const los_hill: Vec3 = [
+        -truth.r_hill_m[0] / range_m,
+        -truth.r_hill_m[1] / range_m,
+        -truth.r_hill_m[2] / range_m,
+      ];
+      const los_body = rotateVector(hillToBody(truth.q_BI, truth.t_s), los_hill);
+      const [trueAzimuth_rad, trueElevation_rad] = losToBearing(los_body);
       const rangeBias_m = (currentDegrade?.biasRamp?.range_m ?? 0) * ramp;
       const bearingBias_rad = scaledVec3([
         currentDegrade?.biasRamp?.bearing_rad?.[0] ?? 0,
         currentDegrade?.biasRamp?.bearing_rad?.[1] ?? 0,
         0,
       ], ramp);
-      const gyroBias_rps = scaledVec3(currentDegrade?.biasRamp?.gyro_rps ?? [0, 0, 0], ramp);
+      const gyroBias_rps = currentGyroBias(truth.t_s);
       const attitudeBias_rad = scaledVec3(currentDegrade?.biasRamp?.attitude_rad ?? [0, 0, 0], ramp);
 
       const noisyRange_m = Math.max(0, range_m + rangeBias_m + rangeRng.gaussian(0, rangeSigma_m));
@@ -220,9 +243,11 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
         attitudeBias_rad[1] + attitudeRng.gaussian(0, attitudeSigma_rad * noiseMultiplier),
         attitudeBias_rad[2] + attitudeRng.gaussian(0, attitudeSigma_rad * noiseMultiplier),
       ];
-      const attitude_q_BI = normalizeQuaternion(multiplyQuaternion(
-        rotationVectorQuaternion(attitudeNoise_rad),
+      // Star tracker reports q_BI (inertial→body); noise is composed on the
+      // right as q_BI ⊗ q_noise per the shared destination-first convention.
+      const star_tracker_q_BI = normalizeQuaternion(multiplyQuaternion(
         truth.q_BI,
+        smallAngleExp(attitudeNoise_rad),
       ));
       const dropout = currentDegrade?.dropout;
 
@@ -231,7 +256,9 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
         range_m: dropoutActive(dropout, 'range') ? null : noisyRange_m,
         bearing_body_rad: dropoutActive(dropout, 'bearing') ? null : noisyBearing,
         gyro_rps,
-        attitude_q_BI: dropoutActive(dropout, 'attitude') ? null : attitude_q_BI,
+        star_tracker_q_BI: dropoutActive(dropout, 'attitude') ? null : star_tracker_q_BI,
+        // Compatibility alias for the Phase 2 attitude channel name.
+        attitude_q_BI: dropoutActive(dropout, 'attitude') ? null : star_tracker_q_BI,
       };
     },
   };

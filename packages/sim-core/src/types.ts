@@ -6,11 +6,37 @@
  * - SI units, sim-time seconds.
  */
 import type { NavDiag } from './ekf.js';
+import type { AttDiag } from './mekf.js';
 
 export type { NavDiag } from './ekf.js';
+export type { AttDiag } from './mekf.js';
 export type Vec3 = [number, number, number];
 /** Scalar-first unit quaternion [w, x, y, z]. */
 export type Quat = [number, number, number, number];
+
+export type ControlMode = 'AUTO' | 'MANUAL';
+export type ManualSubMode = 'RATE' | 'PULSE';
+
+export interface ManualCommand {
+  translation: Vec3;
+  rotation: Vec3;
+}
+
+/** Truth-privileged pose channel for rendering, separate from navigation telemetry. */
+export interface RenderState {
+  t_s: number;
+  r_hill_m: Vec3;
+  v_hill_mps: Vec3;
+  /** q_BH rotates Hill vectors into body axes. */
+  q_BH: Quat;
+}
+
+export interface DockingTelemetry {
+  closing_mps: number;
+  lateral_m: number;
+  misalign_deg: number;
+  rate_dps: number;
+}
 
 /** Truth state of the chaser relative to the target (Hill frame + attitude). */
 export interface TruthState {
@@ -28,7 +54,10 @@ export interface SensorFrame {
   range_m: number | null;
   bearing_body_rad: [number, number] | null;
   gyro_rps: Vec3;
-  attitude_q_BI: Quat | null;
+  /** Star-tracker quaternion, rotating inertial-frame vectors into body axes. */
+  star_tracker_q_BI?: Quat | null;
+  /** @deprecated Use star_tracker_q_BI. */
+  attitude_q_BI?: Quat | null;
 }
 
 /** Commanded on-time per thruster for the next FSW tick, seconds. */
@@ -36,9 +65,12 @@ export type ThrusterCommand = Record<string, number>;
 
 /** The single FSW entry point. Pure: sensors in, commands + telemetry out. */
 export interface FswTick {
-  (sensors: SensorFrame): { thrusters: ThrusterCommand; telemetry: TelemetryFrame; nav_diag: NavDiag };
+  (sensors: SensorFrame): { thrusters: ThrusterCommand; telemetry: TelemetryFrame; nav_diag: NavDiag; att_diag: AttDiag };
   setController(controller: 'PID' | 'LQR'): void;
   setJetAvailability(id: string, available: boolean): void;
+  setControlMode(mode: ControlMode): void;
+  setManualSubMode(mode: ManualSubMode): void;
+  setManualCommand(command: ManualCommand): void;
 }
 
 /** What the UI, scenario director, and Monte Carlo harness observe. */
@@ -53,4 +85,10 @@ export interface TelemetryFrame {
   prop_kg: number;
   thruster_duty: Record<string, number>;
   sat_flag: boolean;
+  q_BH_est: Quat;
+  body_rate_dps_est: Vec3;
+  att_sigma_deg: number;
+  manual_sub_mode: ManualSubMode | null;
+  docking: DockingTelemetry | null;
+  att_nees: number | null;
 }

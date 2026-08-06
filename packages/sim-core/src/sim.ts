@@ -1,18 +1,30 @@
 import { FSW_HZ, TRUTH_HZ } from './constants.js';
+import { errorQuaternion, hillToBody, smallAngleLog } from './attitude.js';
 import { createFsw, type FswConfig } from './fsw.js';
 import { inverseMatrix } from './linalg.js';
 import { createRng } from './rng.js';
 import { createSensorModel, type SensorDegradeConfig, type SensorModel, type SensorModelConfig } from './sensors.js';
 import { applyThrusterCommand, DRACO_THRUSTER_SPECS } from './thrusters.js';
-import type { Quat, TelemetryFrame, ThrusterCommand, TruthState, Vec3 } from './types.js';
+import type {
+  ControlMode,
+  ManualCommand,
+  ManualSubMode,
+  Quat,
+  RenderState,
+  TelemetryFrame,
+  ThrusterCommand,
+  TruthState,
+  Vec3,
+} from './types.js';
 import type { ThrusterSpec, ThrusterState, ThrusterStateMap } from './thrusters.js';
-import { stepTruth } from './dynamics.js';
+import { stepTruth, type InertiaTensor } from './dynamics.js';
 
 export interface SimInitialConditions {
   r_hill_m: Vec3;
   v_hill_mps: Vec3;
   prop_kg: number;
   q_BI?: Quat;
+  w_body_rps?: Vec3;
   t_s?: number;
 }
 
@@ -26,16 +38,22 @@ export interface SimConfig {
   fsw: FswConfig;
   sensors?: SensorModelConfig;
   thrusters?: SimThrusterConfig;
+  /** Diagonal body-frame inertia `[Ixx, Iyy, Izz]` in kg·m². */
+  inertia_kg_m2?: InertiaTensor;
 }
 
 export interface SimLoop {
   stepTo(t_s: number): TelemetryFrame[];
   setController(controller: 'PID' | 'LQR'): void;
+  setControlMode(mode: ControlMode): void;
+  setManualSubMode(mode: ManualSubMode): void;
+  setManualCommand(command: ManualCommand): void;
   isolateThruster(id: string): void;
   injectThrusterStuck(id: string, state: 'OPEN' | 'CLOSED'): void;
   setSensorDegrade(degrade: SensorDegradeConfig): void;
   clearSensorDegrade(): void;
   getTruthState(): TruthState;
+  getRenderState(): RenderState;
 }
 
 const IDENTITY_QUATERNION: Quat = [1, 0, 0, 0];
@@ -57,7 +75,8 @@ function cloneTruthState(state: TruthState): TruthState {
 }
 
 function validateInitial(initial: SimInitialConditions): void {
-  if ([...initial.r_hill_m, ...initial.v_hill_mps, initial.prop_kg].some((value) => !Number.isFinite(value))) {
+  if ([...initial.r_hill_m, ...initial.v_hill_mps, ...(initial.w_body_rps ?? [0, 0, 0]), initial.prop_kg]
+    .some((value) => !Number.isFinite(value))) {
     throw new RangeError('initial truth conditions must be finite');
   }
   if (initial.prop_kg < 0) throw new RangeError('initial propellant must be non-negative');
@@ -73,6 +92,26 @@ function computeNees(truth: TruthState, state: number[], covariance: number[][])
     truth.v_hill_mps[0] - state[3]!, truth.v_hill_mps[1] - state[4]!, truth.v_hill_mps[2] - state[5]!,
   ];
   const covarianceInverse = inverseMatrix(covariance, { strict: true });
+  return error.reduce((sum, value, row) => sum + value * covarianceInverse[row]!.reduce(
+    (inner, coefficient, column) => inner + coefficient * error[column]!,
+    0,
+  ), 0);
+}
+
+function computeAttitudeNees(
+  truth: TruthState,
+  attDiag: { q_ref_BI: Quat; bias_rps: Vec3; covariance: number[][]; initialized: boolean },
+  trueGyroBias_rps: Vec3,
+): number | null {
+  if (!attDiag.initialized) return null;
+  const attitudeError = smallAngleLog(errorQuaternion(attDiag.q_ref_BI, truth.q_BI));
+  const error = [
+    attitudeError[0], attitudeError[1], attitudeError[2],
+    trueGyroBias_rps[0] - attDiag.bias_rps[0],
+    trueGyroBias_rps[1] - attDiag.bias_rps[1],
+    trueGyroBias_rps[2] - attDiag.bias_rps[2],
+  ];
+  const covarianceInverse = inverseMatrix(attDiag.covariance, { strict: true });
   return error.reduce((sum, value, row) => sum + value * covarianceInverse[row]!.reduce(
     (inner, coefficient, column) => inner + coefficient * error[column]!,
     0,
@@ -101,7 +140,7 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     r_hill_m: cloneVec3(config.initial.r_hill_m),
     v_hill_mps: cloneVec3(config.initial.v_hill_mps),
     q_BI: [...(config.initial.q_BI ?? IDENTITY_QUATERNION)],
-    w_body_rps: [0, 0, 0],
+    w_body_rps: cloneVec3(config.initial.w_body_rps ?? [0, 0, 0]),
     prop_kg: config.initial.prop_kg,
   };
   let truthTickIndex = 0;
@@ -129,7 +168,9 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     });
     truth = stepTruth(truth, {
       dt_s: TRUTH_TICK_S,
-      externalSpecificForce_hill_mps2: application.specificForce_hill_mps2,
+      externalSpecificForce_body_mps2: application.specificForce_body_mps2,
+      torque_body_Nm: application.torque_Nm,
+      inertia_kg_m2: config.inertia_kg_m2,
       propellantRate_kg_s: application.propellantRate_kg_s,
     });
     for (const spec of specs) {
@@ -144,6 +185,7 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     const output = fsw({ ...sensorModel.sample(truth), t_s: truth.t_s });
     remainingOnTimes = { ...output.thrusters };
     output.telemetry.nees = computeNees(truth, output.nav_diag.state, output.nav_diag.covariance);
+    output.telemetry.att_nees = computeAttitudeNees(truth, output.att_diag, sensorModel.getTrueGyroBias());
     // Prop is a measured quantity on a real vehicle: publish the truth tank
     // level, not FSW's commanded-consumption estimate — otherwise stuck jets
     // silently diverge the gauge from reality.
@@ -166,6 +208,15 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     setController(controller) {
       fsw.setController(controller);
     },
+    setControlMode(mode) {
+      fsw.setControlMode(mode);
+    },
+    setManualSubMode(mode) {
+      fsw.setManualSubMode(mode);
+    },
+    setManualCommand(command) {
+      fsw.setManualCommand(command);
+    },
     isolateThruster(id) {
       if (!specs.some((spec) => spec.id === id)) throw new RangeError(`unknown thruster ${id}`);
       states[id] = 'isolated';
@@ -184,6 +235,14 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     },
     getTruthState() {
       return cloneTruthState(truth);
+    },
+    getRenderState() {
+      return {
+        t_s: truth.t_s,
+        r_hill_m: cloneVec3(truth.r_hill_m),
+        v_hill_mps: cloneVec3(truth.v_hill_mps),
+        q_BH: hillToBody(truth.q_BI, truth.t_s),
+      };
     },
   };
 }

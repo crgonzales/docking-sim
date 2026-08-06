@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { hillToBody, rotateVector, smallAngleExp } from './attitude.js';
 import { createSimLoop, type SimConfig } from './sim.js';
+import { MEAN_MOTION_RAD_S } from './dynamics.js';
 
 const initialState: [number, number, number, number, number, number] = [0, -250, 12, 0, 0, 0];
 
@@ -92,5 +94,69 @@ describe('SimLoop', () => {
     // Regression (review finding): even with a truth-only stuck jet burning
     // prop the FSW never commanded, the emitted gauge must track the tank.
     expect(frames[frames.length - 1]!.prop_kg).toBeCloseTo(failed.getTruthState().prop_kg, 12);
+  }, 30_000);
+
+  it('applies scripted manual commands deterministically and exposes truth render state', () => {
+    const manualConfig: SimConfig = {
+      ...config(),
+      initial: { ...config().initial, q_BI: smallAngleExp([0.2, -0.1, 0.15]) },
+    };
+    const first = createSimLoop(manualConfig, 991);
+    const second = createSimLoop(manualConfig, 991);
+    const script = [
+      { t_s: 0.1, mode: 'MANUAL' as const, subMode: 'PULSE' as const, command: { translation: [1, 0, 0] as [number, number, number], rotation: [0, 0.5, 0] as [number, number, number] } },
+      { t_s: 0.2, mode: 'MANUAL' as const, subMode: 'RATE' as const, command: { translation: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number] } },
+      { t_s: 0.5, mode: 'AUTO' as const, subMode: 'RATE' as const, command: { translation: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number] } },
+    ];
+    let framesFirst: ReturnType<typeof first.stepTo> = [];
+    let framesSecond: ReturnType<typeof second.stepTo> = [];
+    for (const entry of script) {
+      first.setControlMode(entry.mode);
+      second.setControlMode(entry.mode);
+      first.setManualSubMode(entry.subMode);
+      second.setManualSubMode(entry.subMode);
+      first.setManualCommand(entry.command);
+      second.setManualCommand(entry.command);
+      framesFirst = framesFirst.concat(first.stepTo(entry.t_s));
+      framesSecond = framesSecond.concat(second.stepTo(entry.t_s));
+    }
+    expect(framesFirst).toEqual(framesSecond);
+    expect(first.getTruthState()).toEqual(second.getTruthState());
+    const render = first.getRenderState();
+    const truth = first.getTruthState();
+    expect(render.t_s).toBe(truth.t_s);
+    expect(render.r_hill_m).toEqual(truth.r_hill_m);
+    expect(render.v_hill_mps).toEqual(truth.v_hill_mps);
+    expect(render.q_BH).toEqual(hillToBody(truth.q_BI, truth.t_s));
+    expect(framesFirst.every((frame) => frame.att_nees !== null && Number.isFinite(frame.att_nees))).toBe(true);
+  });
+
+  it('damps a tumbling start toward LVLH rate under closed-loop AUTO attitude control', () => {
+    const tumblingConfig: SimConfig = {
+      ...config(),
+      initial: {
+        ...config().initial,
+        q_BI: smallAngleExp([0.25, -0.2, 0.15]),
+        w_body_rps: [0.04, -0.03, 0.025],
+      },
+      fsw: {
+        ...config().fsw,
+        attitudeControllerConfig: { maxTorque_Nm: 40 },
+      },
+    };
+    const sim = createSimLoop(tumblingConfig, 992);
+    const initial = sim.getTruthState();
+    expect(Math.hypot(...initial.w_body_rps)).toBeGreaterThan(0.05);
+    sim.stepTo(60);
+    const truth = sim.getTruthState();
+    const q_BH = hillToBody(truth.q_BI, truth.t_s);
+    const rateReference = rotateVector(q_BH, [0, 0, MEAN_MOTION_RAD_S]);
+    const rateError = Math.hypot(
+      truth.w_body_rps[0] - rateReference[0],
+      truth.w_body_rps[1] - rateReference[1],
+      truth.w_body_rps[2] - rateReference[2],
+    );
+    expect(Math.hypot(q_BH[1], q_BH[2], q_BH[3])).toBeLessThan(0.08);
+    expect(rateError).toBeLessThan(0.01);
   }, 30_000);
 });

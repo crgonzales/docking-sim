@@ -3,6 +3,8 @@ export * from './constants.js';
 export { propagateCW } from './cw.js';
 export * from './rng.js';
 export * from './dynamics.js';
+export * from './attitude.js';
+export * from './mekf.js';
 export * from './thrusters.js';
 export * from './sensors.js';
 export * from './allocator.js';

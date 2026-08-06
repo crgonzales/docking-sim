@@ -1,7 +1,14 @@
 import { MEAN_MOTION_RAD_S } from './dynamics.js';
+import {
+  conjugateQuaternion,
+  multiplyQuaternion,
+  normalizeQuaternion,
+  rotateVector,
+  smallAngleExp,
+} from './attitude.js';
 import { inverseMatrix } from './linalg.js';
 import { bearingToLosUnit, losToBearing } from './sensors.js';
-import type { SensorFrame, Vec3 } from './types.js';
+import type { Quat, SensorFrame, Vec3 } from './types.js';
 
 export type State6 = [number, number, number, number, number, number];
 export type Matrix6 = number[][];
@@ -35,11 +42,25 @@ export interface EkfMeasurement {
   bearing_body_rad: [number, number];
 }
 
+/** Attitude estimate used to express the Hill-state bearing in body axes. */
+export interface EkfAttitudeContext {
+  /** q_BH rotates Hill vectors into body axes. */
+  q_BH: Quat;
+  /** MEKF attitude-error covariance P_theta-theta, in rad². */
+  attitudeCovariance?: Matrix3;
+}
+
 export interface Ekf {
   predict(dt_s: number, controlSpecificForce_mps2?: Vec3): void;
   predictWithImpulse(dt_s: number, controlSpecificForceImpulse_mps: Vec3): void;
-  update(measurement: EkfMeasurement): boolean;
-  step(sensor: SensorFrame, dt_s: number, velocityReference_mps: Vec3, controlSpecificForce_mps2?: Vec3): void;
+  update(measurement: EkfMeasurement, attitude?: EkfAttitudeContext): boolean;
+  step(
+    sensor: SensorFrame,
+    dt_s: number,
+    velocityReference_mps: Vec3,
+    controlSpecificForce_mps2?: Vec3,
+    attitude?: EkfAttitudeContext,
+  ): void;
   getNavDiag(): NavDiag;
   readonly initialized: boolean;
 }
@@ -149,20 +170,23 @@ export function cwDiscreteMatrices(meanMotionRadS: number, dt_s: number): Discre
   return { phi, gamma };
 }
 
-function measurementFromState(state: State6): Measurement3 {
+const IDENTITY_QUATERNION: Quat = [1, 0, 0, 0];
+
+function measurementFromState(state: State6, q_BH: Quat = IDENTITY_QUATERNION): Measurement3 {
   const position: Vec3 = [state[0], state[1], state[2]];
   const range_m = Math.hypot(...position);
   if (range_m === 0) throw new RangeError('EKF state position must be non-zero for measurement model');
-  const bearing = losToBearing([-position[0] / range_m, -position[1] / range_m, -position[2] / range_m]);
+  const los_hill: Vec3 = [-position[0] / range_m, -position[1] / range_m, -position[2] / range_m];
+  const bearing = losToBearing(rotateVector(q_BH, los_hill));
   return [range_m, bearing[0], bearing[1]];
 }
 
 /** Public measurement model used by the EKF oracle tests and later FSW code. */
-export function ekfMeasurementModel(state: State6): Measurement3 {
-  return measurementFromState(state);
+export function ekfMeasurementModel(state: State6, q_BH: Quat = IDENTITY_QUATERNION): Measurement3 {
+  return measurementFromState(state, q_BH);
 }
 
-function measurementJacobian(state: State6): number[][] {
+function measurementJacobian(state: State6, q_BH: Quat): number[][] {
   const jacobian = Array.from({ length: 3 }, () => new Array<number>(6).fill(0));
   for (let column = 0; column < 6; column += 1) {
     const step = column < 3 ? 1e-5 : 1e-6;
@@ -170,11 +194,29 @@ function measurementJacobian(state: State6): number[][] {
     const minus = cloneState(state);
     plus[column]! += step;
     minus[column]! -= step;
-    const plusMeasurement = measurementFromState(plus);
-    const minusMeasurement = measurementFromState(minus);
+    const plusMeasurement = measurementFromState(plus, q_BH);
+    const minusMeasurement = measurementFromState(minus, q_BH);
     jacobian[0]![column] = (plusMeasurement[0] - minusMeasurement[0]) / (2 * step);
     jacobian[1]![column] = wrapAngle(plusMeasurement[1] - minusMeasurement[1]) / (2 * step);
     jacobian[2]![column] = (plusMeasurement[2] - minusMeasurement[2]) / (2 * step);
+  }
+  return jacobian;
+}
+
+function attitudeBearingJacobian(state: State6, q_BH: Quat): Matrix3 {
+  const jacobian = Array.from({ length: 3 }, () => new Array<number>(3).fill(0)) as Matrix3;
+  const step_rad = 1e-6;
+  for (let axis = 0; axis < 3; axis += 1) {
+    const delta: Vec3 = [0, 0, 0];
+    delta[axis] = step_rad;
+    const plusQuaternion = normalizeQuaternion(multiplyQuaternion(smallAngleExp(delta), q_BH));
+    delta[axis] = -step_rad;
+    const minusQuaternion = normalizeQuaternion(multiplyQuaternion(smallAngleExp(delta), q_BH));
+    const plusMeasurement = measurementFromState(state, plusQuaternion);
+    const minusMeasurement = measurementFromState(state, minusQuaternion);
+    jacobian[0]![axis] = 0;
+    jacobian[1]![axis] = wrapAngle(plusMeasurement[1] - minusMeasurement[1]) / (2 * step_rad);
+    jacobian[2]![axis] = (plusMeasurement[2] - minusMeasurement[2]) / (2 * step_rad);
   }
   return jacobian;
 }
@@ -223,24 +265,38 @@ export function createEkf(config: EkfConfig = {}): Ekf {
     covariance = symmetrize(addMatrices(multiplyMatrices(multiplyMatrices(matrices.phi, covariance), transpose(matrices.phi)), q));
   };
 
-  const updateInternal = (measurement: EkfMeasurement): boolean => {
+  const updateInternal = (measurement: EkfMeasurement, attitude?: EkfAttitudeContext): boolean => {
     if (!isInitialized || measurement.range_m <= 0 || !Number.isFinite(measurement.range_m)) return false;
-    const predicted = measurementFromState(state);
+    const q_BH = attitude === undefined ? IDENTITY_QUATERNION : normalizeQuaternion(attitude.q_BH);
+    const predicted = measurementFromState(state, q_BH);
     const measured: Measurement3 = [measurement.range_m, measurement.bearing_body_rad[0], measurement.bearing_body_rad[1]];
     const innovation = [
       measured[0] - predicted[0],
       wrapAngle(measured[1] - predicted[1]),
       measured[2] - predicted[2],
     ];
-    const h = measurementJacobian(state);
+    const h = measurementJacobian(state, q_BH);
     const hTranspose = transpose(h);
-    const innovationCovariance = addMatrices(multiplyMatrices(multiplyMatrices(h, covariance), hTranspose), r);
+    const measurementNoise = cloneMatrix(r);
+    if (attitude?.attitudeCovariance !== undefined) {
+      const attitudeJacobian = attitudeBearingJacobian(state, q_BH);
+      const attitudeNoise = multiplyMatrices(
+        multiplyMatrices(attitudeJacobian, attitude.attitudeCovariance),
+        transpose(attitudeJacobian),
+      );
+      for (let row = 0; row < 3; row += 1) {
+        for (let column = 0; column < 3; column += 1) {
+          measurementNoise[row]![column] = (measurementNoise[row]?.[column] ?? 0) + (attitudeNoise[row]?.[column] ?? 0);
+        }
+      }
+    }
+    const innovationCovariance = addMatrices(multiplyMatrices(multiplyMatrices(h, covariance), hTranspose), measurementNoise);
     const gain = multiplyMatrices(multiplyMatrices(covariance, hTranspose), inverseMatrix(innovationCovariance));
     state = state.map((value, row) => value + gain[row]!.reduce((sum, coefficient, column) => sum + coefficient * innovation[column]!, 0)) as State6;
     const identityMinusGainH = Array.from({ length: 6 }, (_, row) => Array.from({ length: 6 }, (_, column) => (row === column ? 1 : 0) - gain[row]!.reduce((sum, value, index) => sum + value * h[index]![column]!, 0)));
     covariance = symmetrize(addMatrices(
       multiplyMatrices(multiplyMatrices(identityMinusGainH, covariance), transpose(identityMinusGainH)),
-      multiplyMatrices(multiplyMatrices(gain, r), transpose(gain)),
+      multiplyMatrices(multiplyMatrices(gain, measurementNoise), transpose(gain)),
     ));
     return true;
   };
@@ -257,14 +313,17 @@ export function createEkf(config: EkfConfig = {}): Ekf {
         controlSpecificForceImpulse_mps[2] / dt_s,
       ]);
     },
-    update(measurement) {
-      return updateInternal(measurement);
+    update(measurement, attitude) {
+      return updateInternal(measurement, attitude);
     },
-    step(sensor, dt_s, velocityReference_mps, controlSpecificForce_mps2 = ZERO_VEC3) {
+    step(sensor, dt_s, velocityReference_mps, controlSpecificForce_mps2 = ZERO_VEC3, attitude) {
       const measurement = measurementFromSensor(sensor);
       if (!isInitialized) {
         if (measurement === null) return;
-        const los = bearingToLosUnit(measurement.bearing_body_rad);
+        const q_HB = attitude === undefined
+          ? IDENTITY_QUATERNION
+          : conjugateQuaternion(normalizeQuaternion(attitude.q_BH));
+        const los = rotateVector(q_HB, bearingToLosUnit(measurement.bearing_body_rad));
         state = [
           -measurement.range_m * los[0],
           -measurement.range_m * los[1],
@@ -278,7 +337,7 @@ export function createEkf(config: EkfConfig = {}): Ekf {
         return;
       }
       predictInternal(dt_s, controlSpecificForce_mps2);
-      if (measurement !== null) updateInternal(measurement);
+      if (measurement !== null) updateInternal(measurement, attitude);
     },
     getNavDiag() {
       return { state: cloneState(state), covariance: cloneMatrix(covariance), initialized: isInitialized };

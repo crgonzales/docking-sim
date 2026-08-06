@@ -2,6 +2,7 @@ import { useTelemetryBus } from '../telemetry/bus';
 
 const CONTROLLERS = ['PID', 'LQR', 'MPC'] as const;
 const CONTROL_MODES = ['AUTO', 'MANUAL'] as const;
+const MANUAL_SUB_MODES = ['RATE', 'PULSE'] as const;
 
 /** Bottom mode bar: active controller, control mode, sim clock. */
 export function ModeBar() {
@@ -20,6 +21,13 @@ export function ModeBar() {
         {CONTROL_MODES.map((m) => (
           <span key={m} className={`hud-mode ${frame?.control_mode === m ? 'active' : ''}`}>
             {m}
+          </span>
+        ))}
+      </div>
+      <div className="hud-mode-group hud-submode-group">
+        {MANUAL_SUB_MODES.map((mode) => (
+          <span key={mode} className={`hud-chip ${frame?.manual_sub_mode === mode ? 'active' : ''}`}>
+            {mode}
           </span>
         ))}
       </div>

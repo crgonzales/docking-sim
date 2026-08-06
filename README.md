@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.3.0** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.4.0** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim
 
@@ -18,6 +18,24 @@ Inside:
   states, bounded-NNLS allocator, seeded sensors, ANEES-gated 6-state EKF,
   V-bar guidance with PID/LQR — the scene flies actual closed-loop control fed
   by the `SimLoop` command/injection seam
+- Phase 3 (v0.4.0): full 6-DOF rigid-body attitude with thruster torques,
+  MEKF attitude estimation (gyro bias + star tracker), 6-target force/torque
+  allocation, **manual fly** (AUTO/MANUAL, RATE fly-by-wire or PULSE direct),
+  truth render channel, switchable cameras, and a docking-camera PiP with
+  capture-envelope alignment display
+
+## Flying it (manual controls)
+
+| Input | Action |
+| --- | --- |
+| `M` | toggle AUTO / MANUAL |
+| `T` | toggle RATE (fly-by-wire w/ hold) / PULSE (direct) |
+| `C` | cycle camera: cinematic → chase → cockpit |
+| `W`/`S` | close / back off (±ŷ) |
+| `A`/`D` | lateral (∓ẑ) |
+| `R`/`F` | radial out / in (±x̂) |
+| right-drag | pitch / yaw |
+| `Q`/`E` | roll |
 - project docs structure skills in `local tooling`, project docs under `docs/`
 - Guided-scenario spec for Phase 5 (`docs/scenario-mode-spec.md`)
 - CI workflow (install + test)
@@ -41,6 +59,5 @@ in `local tooling tooling/scripts/start.sh`.
 
 ## Roadmap
 
-See `docs/ARCHI.md` (authoritative). Next: Phase 3 — full 6-DOF attitude,
-MEKF, docking camera, manual fly (planned camera views: cockpit FPV /
-third-person chase / docking PiP, see `docs/6-memo/camera-views-phase3.md`).
+See `docs/ARCHI.md` (authoritative). Next: Phase 4 — MPC terminal approach +
+corridor constraint + passive-abort safety.

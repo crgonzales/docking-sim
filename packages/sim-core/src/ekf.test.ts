@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { hillToBody } from './attitude.js';
 import { stepTruth } from './dynamics.js';
 import { propagateCW } from './cw.js';
 import { createEkf, cwDiscreteMatrices, ekfMeasurementModel, type Matrix6, type State6 } from './ekf.js';
@@ -121,7 +122,13 @@ describe('translational EKF', () => {
         const entry = allRuns[run]!;
         for (let tick = 0; tick < 10; tick += 1) {
           for (let truthTick = 0; truthTick < 10; truthTick += 1) entry.truth = stepTruth(entry.truth);
-          entry.ekf.step(entry.sensor.sample(entry.truth), 0.1, aneesTruth.v_hill_mps);
+          entry.ekf.step(
+            entry.sensor.sample(entry.truth),
+            0.1,
+            aneesTruth.v_hill_mps,
+            undefined,
+            { q_BH: hillToBody(entry.truth.q_BI, entry.truth.t_s) },
+          );
         }
         if (epoch >= 60) {
           const state = entry.ekf.getNavDiag().state;

@@ -38,8 +38,13 @@ export interface ThrusterApplicationOptions extends ThrusterModelConfig {
 export interface ThrusterApplication {
   quantizedOnTime_s: Record<string, number>;
   activeOnTime_s: Record<string, number>;
+  /** Net average force in body axes, in newtons. */
   force_N: Vec3;
+  /** Net average torque in body axes, in newton-metres. */
   torque_Nm: Vec3;
+  /** Net average specific force in body axes, in m/s². */
+  specificForce_body_mps2: Vec3;
+  /** @deprecated Compatibility alias; this value is still body-frame. */
   specificForce_hill_mps2: Vec3;
   propellantRate_kg_s: number;
   propellantUsed_kg: number;
@@ -79,7 +84,7 @@ function cornerJets(sx: -1 | 1, sy: -1 | 1, corner: number): ThrusterSpec[] {
   }));
 }
 
-/** Four canted four-jet corner clusters; body axes equal Hill axes in Phase 2. */
+/** Four canted four-jet corner clusters, specified in body axes. */
 export const DRACO_THRUSTER_SPECS: readonly ThrusterSpec[] = Object.freeze([
   ...cornerJets(-1, -1, 0),
   ...cornerJets(-1, 1, 1),
@@ -126,8 +131,8 @@ function configWithDefaults(options: ThrusterApplicationOptions): Required<Thrus
 }
 
 /**
- * Resolve one commanded FSW pulse into the force, torque, and propellant
- * bookkeeping that truth applies. Body and Hill axes coincide in this phase.
+ * Resolve one commanded FSW pulse into body-frame force, body-frame torque,
+ * and propellant bookkeeping that truth applies.
  */
 export function applyThrusterCommand(
   command: ThrusterCommand,
@@ -179,6 +184,8 @@ export function applyThrusterCommand(
     activeOnTime_s,
     force_N: averageForce,
     torque_Nm: averageTorque,
+    specificForce_body_mps2: specificForce,
+    // Kept for Phase 2 callers; despite the historical name this is now body-frame.
     specificForce_hill_mps2: specificForce,
     propellantRate_kg_s: totalPropellantUsed_kg / config.window_s,
     propellantUsed_kg: totalPropellantUsed_kg,
@@ -198,7 +205,8 @@ export function applyThrusterCommandToTruth(
     application,
     state: stepTruth(state, {
       dt_s,
-      externalSpecificForce_hill_mps2: application.specificForce_hill_mps2,
+      externalSpecificForce_body_mps2: application.specificForce_body_mps2,
+      torque_body_Nm: application.torque_Nm,
       propellantRate_kg_s: application.propellantRate_kg_s,
     }),
   };

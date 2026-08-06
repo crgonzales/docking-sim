@@ -47,7 +47,7 @@ QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
 
 1. ~~Restructure + cinematic visual pass (Earth, starfield, craft, HUD)~~ ✅ v0.2.0 (primitive craft; normalized glTF models are a documented follow-up — see `apps/web/public/assets/ASSETS.md`)
 2. ~~Discrete RCS thrusters + allocator, sensor models, EKF~~ ✅ v0.3.0 (16-jet canted RCS, NNLS allocator, seeded sensors + degrade hooks, 6-state EKF, PID/LQR, `SimLoop` command/injection seam; attitude = kinematic LVLH hold pending Phase 3)
-3. 6-DOF attitude + MEKF + docking camera + manual fly
+3. ~~6-DOF attitude + MEKF + docking camera + manual fly~~ ✅ v0.4.0 (rigid-body truth + thruster torques, MEKF w/ gyro-bias states, 6-target allocator, AUTO/MANUAL-RATE/PULSE via deterministic command API, truth render channel, camera rig + docking PiP)
 4. MPC terminal approach + passive abort safety
 5. Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`) + video
 
@@ -61,6 +61,8 @@ QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
   + window mean (implemented: `ekf.test.ts`)
 - End-to-end determinism + FSW purity grep + failure-injection honesty
   (implemented: `sim.test.ts`, `fsw.test.ts`)
-- Quaternion norm drift bound; torque-free momentum conservation (Phase 3)
+- Quaternion norm drift bound; torque-free full-vector momentum conservation;
+  MEKF 50-run attitude ANEES in the 95% χ²₆ₙ/N band (implemented:
+  `dynamics.test.ts`, `mekf.test.ts`)
 - Scenario mode: determinism, zero-input never docks, perfect-operator docks
   (Phase 5)

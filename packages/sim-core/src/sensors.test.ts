@@ -21,6 +21,7 @@ const zeroNoise = {
   range_sigma_scale: 0,
   bearing_sigma_rad: 0,
   gyro_sigma_rps: 0,
+  gyro_bias_random_walk_rps_sqrt_s: 0,
   attitude_sigma_rad: 0,
 };
 
@@ -72,5 +73,21 @@ describe('sensor model', () => {
     expect(halfway.range_m).toBeCloseTo(range_m + 2, 14);
     expect(after.range_m).toBeCloseTo(range_m + 4, 14);
     expect(halfway.gyro_rps[0]).toBeCloseTo(0.01, 14);
+  });
+
+  it('advances a seeded gyro bias random walk and exposes only its diagnostic getter', () => {
+    const config = { ...zeroNoise, gyro_bias_random_walk_rps_sqrt_s: [1e-3, 2e-3, 3e-3] as [number, number, number] };
+    const first = createSensorModel(config, createRng(101));
+    const second = createSensorModel(config, createRng(101));
+    expect(first.getTrueGyroBias()).toEqual([0, 0, 0]);
+    first.sample({ ...truth, t_s: 0 });
+    second.sample({ ...truth, t_s: 0 });
+    const firstSample = first.sample({ ...truth, t_s: 1 });
+    const secondSample = second.sample({ ...truth, t_s: 1 });
+    expect(firstSample).toEqual(secondSample);
+    expect(first.getTrueGyroBias()).not.toEqual([0, 0, 0]);
+    firstSample.gyro_rps.forEach((value, axis) => {
+      expect(value - truth.w_body_rps[axis]!).toBeCloseTo(first.getTrueGyroBias()[axis]!, 14);
+    });
   });
 });

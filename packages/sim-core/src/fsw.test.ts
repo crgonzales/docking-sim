@@ -1,6 +1,7 @@
 // @ts-expect-error The package intentionally has no Node type dependency; Vitest supplies this test-only runtime module.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { hillToBody, smallAngleExp } from './attitude.js';
 import { createFsw, type FswConfig } from './fsw.js';
 import { stepTruth } from './dynamics.js';
 import { createRng } from './rng.js';
@@ -104,6 +105,59 @@ describe('FSW composition', () => {
     expect(fsw(sensor).telemetry.controller).toBe('PID');
     fsw.setController('LQR');
     expect(fsw({ ...sensor, t_s: 0.1 }).telemetry.controller).toBe('LQR');
+  });
+
+  it('runs AUTO and MANUAL mode branches through a deterministic command surface', () => {
+    const first = createFsw(makeConfig());
+    const second = createFsw(makeConfig());
+    const sensorModelA = zeroNoiseSensor(15);
+    const sensorModelB = zeroNoiseSensor(15);
+    const truth = makeTruth();
+    const commands = [
+      { mode: 'MANUAL' as const, subMode: 'PULSE' as const, command: { translation: [1, 0, 0] as [number, number, number], rotation: [0, 0.5, 0] as [number, number, number] } },
+      { mode: 'MANUAL' as const, subMode: 'RATE' as const, command: { translation: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number] } },
+      { mode: 'AUTO' as const, subMode: 'RATE' as const, command: { translation: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0] as [number, number, number] } },
+    ];
+    commands.forEach((entry, index) => {
+      first.setControlMode(entry.mode);
+      second.setControlMode(entry.mode);
+      first.setManualSubMode(entry.subMode);
+      second.setManualSubMode(entry.subMode);
+      first.setManualCommand(entry.command);
+      second.setManualCommand(entry.command);
+      const t_s = index * 0.1;
+      const outputA = first({ ...sensorModelA.sample({ ...truth, t_s }), t_s });
+      const outputB = second({ ...sensorModelB.sample({ ...truth, t_s }), t_s });
+      expect(outputA).toEqual(outputB);
+      expect(outputA.telemetry.control_mode).toBe(entry.mode);
+      expect(outputA.telemetry.manual_sub_mode).toBe(entry.mode === 'MANUAL' ? entry.subMode : null);
+      expect(outputA.att_diag.initialized).toBe(true);
+    });
+  });
+
+  it('uses the estimated non-identity attitude for the bearing measurement model', () => {
+    const fsw = createFsw({
+      ...makeConfig(),
+      ekfConfig: {
+        initialNavPrior: { state: [0, -220, 12, 0, 0, 0], covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        q: diagonal([0, 0, 0, 0, 0, 0]),
+      },
+    });
+    const sensorModel = zeroNoiseSensor(16);
+    let truth: TruthState = { ...makeTruth(), q_BI: smallAngleExp([0.35, -0.2, 0.15]) };
+    let output = fsw(sensorModel.sample(truth));
+    for (let tick = 1; tick <= 20; tick += 1) {
+      truth = stepTruth(truth, { dt_s: 0.1 });
+      output = fsw(sensorModel.sample(truth));
+    }
+    const q_BH = hillToBody(truth.q_BI, truth.t_s);
+    output.att_diag.q_ref_BI.forEach((value, axis) => expect(value).toBeCloseTo(truth.q_BI[axis]!, 5));
+    output.telemetry.q_BH_est.forEach((value, axis) => expect(value).toBeCloseTo(q_BH[axis]!, 5));
+    expect(Math.hypot(
+      output.nav_diag.state[0] - truth.r_hill_m[0],
+      output.nav_diag.state[1] - truth.r_hill_m[1],
+      output.nav_diag.state[2] - truth.r_hill_m[2],
+    )).toBeLessThan(0.1);
   });
 
   it('drives a noise-free CW approach toward the guidance hold point under LQR', () => {

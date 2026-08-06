@@ -13,8 +13,18 @@ export interface AllocatorConfig {
   fswHz?: number;
   truthHz?: number;
   minOnTime_s?: number;
-  /** Weight applied to torque rows in the stacked least-squares system. */
+  /** Optional scalar weight applied to force rows. */
+  forceWeight?: number;
+  /** Weight applied to torque rows; defaults from characteristicArm_m. */
   torqueWeight?: number;
+  /** Optional per-axis force row weights. */
+  forceWeights?: Vec3;
+  /** Optional per-axis torque row weights. */
+  torqueWeights?: Vec3;
+  /** Physical arm used to make force and torque rows comparable. */
+  characteristicArm_m?: number;
+  forceResidualFloor_N?: number;
+  torqueResidualFloor_Nm?: number;
   maxIterations?: number;
   availableMask?: Partial<Record<string, boolean>>;
   availabilityMask?: Partial<Record<string, boolean>>;
@@ -26,6 +36,8 @@ export interface ThrusterAllocation {
   onTimes: ThrusterCommand;
   /** Force residual from the bounded solve, before deadband/quantization. */
   solveResidual_N: Vec3;
+  /** Torque residual from the bounded solve, before deadband/quantization. */
+  solveTorqueResidual_Nm: Vec3;
   satFlag: boolean;
   /** Exposed for truth-side bookkeeping and actuator diagnostics. */
   preQuantizedOnTimes_s: ThrusterCommand;
@@ -36,7 +48,11 @@ export interface ThrusterAllocation {
 }
 
 export interface ThrusterAllocator {
-  allocate(commandedForce_N: Vec3, availableMask?: Partial<Record<string, boolean>>): ThrusterAllocation;
+  allocate(
+    commandedForce_N: Vec3,
+    commandedTorque_Nm: Vec3,
+    availableMask?: Partial<Record<string, boolean>>,
+  ): ThrusterAllocation;
 }
 
 interface LinearSystem {
@@ -44,7 +60,6 @@ interface LinearSystem {
   target: number[];
   specs: readonly ThrusterSpec[];
   window_s: number;
-  torqueWeight: number;
 }
 
 type BoundStatus = -1 | 0 | 1;
@@ -92,9 +107,11 @@ function forceTorqueForTimes(specs: readonly ThrusterSpec[], onTimes_s: number[]
 
 function buildSystem(
   commandedForce_N: Vec3,
+  commandedTorque_Nm: Vec3,
   specs: readonly ThrusterSpec[],
   window_s: number,
-  torqueWeight: number,
+  forceWeights: Vec3,
+  torqueWeights: Vec3,
 ): LinearSystem {
   const matrix = specs.map((spec) => {
     const forceScale_N_s = spec.thrust_N / window_s;
@@ -104,20 +121,26 @@ function buildSystem(
       spec.direction_body[2] * forceScale_N_s,
     ]);
     return [
-      spec.direction_body[0] * forceScale_N_s,
-      spec.direction_body[1] * forceScale_N_s,
-      spec.direction_body[2] * forceScale_N_s,
-      torquePerOnTime_Nm_s[0] * torqueWeight,
-      torquePerOnTime_Nm_s[1] * torqueWeight,
-      torquePerOnTime_Nm_s[2] * torqueWeight,
+      spec.direction_body[0] * forceScale_N_s * forceWeights[0],
+      spec.direction_body[1] * forceScale_N_s * forceWeights[1],
+      spec.direction_body[2] * forceScale_N_s * forceWeights[2],
+      torquePerOnTime_Nm_s[0] * torqueWeights[0],
+      torquePerOnTime_Nm_s[1] * torqueWeights[1],
+      torquePerOnTime_Nm_s[2] * torqueWeights[2],
     ];
   });
   return {
     matrix: [0, 1, 2, 3, 4, 5].map((row) => matrix.map((column) => column[row] ?? 0)),
-    target: [commandedForce_N[0], commandedForce_N[1], commandedForce_N[2], 0, 0, 0],
+    target: [
+      commandedForce_N[0] * forceWeights[0],
+      commandedForce_N[1] * forceWeights[1],
+      commandedForce_N[2] * forceWeights[2],
+      commandedTorque_Nm[0] * torqueWeights[0],
+      commandedTorque_Nm[1] * torqueWeights[1],
+      commandedTorque_Nm[2] * torqueWeights[2],
+    ],
     specs,
     window_s,
-    torqueWeight,
   };
 }
 
@@ -242,10 +265,17 @@ function validateAllocatorConfig(config: AllocatorConfig): void {
   const fswHz = config.fswHz ?? FSW_HZ;
   const truthHz = config.truthHz ?? TRUTH_HZ;
   const minOnTime_s = config.minOnTime_s ?? DEFAULT_MIN_ON_TIME_S;
-  const torqueWeight = config.torqueWeight ?? 0.05;
-  if (![fswHz, truthHz, minOnTime_s, torqueWeight].every((value) => Number.isFinite(value) && value > 0)) {
+  const forceWeight = config.forceWeight ?? 1;
+  const characteristicArm_m = config.characteristicArm_m ?? 1;
+  const torqueWeight = config.torqueWeight ?? forceWeight / characteristicArm_m;
+  const floors = [config.forceResidualFloor_N ?? 0.05, config.torqueResidualFloor_Nm ?? 0.05];
+  const weights = [forceWeight, torqueWeight, ...(config.forceWeights ?? []), ...(config.torqueWeights ?? [])];
+  if (![fswHz, truthHz, minOnTime_s, characteristicArm_m, ...floors, ...weights]
+    .every((value) => Number.isFinite(value) && value > 0)) {
     throw new RangeError('allocator configuration must be finite and positive');
   }
+  if (config.forceWeights?.length !== undefined && config.forceWeights.length !== 3) throw new RangeError('forceWeights must have three axes');
+  if (config.torqueWeights?.length !== undefined && config.torqueWeights.length !== 3) throw new RangeError('torqueWeights must have three axes');
 }
 
 function makeAllocator(config: AllocatorConfig): ThrusterAllocator {
@@ -253,18 +283,26 @@ function makeAllocator(config: AllocatorConfig): ThrusterAllocator {
   const fswHz = config.fswHz ?? FSW_HZ;
   const truthHz = config.truthHz ?? TRUTH_HZ;
   const minOnTime_s = config.minOnTime_s ?? DEFAULT_MIN_ON_TIME_S;
-  const torqueWeight = config.torqueWeight ?? 0.05;
+  const forceWeight = config.forceWeight ?? 1;
+  const characteristicArm_m = config.characteristicArm_m ?? 1;
+  const torqueWeight = config.torqueWeight ?? forceWeight / characteristicArm_m;
+  const forceWeights = config.forceWeights ?? [forceWeight, forceWeight, forceWeight];
+  const torqueWeights = config.torqueWeights ?? [torqueWeight, torqueWeight, torqueWeight];
+  const forceResidualFloor_N = config.forceResidualFloor_N ?? 0.05;
+  const torqueResidualFloor_Nm = config.torqueResidualFloor_Nm ?? 0.05;
   const window_s = 1 / fswHz;
   const maxIterations = config.maxIterations ?? 256;
   return {
-    allocate(commandedForce_N, availableMask) {
+    allocate(commandedForce_N, commandedTorque_Nm, availableMask) {
       const specs = resolveAvailableSpecs(config, availableMask);
-      const system = buildSystem(commandedForce_N, specs, window_s, torqueWeight);
+      const system = buildSystem(commandedForce_N, commandedTorque_Nm, specs, window_s, forceWeights, torqueWeights);
       const solvedOnTimes = boundedActiveSetSolve(system, window_s, maxIterations);
       const preResult = forceTorqueForTimes(specs, solvedOnTimes, window_s);
       const solveResidual_N = subtract(commandedForce_N, preResult.force_N);
-      const commandedNorm_N = norm(commandedForce_N);
-      const satFlag = norm(solveResidual_N) > 0.05 * commandedNorm_N;
+      const solveTorqueResidual_Nm = subtract(commandedTorque_Nm, preResult.torque_Nm);
+      const forceThreshold_N = Math.max(forceResidualFloor_N, 0.05 * norm(commandedForce_N));
+      const torqueThreshold_Nm = Math.max(torqueResidualFloor_Nm, 0.05 * norm(commandedTorque_Nm));
+      const satFlag = norm(solveResidual_N) > forceThreshold_N || norm(solveTorqueResidual_Nm) > torqueThreshold_Nm;
       const preQuantizedOnTimes_s: ThrusterCommand = {};
       const onTimes: ThrusterCommand = {};
       const quantizedValues: number[] = [];
@@ -281,6 +319,7 @@ function makeAllocator(config: AllocatorConfig): ThrusterAllocator {
       return {
         onTimes,
         solveResidual_N,
+        solveTorqueResidual_Nm,
         satFlag,
         preQuantizedOnTimes_s,
         achievedForce_N: preResult.force_N,
@@ -297,7 +336,11 @@ export function createAllocator(config: AllocatorConfig = {}): ThrusterAllocator
   return makeAllocator(config);
 }
 
-/** Stateless convenience wrapper for one allocation request. */
-export function allocateThrusters(commandedForce_N: Vec3, config: AllocatorConfig = {}): ThrusterAllocation {
-  return makeAllocator(config).allocate(commandedForce_N);
+/** Stateless convenience wrapper for one force+torque request. */
+export function allocateThrusters(
+  commandedForce_N: Vec3,
+  commandedTorque_Nm: Vec3,
+  config: AllocatorConfig = {},
+): ThrusterAllocation {
+  return makeAllocator(config).allocate(commandedForce_N, commandedTorque_Nm);
 }

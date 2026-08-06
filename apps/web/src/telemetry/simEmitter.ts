@@ -1,4 +1,12 @@
-import { FSW_HZ, createSimLoop, type SimConfig, type SimLoop } from '@docking/sim-core';
+import {
+  FSW_HZ,
+  createSimLoop,
+  type ControlMode,
+  type ManualCommand,
+  type ManualSubMode,
+  type SimConfig,
+  type SimLoop,
+} from '@docking/sim-core';
 import { useTelemetryBus } from './bus';
 
 export const SIM_SEED = 20260806;
@@ -45,6 +53,7 @@ export function startSimEmitter(): void {
     simTime_s += SIM_DT_S;
     const frames = sim?.stepTo(simTime_s) ?? [];
     frames.forEach((frame) => useTelemetryBus.getState().publish(frame));
+    if (sim !== null) useTelemetryBus.getState().publishRenderState(sim.getRenderState());
   }, 1000 / FSW_HZ);
 }
 
@@ -55,4 +64,17 @@ export function stopSimEmitter(): void {
     timer = null;
   }
   sim = null;
+}
+
+/** Forward the UI command surface to the active deterministic SimLoop. */
+export function setControlMode(mode: ControlMode): void {
+  sim?.setControlMode(mode);
+}
+
+export function setManualSubMode(mode: ManualSubMode): void {
+  sim?.setManualSubMode(mode);
+}
+
+export function setManualCommand(command: ManualCommand): void {
+  sim?.setManualCommand(command);
 }

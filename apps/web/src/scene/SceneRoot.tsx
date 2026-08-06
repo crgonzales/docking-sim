@@ -2,6 +2,8 @@ import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Earth } from './Earth';
 import { Effects } from './Effects';
+import { CameraRig } from './CameraRig';
+import { DockingCameraPass } from './DockingCameraPiP';
 import { Spacecraft } from './Spacecraft';
 import { Starfield } from './Starfield';
 import { SUN_DIR, SUN_LIGHT_DISTANCE_M } from './sun';
@@ -37,6 +39,8 @@ export function SceneRoot() {
       {/* faint earthshine so the night side of the craft isn't pure black */}
       <ambientLight intensity={0.06} color="#7d9bff" />
       <Spacecraft />
+      <CameraRig />
+      <DockingCameraPass />
       <Effects />
     </Canvas>
   );
