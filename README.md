@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.4.0** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.4.2** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim
 
@@ -26,16 +26,23 @@ Inside:
 
 ## Flying it (manual controls)
 
+KSP-style layout (rotation on WASD, translation on Shift/Ctrl + IJKL):
+
 | Input | Action |
 | --- | --- |
 | `M` | toggle AUTO / MANUAL |
 | `T` | toggle RATE (fly-by-wire w/ hold) / PULSE (direct) |
 | `C` | cycle camera: cinematic → chase → cockpit |
-| `W`/`S` | close / back off (±ŷ) |
-| `A`/`D` | lateral (∓ẑ) |
-| `R`/`F` | radial out / in (±x̂) |
-| right-drag | pitch / yaw |
-| `Q`/`E` | roll |
+| `Shift` / `Ctrl` | thrust forward / back (±ŷ) |
+| `W`/`S` | pitch down / up |
+| `A`/`D` | yaw left / right |
+| `Q`/`E` | roll left / right |
+| `I`/`K` | translate up / down (±ẑ) |
+| `J`/`L` | translate left / right (∓x̂) |
+| right-drag | pitch / yaw (additive) |
+
+⚠ Browser caveat: avoid `Ctrl+W` combos (reversing while pitching down) —
+the browser may close the tab before the page sees the keystroke.
 - project docs structure skills in `local tooling`, project docs under `docs/`
 - Guided-scenario spec for Phase 5 (`docs/scenario-mode-spec.md`)
 - CI workflow (install + test)

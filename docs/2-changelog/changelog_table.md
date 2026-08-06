@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.4.2` | 1    | feat: KSP-style manual controls (Shift/Ctrl thrust, WASD pitch/yaw, QE roll, IJKL translate) |
 | `0.4.1` | 1    | hotfix: manual-translation tumble — allocator force back-off, min-impulse accumulators, PULSE rate damping |
 | `0.4.0` | 1    | feat: Phase 3 6-DOF attitude, MEKF, docking camera & manual fly |
 | `0.3.0` | 1    | feat: Phase 2 real GNC — RK4 truth dynamics, 16-jet RCS + NNLS allocator, EKF navigation, PID/LQR closed loop |
@@ -9,6 +10,10 @@
 | `0.1.1` | 1    | chore: initialize project docs structure for docking-sim |
 
 # Changelog Summary
+
+- **v0.4.2 (KSP-style controls - Week 1, 06-08-2026)**:
+  - **Controls**: rebound per pilot feedback - Shift/Ctrl forward/back, W/S pitch, A/D yaw, Q/E roll, I/K up/down, J/L left/right, right-drag additive pitch/yaw; README controls table + Ctrl+W browser caveat
+  - **Known issue**: manual rotation response is over-damped (~0.15 deg/s effective vs 1.5 deg/s commanded) - rate-loop tuning pass scheduled with Phase 4
 
 - **v0.4.1 (Hotfix - Week 1, 06-08-2026)**:
   - **Issue**: pressing W in MANUAL tumbled the vehicle 175 deg instead of translating (user-reported)

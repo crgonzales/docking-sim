@@ -55,16 +55,27 @@ export function attachManualControls(element: HTMLElement): () => void {
       return;
     }
 
+    // KSP-style bindings (user request, v0.4.2). Body axes: +y forward
+    // (docking axis), +z up, +x right (= y × z). Screen left/right derive
+    // from the cockpit view (up = +z, forward = +y).
+    const anyShift = pressed.has('ShiftLeft') || pressed.has('ShiftRight');
+    const anyCtrl = pressed.has('ControlLeft') || pressed.has('ControlRight');
     const translation: [number, number, number] = [
-      (pressed.has('KeyR') ? 1 : 0) - (pressed.has('KeyF') ? 1 : 0),
-      (pressed.has('KeyW') ? 1 : 0) - (pressed.has('KeyS') ? 1 : 0),
-      (pressed.has('KeyD') ? 1 : 0) - (pressed.has('KeyA') ? 1 : 0),
+      (pressed.has('KeyL') ? 1 : 0) - (pressed.has('KeyJ') ? 1 : 0),   // right / left
+      (anyShift ? 1 : 0) - (anyCtrl ? 1 : 0),                          // forward / back
+      (pressed.has('KeyI') ? 1 : 0) - (pressed.has('KeyK') ? 1 : 0),   // up / down
     ];
+    // W = pitch down (−x), S = pitch up (+x); A = yaw left (+z), D = yaw
+    // right (−z); Q = roll left (−y), E = roll right (+y). Mouse right-drag
+    // adds pitch/yaw: pull down = pitch up, drag right = yaw right.
+    const pitchKeys = (pressed.has('KeyS') ? 1 : 0) - (pressed.has('KeyW') ? 1 : 0);
+    const yawKeys = (pressed.has('KeyA') ? 1 : 0) - (pressed.has('KeyD') ? 1 : 0);
     const roll = (pressed.has('KeyE') ? 1 : 0) - (pressed.has('KeyQ') ? 1 : 0);
-    // Body axes: +y is the forward/docking axis, +z cross-track "up".
-    // Pilot convention: pitch about x, ROLL about the forward y axis (Q/E),
-    // YAW about z (horizontal mouse drag).
-    const rotation: [number, number, number] = [clamp(dragPitch), roll, clamp(dragYaw)];
+    const rotation: [number, number, number] = [
+      clamp(pitchKeys + dragPitch),
+      roll,
+      clamp(yawKeys - dragYaw),
+    ];
     setManualCommand({ translation, rotation });
     if (!dragging) {
       dragPitch *= ROTATION_DECAY;
@@ -73,7 +84,11 @@ export function attachManualControls(element: HTMLElement): () => void {
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
-    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyR', 'KeyF', 'KeyQ', 'KeyE'].includes(event.code)) {
+    if ([
+      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE',
+      'KeyI', 'KeyJ', 'KeyK', 'KeyL',
+      'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight',
+    ].includes(event.code)) {
       pressed.add(event.code);
       event.preventDefault();
       return;
