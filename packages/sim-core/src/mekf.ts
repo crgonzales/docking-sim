@@ -7,7 +7,7 @@ import {
 } from './attitude.js';
 import { inverseMatrix } from './linalg.js';
 import type { Matrix3, Matrix6 } from './ekf.js';
-import type { Quat, SensorFrame, Vec3 } from './types.js';
+import type { NavSource, Quat, SensorFrame, Vec3 } from './types.js';
 
 /** Configuration for the six-state attitude/bias multiplicative EKF. */
 export interface MekfConfig {
@@ -36,6 +36,8 @@ export interface MekfConfig {
   star_tracker_sigma_rad?: number | Vec3;
   /** Alias for star-tracker sigma. */
   attitude_sigma_rad?: number | Vec3;
+  /** Attitude measurement source selected by flight software. */
+  navSource?: NavSource;
 }
 
 /** Truth-independent diagnostic state returned by the MEKF. */
@@ -48,9 +50,10 @@ export interface AttDiag {
 
 export interface Mekf {
   readonly initialized: boolean;
-  step(sensor: SensorFrame, dt_s: number): void;
+  step(sensor: SensorFrame, dt_s: number, navSource?: NavSource): void;
   predict(gyro_rps: Vec3, dt_s: number): void;
   update(star_tracker_q_BI: Quat): boolean;
+  setNavSource(source: NavSource): void;
   getAttDiag(): AttDiag;
 }
 
@@ -136,6 +139,10 @@ function validateQuaternion(quaternion: Quat, name: string): void {
   if (quaternion.some((value) => !Number.isFinite(value))) throw new RangeError(`${name} must be finite`);
 }
 
+function validateNavSource(source: NavSource): void {
+  if (source !== 'PRIMARY' && source !== 'BACKUP') throw new RangeError('nav source must be PRIMARY or BACKUP');
+}
+
 function attitudeCovarianceTransition(omega_rps: Vec3, dt_s: number): Matrix6 {
   const omegaSkew = skew(omega_rps);
   const phi: Matrix6 = diagonal([1, 1, 1, 1, 1, 1]);
@@ -204,6 +211,8 @@ export function createMekf(config: MekfConfig = {}): Mekf {
   let bias_rps = cloneVec3(initialBias_rps);
   let covariance = cloneMatrix(p0);
   let isInitialized = config.initial_q_ref_BI !== undefined || config.initialQuaternion_BI !== undefined;
+  let navSource: NavSource = config.navSource ?? 'PRIMARY';
+  validateNavSource(navSource);
 
   const predictInternal = (gyro_rps: Vec3, dt_s: number): void => {
     if (!(dt_s > 0) || !Number.isFinite(dt_s)) throw new RangeError('MEKF dt_s must be finite and positive');
@@ -283,20 +292,26 @@ export function createMekf(config: MekfConfig = {}): Mekf {
     get initialized() {
       return isInitialized;
     },
-    step(sensor, dt_s) {
+    step(sensor, dt_s, selectedNavSource = navSource) {
+      validateNavSource(selectedNavSource);
+      navSource = selectedNavSource;
       const starTracker = starTrackerFromSensor(sensor);
       if (!isInitialized) {
-        if (starTracker !== null) updateInternal(starTracker);
+        if (navSource === 'PRIMARY' && starTracker !== null) updateInternal(starTracker);
         return;
       }
       predictInternal(sensor.gyro_rps, dt_s);
-      if (starTracker !== null) updateInternal(starTracker);
+      if (navSource === 'PRIMARY' && starTracker !== null) updateInternal(starTracker);
     },
     predict(gyro_rps, dt_s) {
       predictInternal(gyro_rps, dt_s);
     },
     update(star_tracker_q_BI) {
       return updateInternal(star_tracker_q_BI);
+    },
+    setNavSource(source) {
+      validateNavSource(source);
+      navSource = source;
     },
     getAttDiag() {
       return {

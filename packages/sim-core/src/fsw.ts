@@ -8,7 +8,7 @@ import {
 import { createAllocator, type AllocatorConfig } from './allocator.js';
 import { MEAN_MOTION_RAD_S } from './dynamics.js';
 import { createEkf, type EkfConfig, type State6 } from './ekf.js';
-import { createGuidance, type GuidanceConfig } from './guidance.js';
+import { createGuidance, type GuidanceConfig, type GuidanceReference } from './guidance.js';
 import {
   createAttitudeController,
   createLqrController,
@@ -29,6 +29,7 @@ import type {
   FswTick,
   ManualCommand,
   ManualSubMode,
+  NavSource,
   SensorFrame,
   TelemetryFrame,
   ThrusterCommand,
@@ -60,6 +61,7 @@ export interface FswConfig {
    * v0.4.0 tumble. 60 N leaves the canted 16-jet set comfortable headroom.
    */
   manualForceLimit_N?: number;
+  navSource?: NavSource;
 }
 
 const DEFAULT_GUIDANCE_STATE: [number, number, number, number, number, number] = [0, -250, 12, 0, 0, 0];
@@ -112,6 +114,15 @@ function validateManualCommand(command: ManualCommand): void {
 
 function cloneManualCommand(command: ManualCommand): ManualCommand {
   return { translation: [...command.translation], rotation: [...command.rotation] };
+}
+
+function cloneGuidanceReference(reference: GuidanceReference): GuidanceReference {
+  return {
+    t_s: reference.t_s,
+    r_hill_m: [...reference.r_hill_m],
+    v_hill_mps: [...reference.v_hill_mps],
+    state: [...reference.state] as State6,
+  };
 }
 
 function attitudeSigmaDeg(covariance: number[][]): number {
@@ -170,6 +181,7 @@ export function createFsw(config: FswConfig): FswTick {
     throw new RangeError('manualForceLimit_N must be finite and positive');
   }
   let selectedController: 'PID' | 'LQR' | 'MPC' = config.controller;
+  let navSource: NavSource = config.navSource ?? 'PRIMARY';
   let propEstimate_kg = config.massModel.initialProp_kg;
   let lastSensorTime_s: number | null = null;
   let previousOnTimes: ThrusterCommand = { ...ZERO_COMMAND };
@@ -186,6 +198,9 @@ export function createFsw(config: FswConfig): FswTick {
   let abortRequested = false;
   let abortElapsed_s = 0;
   let abortTargetVelocity_hill_mps: Vec3 = [0, 0, 0];
+  let guidanceFrozen = false;
+  let lastGuidanceReference: GuidanceReference | null = null;
+  let frozenGuidanceReference: GuidanceReference | null = null;
   const ABORT_COMPLETION_TOLERANCE_MPS = 0.01;
   const ABORT_TIMEOUT_S = 30;
   const ABORT_MAX_FORCE_N = 60;
@@ -212,7 +227,7 @@ export function createFsw(config: FswConfig): FswTick {
   const tick = ((sensor: SensorFrame) => {
     const dt_s = finiteDt(sensor, lastSensorTime_s, commandWindow_s);
     lastSensorTime_s = sensor.t_s;
-    mekf.step(sensor, dt_s);
+    mekf.step(sensor, dt_s, navSource);
     const att_diag = mekf.getAttDiag();
     const q_BH = hillToBody(
       att_diag.q_ref_BI,
@@ -224,7 +239,14 @@ export function createFsw(config: FswConfig): FswTick {
       sensor.gyro_rps[1] - att_diag.bias_rps[1],
       sensor.gyro_rps[2] - att_diag.bias_rps[2],
     ];
-    const reference = guidance.reference(sensor.t_s);
+    const generatedReference = guidance.reference(sensor.t_s);
+    if (!guidanceFrozen) lastGuidanceReference = cloneGuidanceReference(generatedReference);
+    if (guidanceFrozen && frozenGuidanceReference === null) {
+      frozenGuidanceReference = cloneGuidanceReference(lastGuidanceReference ?? generatedReference);
+    }
+    const reference = guidanceFrozen && frozenGuidanceReference !== null
+      ? frozenGuidanceReference
+      : generatedReference;
     const previousApplication = applyThrusterCommand(previousOnTimes, {
       specs,
       prop_kg: propEstimate_kg,
@@ -286,7 +308,7 @@ export function createFsw(config: FswConfig): FswTick {
       );
       commandedTorque_body_Nm = rateDamping_Nm;
     } else if (controlMode === 'AUTO') {
-      if (selectedController === 'MPC') {
+      if (selectedController === 'MPC' && !guidanceFrozen) {
         if (mpc === null && !mpcUnavailable) {
           mpc = createConfiguredMpc();
           mpcUnavailable = mpc === null;
@@ -302,7 +324,7 @@ export function createFsw(config: FswConfig): FswTick {
         }
       } else {
         commandedForce_hill_N = translationController.step(nav_diag.state, reference, dt_s);
-        mpcFallback = false;
+        mpcFallback = selectedController === 'MPC';
       }
       commandedTorque_body_Nm = attitudeController.stepAuto(att_diag.q_ref_BI, sensor.t_s, omega_est_body_rps);
     } else if (manualSubMode === 'RATE') {
@@ -389,11 +411,16 @@ export function createFsw(config: FswConfig): FswTick {
       nav_cov_pos_m2: navCovPos_m2,
       nees: null,
       corridor_err_m: corridor.corridor_err_m,
+      range_m: Math.hypot(nav_diag.state[0], nav_diag.state[1], nav_diag.state[2]),
+      body_rate_dps: Math.hypot(...omega_est_body_rps.map((value) => value * DEG_PER_RAD)),
       controller: selectedController,
       mpc_fallback: selectedController === 'MPC' && controlMode === 'AUTO' ? mpcFallback : false,
       outcome: 'NONE',
       abort: abortState,
       control_mode: controlMode,
+      nav_source: navSource,
+      guidance_frozen: guidanceFrozen,
+      corridor_level: corridor.abortTrigger ? 'VIOLATION' : corridor.caution ? 'CAUTION' : 'NOMINAL',
       prop_kg: propEstimate_kg,
       thruster_duty: thrusterDuty,
       sat_flag: allocation.satFlag,
@@ -424,6 +451,14 @@ export function createFsw(config: FswConfig): FswTick {
   tick.setControlMode = (mode: ControlMode) => {
     if (mode !== 'AUTO' && mode !== 'MANUAL') throw new RangeError('control mode must be AUTO or MANUAL');
     controlMode = mode;
+    if (mode === 'MANUAL') {
+      guidanceFrozen = false;
+      frozenGuidanceReference = null;
+    }
+  };
+  tick.setNavSource = (source: NavSource) => {
+    if (source !== 'PRIMARY' && source !== 'BACKUP') throw new RangeError('nav source must be PRIMARY or BACKUP');
+    navSource = source;
   };
   tick.setManualSubMode = (mode: ManualSubMode) => {
     if (mode !== 'RATE' && mode !== 'PULSE') throw new RangeError('manual sub-mode must be RATE or PULSE');
@@ -435,6 +470,14 @@ export function createFsw(config: FswConfig): FswTick {
   };
   tick.commandAbort = () => {
     if (abortState === 'ARMED') abortRequested = true;
+  };
+  tick.injectGuidanceFault = () => {
+    guidanceFrozen = true;
+    frozenGuidanceReference = lastGuidanceReference === null ? null : cloneGuidanceReference(lastGuidanceReference);
+  };
+  tick.clearGuidanceFault = () => {
+    guidanceFrozen = false;
+    frozenGuidanceReference = null;
   };
   return tick;
 }

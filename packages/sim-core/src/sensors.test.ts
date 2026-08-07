@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { errorQuaternion, smallAngleLog } from './attitude.js';
 import { createRng } from './rng.js';
 import {
   bearingToLosUnit,
@@ -73,6 +74,55 @@ describe('sensor model', () => {
     expect(halfway.range_m).toBeCloseTo(range_m + 2, 14);
     expect(after.range_m).toBeCloseTo(range_m + 4, 14);
     expect(halfway.gyro_rps[0]).toBeCloseTo(0.01, 14);
+  });
+
+  it('scales only the selected noise channel', () => {
+    const noisyConfig = {
+      range_sigma_floor_m: 1,
+      range_sigma_scale: 0,
+      bearing_sigma_rad: 0,
+      gyro_sigma_rps: 0,
+      gyro_bias_random_walk_rps_sqrt_s: 0,
+      attitude_sigma_rad: 0.01,
+    };
+    const nominal = createSensorModel(noisyConfig, createRng(202));
+    const rangeOnly = createSensorModel({
+      ...noisyConfig,
+      degrade: { channel: 'RANGE', noiseMultiplier: 10 },
+    }, createRng(202));
+    const attitudeOnly = createSensorModel({
+      ...noisyConfig,
+      degrade: { channel: 'ATTITUDE', noiseMultiplier: 10 },
+    }, createRng(202));
+    const sampleTruth = { ...truth, t_s: 1 };
+
+    const nominalSample = nominal.sample(sampleTruth);
+    const rangeSample = rangeOnly.sample(sampleTruth);
+    const attitudeSample = attitudeOnly.sample(sampleTruth);
+    expect(rangeSample.range_m).not.toBe(nominalSample.range_m);
+    expect(rangeSample.star_tracker_q_BI).toEqual(nominalSample.star_tracker_q_BI);
+    expect(attitudeSample.range_m).toBe(nominalSample.range_m);
+    expect(attitudeSample.star_tracker_q_BI).not.toEqual(nominalSample.star_tracker_q_BI);
+  });
+
+  it('grows continuous attitude bias linearly until the degradation is cleared', () => {
+    const model = createSensorModel(zeroNoise, createRng(203));
+    model.setDegrade({
+      start_t_s: 10,
+      biasRamp: { attitudeBiasRatePerMin_rad: [0.6, -0.3, 0.2] },
+    });
+    const biasAt = (t_s: number): [number, number, number] => {
+      const sample = model.sample({ ...truth, t_s });
+      return smallAngleLog(errorQuaternion(truth.q_BI, sample.star_tracker_q_BI!));
+    };
+
+    expect(biasAt(10)).toEqual([0, 0, 0]);
+    biasAt(40).forEach((value, axis) => expect(value).toBeCloseTo([0.3, -0.15, 0.1][axis]!, 12));
+    biasAt(70).forEach((value, axis) => expect(value).toBeCloseTo([0.6, -0.3, 0.2][axis]!, 12));
+    expect(Math.hypot(...biasAt(100))).toBeGreaterThan(Math.hypot(0.6, 0.3, 0.2));
+
+    model.clearDegrade();
+    expect(biasAt(100)).toEqual([0, 0, 0]);
   });
 
   it('advances a seeded gyro bias random walk and exposes only its diagnostic getter', () => {

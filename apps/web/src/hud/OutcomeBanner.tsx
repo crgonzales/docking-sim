@@ -1,3 +1,4 @@
+import { useAppModeStore } from '../appModeStore';
 import { useTelemetryBus } from '../telemetry/bus';
 
 const OUTCOME_COPY = {
@@ -7,7 +8,9 @@ const OUTCOME_COPY = {
 } as const;
 
 export function OutcomeBanner() {
+  const mode = useAppModeStore((state) => state.mode);
   const outcome = useTelemetryBus((state) => state.frame?.outcome ?? 'NONE');
+  if (mode === 'MISSION') return null;
   if (outcome === 'NONE') return null;
   const copy = OUTCOME_COPY[outcome];
 

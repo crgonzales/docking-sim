@@ -14,8 +14,15 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
 - `packages/sim-core` — pure TypeScript. Truth dynamics, sensors, thrusters,
   FSW (nav filters, guidance, controllers, allocator). **No React, no Three.js,
   no DOM imports, ever.** Runs identically in page, workers, and Node tests.
-- `apps/web` — Vite + React + react-three-fiber. Rendering, HUD, panel,
-  scenario director UI. Consumes sim-core through its public API only.
+- `packages/scenario` — pure TypeScript, same no-DOM rule. Scenario schema +
+  validator, `FINAL_APPROACH_01` data, `ScenarioDirector`, perfect-operator
+  bot, Monte Carlo runner. Imports sim-core **only** via its public export map
+  and is typed against `ScenarioSimPort` (`Omit<SimLoop, truth/render getters>`)
+  — the honesty invariant is compile-enforced and test-greped
+  (`acceptance.test.ts`).
+- `apps/web` — Vite + React + react-three-fiber. Rendering, HUD, switch
+  panel, scenario/Monte Carlo UI. Consumes sim-core/scenario through public
+  APIs only. App modes: SANDBOX / MISSION / ANALYSIS (`appModeStore`).
 - FSW is a pure function of sensor data: `FswTick(SensorFrame) →
   {ThrusterCommand, TelemetryFrame}`. FSW never reads `TruthState`.
 - External actors (UI, ScenarioDirector, Monte Carlo) act only through the
@@ -38,10 +45,13 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
 ## Stack
 
 TypeScript + Vite + pnpm workspace. Web: React 18, react-three-fiber, drei,
-@react-three/postprocessing (bloom), zustand; uPlot planned. Tests: Vitest.
-QP: in-house pure-TS active-set solver (`qp.ts`, KKT-oracle-tested). CI: GitHub Actions (install +
-`pnpm -r test`). Web telemetry seam: zustand bus in `apps/web/src/telemetry/`
-(stub emitter in Phase 1; the real sim loop replaces one file in Phase 2).
+@react-three/postprocessing (bloom), zustand, uPlot (MC histograms). Tests:
+Vitest. QP: in-house pure-TS active-set solver (`qp.ts`, KKT-oracle-tested).
+CI: GitHub Actions (install + `pnpm -r test`). Web telemetry seam: zustand
+bus in `apps/web/src/telemetry/` (sandbox `simEmitter` / mission
+`scenarioEmitter`, both wall-clock-paced publishers over sim-time loops);
+Monte Carlo batches run `@docking/scenario` in a Web Worker pool
+(`monteCarloWorker.ts`, strided global-index shards, progressive results).
 
 ## Roadmap
 
@@ -49,7 +59,7 @@ QP: in-house pure-TS active-set solver (`qp.ts`, KKT-oracle-tested). CI: GitHub 
 2. ~~Discrete RCS thrusters + allocator, sensor models, EKF~~ ✅ v0.3.0 (16-jet canted RCS, NNLS allocator, seeded sensors + degrade hooks, 6-state EKF, PID/LQR, `SimLoop` command/injection seam; attitude = kinematic LVLH hold pending Phase 3)
 3. ~~6-DOF attitude + MEKF + docking camera + manual fly~~ ✅ v0.4.0 (rigid-body truth + thruster torques, MEKF w/ gyro-bias states, 6-target allocator, AUTO/MANUAL-RATE/PULSE via deterministic command API, truth render channel, camera rig + docking PiP)
 4. ~~MPC terminal approach + passive abort safety~~ ✅ v0.5.0 (active-set QP + 1 Hz condensed CW MPC w/ soft corridor/terminal constraints + probed octahedral authority; two-level corridor monitor, keep-out-proven passive abort, truth-side DOCKED/COLLISION/ABORT outcome latch)
-5. Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`) + video
+5. ~~Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`)~~ ✅ v0.6.0 (`packages/scenario`: schema v1 + validator, ScenarioDirector w/ merged failure injection + BRIEFING/RUNNING/DEBRIEF, perfect-operator bot, seeded MC runner; sim-core nav-source/guidance-freeze/vel-bias command surface; MISSION switch panel + ANALYSIS worker-pool MC screen; demo video remains a manual follow-up)
 
 ## Testing gate (oracle tests, not vibes)
 
@@ -67,5 +77,7 @@ QP: in-house pure-TS active-set solver (`qp.ts`, KKT-oracle-tested). CI: GitHub 
 - QP KKT oracles; MPC constraint satisfaction + headline 250 m MPC-docks-green
   run; abort passive-safety keep-out over 2 orbits (implemented: `qp.test.ts`,
   `mpc.test.ts`, `monitors.test.ts`, `sim.test.ts`)
-- Scenario mode: determinism, zero-input never docks, perfect-operator docks
-  (Phase 5)
+- Scenario mode: determinism, zero-input never docks, perfect-operator docks,
+  schema unknown-field rejection, honesty-invariant static import check
+  (implemented: `packages/scenario/src/acceptance.test.ts`; director beat
+  rules + MC scoring/seed-uniqueness in `director.test.ts`, `monteCarlo.test.ts`)

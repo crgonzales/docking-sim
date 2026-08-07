@@ -205,13 +205,13 @@ export const FINAL_APPROACH_01: Scenario = {
     {
       id: 'B2_RCS_STUCK',
       t_start_s: 90,
-      trigger: { kind: 'THRUSTER_STUCK', thruster_id: 'B2', stuck: 'OPEN' },
-      required_action: { kind: 'ISOLATE_THRUSTER', thruster_id: 'B2' },
+      trigger: { kind: 'THRUSTER_STUCK', thruster_id: 'J6', stuck: 'OPEN' },
+      required_action: { kind: 'ISOLATE_THRUSTER', thruster_id: 'J6' },
       response_window_s: 40,
       clears_when: { kind: 'ACTION_AND_TELEMETRY',
                      check: { signal: 'BODY_RATE_DPS', below: 1.5, hold_s: 5 } },
-      prompts: { callout: 'RCS B2 STUCK OPEN — ISOLATE',
-                 hint_control: 'RCS_ISO_B2', alarm: 'MASTER' },
+      prompts: { callout: 'RCS J6 STUCK OPEN — ISOLATE',
+                 hint_control: 'RCS_ISO_J6', alarm: 'MASTER' },
       debrief_if_causal:
         'A stuck-open jet torques and translates the vehicle continuously ' +
         '(Gemini 8, 1966). Isolating it lets the allocator reconfigure around ' +
@@ -298,7 +298,7 @@ plus `debrief_if_causal` of the latest uncleared/escalated beat, if any.
 | Control id   | Widget                          | Emits                                   |
 |--------------|---------------------------------|------------------------------------------|
 | `NAV_SRC`    | 2-pos toggle PRIMARY/BACKUP     | `SET_NAV_SOURCE`                         |
-| `RCS_ISO_B2` | guarded valve toggle (per jet: `RCS_ISO_<id>`) | `ISOLATE_THRUSTER`        |
+| `RCS_ISO_J6` | guarded valve toggle (per jet: `RCS_ISO_<id>`) | `ISOLATE_THRUSTER`        |
 | `CTRL_MODE`  | 3-pos selector PID/LQR/MPC      | `SET_CONTROLLER`                         |
 | `AUTO_MANUAL`| guarded cover + toggle          | `SET_CONTROL_MODE`                       |
 | `MASTER_ALARM`| lit pushbutton                 | silences audio only; never gates a beat  |

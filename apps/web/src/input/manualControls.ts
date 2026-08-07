@@ -1,5 +1,6 @@
 import { FSW_HZ, type ManualCommand } from '@docking/sim-core';
 import { getLatestFrame } from '../telemetry/bus';
+import { useAppModeStore } from '../appModeStore';
 import {
   commandAbort,
   cycleController,
@@ -7,6 +8,13 @@ import {
   setManualCommand,
   setManualSubMode,
 } from '../telemetry/simEmitter';
+import {
+  commandAbort as scenarioCommandAbort,
+  cycleController as scenarioCycleController,
+  setControlMode as scenarioSetControlMode,
+  setManualCommand as scenarioSetManualCommand,
+  setManualSubMode as scenarioSetManualSubMode,
+} from '../telemetry/scenarioEmitter';
 import { bindingForCode, bindingForKey, codesFor } from './bindings';
 import { useViewStore } from '../viewStore';
 
@@ -23,7 +31,33 @@ function held(pressed: Set<string>, id: string): boolean {
 }
 
 function zeroCommand(): void {
-  setManualCommand(ZERO_COMMAND);
+  if (useAppModeStore.getState().mode === 'MISSION') scenarioSetManualCommand(ZERO_COMMAND);
+  else setManualCommand(ZERO_COMMAND);
+}
+
+function forwardControlMode(mode: 'AUTO' | 'MANUAL'): void {
+  if (useAppModeStore.getState().mode === 'MISSION') scenarioSetControlMode(mode);
+  else setControlMode(mode);
+}
+
+function forwardManualSubMode(mode: 'RATE' | 'PULSE'): void {
+  if (useAppModeStore.getState().mode === 'MISSION') scenarioSetManualSubMode(mode);
+  else setManualSubMode(mode);
+}
+
+function forwardManualCommand(command: ManualCommand): void {
+  if (useAppModeStore.getState().mode === 'MISSION') scenarioSetManualCommand(command);
+  else setManualCommand(command);
+}
+
+function forwardAbort(): void {
+  if (useAppModeStore.getState().mode === 'MISSION') scenarioCommandAbort();
+  else commandAbort();
+}
+
+function forwardCycleController(): void {
+  if (useAppModeStore.getState().mode === 'MISSION') scenarioCycleController();
+  else cycleController();
 }
 
 /** Attach deterministic keyboard and camera-only mouse controls to an element. */
@@ -63,7 +97,7 @@ export function attachManualControls(element: HTMLElement): () => void {
     const pitch = (held(pressed, 'pitchUp') ? 1 : 0) - (held(pressed, 'pitchDown') ? 1 : 0);
     const yaw = (held(pressed, 'yawLeft') ? 1 : 0) - (held(pressed, 'yawRight') ? 1 : 0);
     const roll = (held(pressed, 'rollRight') ? 1 : 0) - (held(pressed, 'rollLeft') ? 1 : 0);
-    setManualCommand({ translation, rotation: [pitch, roll, yaw] });
+    forwardManualCommand({ translation, rotation: [pitch, roll, yaw] });
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
@@ -81,16 +115,16 @@ export function attachManualControls(element: HTMLElement): () => void {
       case 'toggleControlMode':
         controlMode = controlMode === 'MANUAL' ? 'AUTO' : 'MANUAL';
         modeCommandPending = true;
-        setControlMode(controlMode);
+        forwardControlMode(controlMode);
         if (controlMode === 'AUTO') zeroCommand();
         break;
       case 'toggleManualSubMode':
         manualSubMode = manualSubMode === 'RATE' ? 'PULSE' : 'RATE';
         subModeCommandPending = true;
-        setManualSubMode(manualSubMode);
+        forwardManualSubMode(manualSubMode);
         break;
       case 'cycleController':
-        cycleController();
+        forwardCycleController();
         break;
       case 'cycleView':
         useViewStore.getState().cycleMode();
@@ -100,7 +134,7 @@ export function attachManualControls(element: HTMLElement): () => void {
         useViewStore.getState().toggleKeybinds();
         break;
       case 'abort':
-        commandAbort();
+        forwardAbort();
         break;
       default:
         return;
@@ -175,6 +209,6 @@ export function attachManualControls(element: HTMLElement): () => void {
     window.removeEventListener('pointercancel', stopDragging);
     document.removeEventListener('visibilitychange', onVisibilityChange);
     pressed.clear();
-    setManualCommand(ZERO_COMMAND);
+    zeroCommand();
   };
 }

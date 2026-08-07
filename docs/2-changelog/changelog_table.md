@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.6.0` | 1    | feat: Phase 5 guided scenario mode, Monte Carlo analysis & mission switch panel |
 | `0.5.0` | 1    | feat: Phase 4 MPC terminal approach, passive abort safety & flight-deck UX |
 | `0.4.2` | 1    | feat: KSP-style manual controls (Shift/Ctrl thrust, WASD pitch/yaw, QE roll, IJKL translate) |
 | `0.4.1` | 1    | hotfix: manual-translation tumble — allocator force back-off, min-impulse accumulators, PULSE rate damping |
@@ -11,6 +12,13 @@
 | `0.1.1` | 1    | chore: initialize project docs structure for docking-sim |
 
 # Changelog Summary
+
+- **v0.6.0 (Phase 5: Guided Scenario + Monte Carlo - Week 1, 07-08-2026)**:
+  - **Scenario**: new pure-TS `@docking/scenario` package — spec-v1 schema + strict validator, `FINAL_APPROACH_01` ("Final Approach" timed emergency), `ScenarioDirector` acting only through public SimLoop APIs (honesty invariant compile- and test-enforced), deterministic perfect-operator bot
+  - **sim-core**: `setNavSource` (MEKF BACKUP gyro dead-reckoning), guidance-freeze fault, truth-layer velocity-bias nudge, per-channel noise degrade, continuous attitude-bias ramp, `corridor_level`/`range_m`/`body_rate_dps` telemetry
+  - **UI**: SANDBOX/MISSION/ANALYSIS modes — guarded switch panel with WebAudio clicks + master alarm, mission clock, briefing/debrief/retry flow; Monte Carlo screen with worker-pool batch runs and uPlot histograms (outcomes, grades, prop, time margin)
+  - **Review**: review loop, 3 rounds → APPROVED (`CR_w1_v0.6.0.md`), 2 Majors + 6 Minors fixed; 118 tests incl. the 5 spec acceptance tests; browser-verified end-to-end
+  - **Spec fix**: Beat B2 thruster id corrected `B2` → `J6` (real jet ids are J1–J16)
 
 - **v0.5.0 (Phase 4: MPC + Abort Safety - Week 1, 06-08-2026)**:
   - **Guidance**: pure-TS active-set QP (KKT-oracle-verified) powering a 1 Hz condensed CW MPC with soft corridor/terminal constraints and probed octahedral thrust authority; headline test flies 250 m to a green-envelope DOCKED outcome

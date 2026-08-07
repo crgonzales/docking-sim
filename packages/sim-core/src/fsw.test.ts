@@ -1,4 +1,4 @@
-// @ts-expect-error The package intentionally has no Node type dependency; Vitest supplies this test-only runtime module.
+// @ts-ignore The package intentionally has no Node type dependency; Vitest supplies this test-only runtime module.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { hillToBody, smallAngleExp } from './attitude.js';
@@ -135,6 +135,41 @@ describe('FSW composition', () => {
       expect(outputA.telemetry.manual_sub_mode).toBe(entry.mode === 'MANUAL' ? entry.subMode : null);
       expect(outputA.att_diag.initialized).toBe(true);
     });
+  });
+
+  it('freezes the guidance reference until a manual takeover clears the fault', () => {
+    const testConfig = { ...makeConfig(), attitudeControllerConfig: { meanMotionRadS: 0 } };
+    const frozen = createFsw(testConfig);
+    const nominal = createFsw(testConfig);
+    const constantReference = createFsw({
+      ...testConfig,
+      guidanceConfig: { initialState: [...initialState], closingGain_s_inv: 0 },
+    });
+    const sensors = zeroNoiseSensor(23);
+    const truth = makeTruth();
+
+    const initialSensor = sensors.sample(truth);
+    frozen(initialSensor);
+    nominal(initialSensor);
+    constantReference(initialSensor);
+    frozen.injectGuidanceFault();
+
+    const laterSensor = sensors.sample({ ...truth, t_s: 10 });
+    const frozenOutput = frozen(laterSensor);
+    const nominalOutput = nominal(laterSensor);
+    const constantOutput = constantReference(laterSensor);
+    expect(frozenOutput.telemetry.guidance_frozen).toBe(true);
+    expect(frozenOutput.thrusters).not.toEqual(nominalOutput.thrusters);
+    expect(frozenOutput.thrusters).toEqual(constantOutput.thrusters);
+    const heldSensor = sensors.sample({ ...truth, t_s: 20 });
+    const heldOutput = frozen(heldSensor);
+    const constantHeldOutput = constantReference(heldSensor);
+    expect(heldOutput.thrusters).toEqual(constantHeldOutput.thrusters);
+
+    frozen.setControlMode('MANUAL');
+    const manualOutput = frozen(sensors.sample({ ...truth, t_s: 20.1 }));
+    expect(manualOutput.telemetry.control_mode).toBe('MANUAL');
+    expect(manualOutput.telemetry.guidance_frozen).toBe(false);
   });
 
   it('uses the estimated non-identity attitude for the bearing measurement model', () => {

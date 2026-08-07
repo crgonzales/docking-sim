@@ -19,6 +19,7 @@ import type {
   ControlMode,
   ManualCommand,
   ManualSubMode,
+  NavSource,
   Quat,
   RenderState,
   TelemetryFrame,
@@ -57,10 +58,14 @@ export interface SimLoop {
   setController(controller: 'PID' | 'LQR' | 'MPC'): void;
   commandAbort(): void;
   setControlMode(mode: ControlMode): void;
+  setNavSource(source: NavSource): void;
+  injectGuidanceFault(): void;
+  clearGuidanceFault(): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
   isolateThruster(id: string): void;
   injectThrusterStuck(id: string, state: 'OPEN' | 'CLOSED'): void;
+  injectVelocityBias(dv_mps: Vec3): void;
   setSensorDegrade(degrade: SensorDegradeConfig): void;
   clearSensorDegrade(): void;
   getTruthState(): TruthState;
@@ -182,6 +187,7 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
   let remainingOnTimes: ThrusterCommand = {};
   let outcome: SimOutcome = 'NONE';
   let docked = false;
+  let pendingVelocityBias_mps: Vec3 | null = null;
   const meanMotionRadS = config.fsw.attitudeControllerConfig?.meanMotionRadS ?? DEFAULT_MEAN_MOTION_RAD_S;
 
   const evaluateContact = (): void => {
@@ -226,6 +232,13 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
   };
 
   const applyOneTruthTick = (): void => {
+    if (pendingVelocityBias_mps !== null) {
+      truth = {
+        ...truth,
+        v_hill_mps: truth.v_hill_mps.map((value, index) => value + pendingVelocityBias_mps![index]!) as Vec3,
+      };
+      pendingVelocityBias_mps = null;
+    }
     if (docked) {
       // Docked = rigidly attached to the station: the inertial attitude must
       // keep rotating with the LVLH frame (recomputed each tick), or q_BH
@@ -305,6 +318,15 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     setControlMode(mode) {
       fsw.setControlMode(mode);
     },
+    setNavSource(source) {
+      fsw.setNavSource(source);
+    },
+    injectGuidanceFault() {
+      fsw.injectGuidanceFault();
+    },
+    clearGuidanceFault() {
+      fsw.clearGuidanceFault();
+    },
     setManualSubMode(mode) {
       fsw.setManualSubMode(mode);
     },
@@ -320,6 +342,10 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     injectThrusterStuck(id, state) {
       if (!specs.some((spec) => spec.id === id)) throw new RangeError(`unknown thruster ${id}`);
       states[id] = state === 'OPEN' ? 'stuck_open' : 'stuck_closed';
+    },
+    injectVelocityBias(dv_mps) {
+      if (dv_mps.some((value) => !Number.isFinite(value))) throw new RangeError('velocity bias must be finite');
+      pendingVelocityBias_mps = [...dv_mps];
     },
     setSensorDegrade(degrade) {
       sensorModel.setDegrade(degrade);

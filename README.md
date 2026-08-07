@@ -1,12 +1,13 @@
 # Orbital Docking GNC Lab
 
-**v0.5.0** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.6.0** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim
 
 Inside:
 
-- pnpm workspace: `packages/sim-core` (pure TS flight software + dynamics) and
+- pnpm workspace: `packages/sim-core` (pure TS flight software + dynamics),
+  `packages/scenario` (pure TS mission scripting + Monte Carlo), and
   `apps/web` (Vite + React + react-three-fiber shell)
 - Core types and conventions (`docs/ARCHI.md` — read it first, it's the law)
 - A real analytic oracle: closed-form CW propagation + 4 passing Vitest tests,
@@ -28,8 +29,14 @@ Inside:
   two-level corridor monitoring with **passive abort** (keep-out-proven safing
   burn), and truth-side contact outcomes — fly it to a real **DOCKED /
   COLLISION / ABORT** ending with HUD banners and live caution/warning tiles
+- Phase 5 (v0.6.0): **guided scenario mode** ("Final Approach" — a 6-minute
+  timed emergency with scripted failures cleared by real panel controls:
+  nav-source switch, jet isolation, MPC recapture, manual takeover; GUIDED
+  hints, briefing/debrief/retry, guarded switches with audio) and a
+  **Monte Carlo analysis screen** (seeded batch runs in a Web Worker pool,
+  outcome/grade/prop/time-margin histograms) — spec in
+  `docs/scenario-mode-spec.md`, mission modes: SANDBOX / MISSION / ANALYSIS
 - project docs structure skills in `local tooling`, project docs under `docs/`
-- Guided-scenario spec for Phase 5 (`docs/scenario-mode-spec.md`)
 - CI workflow (install + test)
 
 ## Flying it (manual controls)
@@ -76,5 +83,5 @@ in `local tooling tooling/scripts/start.sh`.
 
 ## Roadmap
 
-See `docs/ARCHI.md` (authoritative). Next: Phase 5 — Monte Carlo + guided
-scenario mode (`docs/scenario-mode-spec.md`) + portfolio video.
+See `docs/ARCHI.md` (authoritative). Phases 1–5 complete. Next: portfolio
+video (manual), then backlog (visual pass, guidance tuning UI).

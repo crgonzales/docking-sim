@@ -91,6 +91,35 @@ describe('attitude MEKF', () => {
     expect(after[1]![1]!).toBeGreaterThan(before[1]![1]!);
   });
 
+  it('rejects a biased star tracker while BACKUP navigation dead-reckons on gyro data', () => {
+    const biasedSensors = createSensorModel({
+      ...sensorConfig(),
+      degrade: {
+        biasRamp: { attitudeBiasRatePerMin_rad: [0.2, 0, 0] },
+      },
+    }, createRng(23));
+    const primary = createMekf(mekfConfig());
+    const backup = createMekf(mekfConfig());
+    let truth = { ...truthAtStart(), w_body_rps: [0, 0, 0] as Vec3 };
+
+    const initialSensor = biasedSensors.sample(truth);
+    primary.step(initialSensor, 0.01);
+    backup.step(initialSensor, 0.01);
+    backup.setNavSource('BACKUP');
+    for (let step = 0; step < 1_800; step += 1) {
+      truth = stepTruth(truth, { dt_s: 0.01, torque_body_Nm: [0, 0, 0] });
+      const sensor = biasedSensors.sample(truth);
+      primary.step(sensor, 0.01);
+      backup.step(sensor, 0.01);
+    }
+
+    const primaryError = Math.hypot(...smallAngleLog(errorQuaternion(primary.getAttDiag().q_ref_BI, truth.q_BI)));
+    const backupError = Math.hypot(...smallAngleLog(errorQuaternion(backup.getAttDiag().q_ref_BI, truth.q_BI)));
+    expect(primaryError).toBeGreaterThan(0.05);
+    expect(backupError).toBeLessThan(1e-6);
+    expect(primaryError).toBeGreaterThan(backupError * 10_000);
+  });
+
   it('handles double-covered star-tracker quaternions without a sign jump', () => {
     const filter = createMekf(mekfConfig());
     const identitySensor: SensorFrame = {

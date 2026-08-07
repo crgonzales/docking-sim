@@ -1,4 +1,6 @@
+import { useAppModeStore } from '../appModeStore';
 import { useTelemetryBus } from '../telemetry/bus';
+import { useScenarioStore } from '../telemetry/scenarioStore';
 
 export type CwTileState = 'off' | 'caution' | 'warning';
 
@@ -10,7 +12,26 @@ export interface CwTile {
 
 /** Live caution/warning tiles driven by the additive FSW telemetry fields. */
 export function CautionWarningPanel() {
+  const mode = useAppModeStore((state) => state.mode);
   const frame = useTelemetryBus((state) => state.frame);
+  const scenarioState = useScenarioStore((state) => state.state);
+  if (mode === 'MISSION') {
+    const callouts = scenarioState?.active_callouts ?? [];
+    const alarmLevel = scenarioState?.alarm_level ?? null;
+    return (
+      <div className="hud-cw mission-callout-panel">
+        <div className="hud-cw-title">mission callouts / {alarmLevel ?? 'nominal'}</div>
+        {callouts.length === 0
+          ? <div className="mission-callout-empty">no active callouts</div>
+          : callouts.map((callout) => (
+            <div key={callout.beat_id} className={`mission-callout ${callout.alarm === 'MASTER' ? 'master' : 'caution'}`}>
+              {callout.callout}
+            </div>
+          ))}
+      </div>
+    );
+  }
+
   const tiles: CwTile[] = [
     { id: 'NAV', label: 'nav', state: 'off' },
     { id: 'RCS', label: 'rcs', state: 'off' },

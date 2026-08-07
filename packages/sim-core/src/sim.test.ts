@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { hillToBody, rotateVector, smallAngleExp } from './attitude.js';
 import { createSimLoop, type SimConfig } from './sim.js';
 import { propagateCW } from './cw.js';
-import { MEAN_MOTION_RAD_S } from './dynamics.js';
+import { MEAN_MOTION_RAD_S, stepTruth } from './dynamics.js';
 import { computeSafingBurn } from './monitors.js';
 
 const initialState: [number, number, number, number, number, number] = [0, -250, 12, 0, 0, 0];
@@ -63,6 +63,48 @@ describe('SimLoop', () => {
     expect(framesA).toEqual(framesB);
     expect(runA.getTruthState()).toEqual(runB.getTruthState());
   }, 30_000);
+
+  it('exposes navigation and guidance injections and applies a one-shot truth velocity bias', () => {
+    const first = createSimLoop(config(), 20260807);
+    const second = createSimLoop(config(), 20260807);
+    first.setNavSource('BACKUP');
+    second.setNavSource('BACKUP');
+    first.injectGuidanceFault();
+    second.injectGuidanceFault();
+
+    const firstFaultFrames = first.stepTo(0.1);
+    const secondFaultFrames = second.stepTo(0.1);
+    expect(firstFaultFrames).toEqual(secondFaultFrames);
+    expect(firstFaultFrames.at(-1)!.nav_source).toBe('BACKUP');
+    expect(firstFaultFrames.at(-1)!.guidance_frozen).toBe(true);
+
+    first.clearGuidanceFault();
+    second.clearGuidanceFault();
+    const firstClearFrames = first.stepTo(0.2);
+    const secondClearFrames = second.stepTo(0.2);
+    expect(firstClearFrames).toEqual(secondClearFrames);
+    expect(firstClearFrames.at(-1)!.guidance_frozen).toBe(false);
+
+    const biased = createSimLoop(config(), 20260808);
+    const deterministicBiased = createSimLoop(config(), 20260808);
+    const before = biased.getTruthState();
+    const dv_mps: [number, number, number] = [0.12, -0.04, 0.07];
+    const nudged = {
+      ...before,
+      v_hill_mps: before.v_hill_mps.map((value, axis) => value + dv_mps[axis]!) as [number, number, number],
+    };
+    const expectedAfter = stepTruth(nudged, { dt_s: 0.01 });
+    biased.injectVelocityBias(dv_mps);
+    deterministicBiased.injectVelocityBias(dv_mps);
+    biased.stepTo(0.01);
+    deterministicBiased.stepTo(0.01);
+    expect(biased.getTruthState()).toEqual(deterministicBiased.getTruthState());
+    expect(biased.getTruthState()).toEqual(expectedAfter);
+
+    const expectedNext = stepTruth(expectedAfter, { dt_s: 0.01 });
+    biased.stepTo(0.02);
+    expect(biased.getTruthState()).toEqual(expectedNext);
+  });
 
   it('populates finite truth-privileged NEES and approaches the hold point within prop budget', () => {
     const sim = createSimLoop(config(), 123);

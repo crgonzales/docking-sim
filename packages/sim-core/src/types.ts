@@ -17,6 +17,7 @@ export type Quat = [number, number, number, number];
 
 export type ControlMode = 'AUTO' | 'MANUAL';
 export type ManualSubMode = 'RATE' | 'PULSE';
+export type NavSource = 'PRIMARY' | 'BACKUP';
 
 export interface ManualCommand {
   translation: Vec3;
@@ -70,6 +71,9 @@ export interface FswTick {
   setController(controller: 'PID' | 'LQR' | 'MPC'): void;
   setJetAvailability(id: string, available: boolean): void;
   setControlMode(mode: ControlMode): void;
+  setNavSource(source: NavSource): void;
+  injectGuidanceFault(): void;
+  clearGuidanceFault(): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
   commandAbort(): void;
@@ -82,11 +86,16 @@ export interface TelemetryFrame {
   nav_cov_pos_m2: Vec3;
   nees: number | null;
   corridor_err_m: number | null;
+  range_m: number;
+  body_rate_dps: number;
   controller: 'PID' | 'LQR' | 'MPC';
   mpc_fallback: boolean;
   outcome: 'NONE' | 'DOCKED' | 'COLLISION' | 'ABORT';
   abort: AbortState;
   control_mode: 'AUTO' | 'MANUAL';
+  nav_source: NavSource;
+  guidance_frozen: boolean;
+  corridor_level: 'NOMINAL' | 'CAUTION' | 'VIOLATION';
   prop_kg: number;
   thruster_duty: Record<string, number>;
   sat_flag: boolean;
