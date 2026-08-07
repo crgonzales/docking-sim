@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.5.0` | 1    | feat: Phase 4 MPC terminal approach, passive abort safety & flight-deck UX |
 | `0.4.2` | 1    | feat: KSP-style manual controls (Shift/Ctrl thrust, WASD pitch/yaw, QE roll, IJKL translate) |
 | `0.4.1` | 1    | hotfix: manual-translation tumble — allocator force back-off, min-impulse accumulators, PULSE rate damping |
 | `0.4.0` | 1    | feat: Phase 3 6-DOF attitude, MEKF, docking camera & manual fly |
@@ -10,6 +11,13 @@
 | `0.1.1` | 1    | chore: initialize project docs structure for docking-sim |
 
 # Changelog Summary
+
+- **v0.5.0 (Phase 4: MPC + Abort Safety - Week 1, 06-08-2026)**:
+  - **Guidance**: pure-TS active-set QP (KKT-oracle-verified) powering a 1 Hz condensed CW MPC with soft corridor/terminal constraints and probed octahedral thrust authority; headline test flies 250 m to a green-envelope DOCKED outcome
+  - **Safety**: two-level corridor monitor, passive abort with keep-out-oracle-proven safing burn, truth-side contact detection latching DOCKED/COLLISION/ABORT (sim is now a completable docking loop)
+  - **UX**: camera orbit/zoom on mouse, keybinds overlay (H) from a single-source bindings table, outcome banners, live C&W tiles, V controller cycle, Backspace abort; manual-rate over-damping fixed
+  - **Review**: review loop, 2 rounds -> APPROVED (`CR_w1_v0.5.0.md`), 5 Majors fixed; 99 tests
+
 
 - **v0.4.2 (KSP-style controls - Week 1, 06-08-2026)**:
   - **Controls**: rebound per pilot feedback - Shift/Ctrl forward/back, W/S pitch, A/D yaw, Q/E roll, I/K up/down, J/L left/right, right-drag additive pitch/yaw; README controls table + Ctrl+W browser caveat

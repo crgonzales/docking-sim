@@ -1,36 +1,37 @@
 import { FSW_HZ, type ManualCommand } from '@docking/sim-core';
 import { getLatestFrame } from '../telemetry/bus';
 import {
+  commandAbort,
+  cycleController,
   setControlMode,
   setManualCommand,
   setManualSubMode,
 } from '../telemetry/simEmitter';
+import { bindingForCode, bindingForKey, codesFor } from './bindings';
 import { useViewStore } from '../viewStore';
 
 const ZERO_COMMAND: ManualCommand = {
   translation: [0, 0, 0],
   rotation: [0, 0, 0],
 };
-const DRAG_SENSITIVITY = 0.006;
-const ROTATION_DECAY = 0.72;
+const ORBIT_SENSITIVITY_RAD_PX = 0.005;
+const ZOOM_STEP = 1.1;
 const TICK_MS = 1000 / FSW_HZ;
 
+function held(pressed: Set<string>, id: string): boolean {
+  return codesFor(id).some((code) => pressed.has(code));
+}
+
 function zeroCommand(): void {
-  setManualCommand({ translation: [0, 0, 0], rotation: [0, 0, 0] });
+  setManualCommand(ZERO_COMMAND);
 }
 
-function clamp(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
-
-/** Attach deterministic keyboard/mouse manual flight controls to an element. */
+/** Attach deterministic keyboard and camera-only mouse controls to an element. */
 export function attachManualControls(element: HTMLElement): () => void {
   const pressed = new Set<string>();
   let dragging = false;
   let lastX = 0;
   let lastY = 0;
-  let dragPitch = 0;
-  let dragYaw = 0;
   let controlMode = getLatestFrame()?.control_mode ?? 'AUTO';
   let manualSubMode = getLatestFrame()?.manual_sub_mode ?? 'RATE';
   let modeCommandPending = false;
@@ -49,66 +50,62 @@ export function attachManualControls(element: HTMLElement): () => void {
       if (subModeCommandPending && frame.manual_sub_mode === manualSubMode) subModeCommandPending = false;
       if (!subModeCommandPending && frame.manual_sub_mode !== manualSubMode) manualSubMode = frame.manual_sub_mode;
     }
-    if (controlMode !== 'MANUAL') {
-      dragPitch *= ROTATION_DECAY;
-      dragYaw *= ROTATION_DECAY;
-      return;
-    }
+    if (controlMode !== 'MANUAL') return;
 
-    // KSP-style bindings (user request, v0.4.2). Body axes: +y forward
-    // (docking axis), +z up, +x right (= y × z). Screen left/right derive
-    // from the cockpit view (up = +z, forward = +y).
-    const anyShift = pressed.has('ShiftLeft') || pressed.has('ShiftRight');
-    const anyCtrl = pressed.has('ControlLeft') || pressed.has('ControlRight');
+    // KSP-style bindings. Body axes: +y forward, +z up, +x right.
+    const anyShift = held(pressed, 'translateForwardShiftLeft') || held(pressed, 'translateForwardShiftRight');
+    const anyCtrl = held(pressed, 'translateBackControlLeft') || held(pressed, 'translateBackControlRight');
     const translation: [number, number, number] = [
-      (pressed.has('KeyL') ? 1 : 0) - (pressed.has('KeyJ') ? 1 : 0),   // right / left
-      (anyShift ? 1 : 0) - (anyCtrl ? 1 : 0),                          // forward / back
-      (pressed.has('KeyI') ? 1 : 0) - (pressed.has('KeyK') ? 1 : 0),   // up / down
+      (held(pressed, 'translateRight') ? 1 : 0) - (held(pressed, 'translateLeft') ? 1 : 0),
+      (anyShift ? 1 : 0) - (anyCtrl ? 1 : 0),
+      (held(pressed, 'translateUp') ? 1 : 0) - (held(pressed, 'translateDown') ? 1 : 0),
     ];
-    // W = pitch down (−x), S = pitch up (+x); A = yaw left (+z), D = yaw
-    // right (−z); Q = roll left (−y), E = roll right (+y). Mouse right-drag
-    // adds pitch/yaw: pull down = pitch up, drag right = yaw right.
-    const pitchKeys = (pressed.has('KeyS') ? 1 : 0) - (pressed.has('KeyW') ? 1 : 0);
-    const yawKeys = (pressed.has('KeyA') ? 1 : 0) - (pressed.has('KeyD') ? 1 : 0);
-    const roll = (pressed.has('KeyE') ? 1 : 0) - (pressed.has('KeyQ') ? 1 : 0);
-    const rotation: [number, number, number] = [
-      clamp(pitchKeys + dragPitch),
-      roll,
-      clamp(yawKeys - dragYaw),
-    ];
-    setManualCommand({ translation, rotation });
-    if (!dragging) {
-      dragPitch *= ROTATION_DECAY;
-      dragYaw *= ROTATION_DECAY;
-    }
+    const pitch = (held(pressed, 'pitchUp') ? 1 : 0) - (held(pressed, 'pitchDown') ? 1 : 0);
+    const yaw = (held(pressed, 'yawLeft') ? 1 : 0) - (held(pressed, 'yawRight') ? 1 : 0);
+    const roll = (held(pressed, 'rollRight') ? 1 : 0) - (held(pressed, 'rollLeft') ? 1 : 0);
+    setManualCommand({ translation, rotation: [pitch, roll, yaw] });
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
-    if ([
-      'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE',
-      'KeyI', 'KeyJ', 'KeyK', 'KeyL',
-      'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight',
-    ].includes(event.code)) {
-      pressed.add(event.code);
+    const binding = bindingForCode(event.code) ?? bindingForKey(event.key);
+    if (!binding) return;
+
+    if (binding.group === 'TRANSLATE' || binding.group === 'ROTATE') {
+      if (binding.code !== null) pressed.add(binding.code);
       event.preventDefault();
       return;
     }
     if (event.repeat) return;
-    if (event.code === 'KeyM') {
-      controlMode = controlMode === 'MANUAL' ? 'AUTO' : 'MANUAL';
-      modeCommandPending = true;
-      setControlMode(controlMode);
-      if (controlMode === 'AUTO') zeroCommand();
-      event.preventDefault();
-    } else if (event.code === 'KeyT') {
-      manualSubMode = manualSubMode === 'RATE' ? 'PULSE' : 'RATE';
-      subModeCommandPending = true;
-      setManualSubMode(manualSubMode);
-      event.preventDefault();
-    } else if (event.code === 'KeyC') {
-      useViewStore.getState().cycleMode();
-      event.preventDefault();
+
+    switch (binding.id) {
+      case 'toggleControlMode':
+        controlMode = controlMode === 'MANUAL' ? 'AUTO' : 'MANUAL';
+        modeCommandPending = true;
+        setControlMode(controlMode);
+        if (controlMode === 'AUTO') zeroCommand();
+        break;
+      case 'toggleManualSubMode':
+        manualSubMode = manualSubMode === 'RATE' ? 'PULSE' : 'RATE';
+        subModeCommandPending = true;
+        setManualSubMode(manualSubMode);
+        break;
+      case 'cycleController':
+        cycleController();
+        break;
+      case 'cycleView':
+        useViewStore.getState().cycleMode();
+        break;
+      case 'toggleKeybinds':
+      case 'toggleKeybindsQuestion':
+        useViewStore.getState().toggleKeybinds();
+        break;
+      case 'abort':
+        commandAbort();
+        break;
+      default:
+        return;
     }
+    event.preventDefault();
   };
 
   const onKeyUp = (event: KeyboardEvent): void => {
@@ -116,7 +113,7 @@ export function attachManualControls(element: HTMLElement): () => void {
   };
 
   const onMouseDown = (event: MouseEvent): void => {
-    if (event.button !== 2) return;
+    if (event.button !== 2 || useViewStore.getState().mode === 'COCKPIT') return;
     dragging = true;
     lastX = event.clientX;
     lastY = event.clientY;
@@ -125,24 +122,28 @@ export function attachManualControls(element: HTMLElement): () => void {
 
   const onMouseMove = (event: MouseEvent): void => {
     if (!dragging) return;
-    dragYaw = clamp(dragYaw + (event.clientX - lastX) * DRAG_SENSITIVITY);
-    dragPitch = clamp(dragPitch + (event.clientY - lastY) * DRAG_SENSITIVITY);
+    useViewStore.getState().orbitBy(
+      (event.clientX - lastX) * ORBIT_SENSITIVITY_RAD_PX,
+      -(event.clientY - lastY) * ORBIT_SENSITIVITY_RAD_PX,
+    );
     lastX = event.clientX;
     lastY = event.clientY;
   };
 
   const stopDragging = (): void => {
     dragging = false;
-    // Clear the accumulators too — otherwise the next emit interval would
-    // re-issue the last drag rotation right after the zero command.
-    dragPitch = 0;
-    dragYaw = 0;
-    zeroCommand();
+  };
+
+  const onWheel = (event: WheelEvent): void => {
+    if (useViewStore.getState().mode === 'COCKPIT') return;
+    event.preventDefault();
+    useViewStore.getState().zoomBy(Math.pow(ZOOM_STEP, event.deltaY > 0 ? 1 : -1));
   };
 
   const onBlur = (): void => {
     pressed.clear();
     stopDragging();
+    zeroCommand();
   };
   const onVisibilityChange = (): void => {
     if (document.visibilityState === 'hidden') onBlur();
@@ -150,6 +151,7 @@ export function attachManualControls(element: HTMLElement): () => void {
   const onContextMenu = (event: MouseEvent): void => event.preventDefault();
 
   element.addEventListener('mousedown', onMouseDown);
+  element.addEventListener('wheel', onWheel, { passive: false });
   element.addEventListener('contextmenu', onContextMenu);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
@@ -163,6 +165,7 @@ export function attachManualControls(element: HTMLElement): () => void {
   return () => {
     window.clearInterval(timer);
     element.removeEventListener('mousedown', onMouseDown);
+    element.removeEventListener('wheel', onWheel);
     element.removeEventListener('contextmenu', onContextMenu);
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);

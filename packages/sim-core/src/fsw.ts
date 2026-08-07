@@ -21,6 +21,9 @@ import {
 import { createMekf, type MekfConfig } from './mekf.js';
 import { applyThrusterCommand } from './thrusters.js';
 import { DRACO_THRUSTER_SPECS } from './thrusters.js';
+import { probeAccelerationAuthority } from './authority.js';
+import { createMpc, type MpcConfig, type MpcController } from './mpc.js';
+import { computeSafingBurn, createCorridorMonitor, type AbortState } from './monitors.js';
 import type {
   ControlMode,
   FswTick,
@@ -38,7 +41,7 @@ export interface FswMassModel {
 }
 
 export interface FswConfig {
-  controller: 'PID' | 'LQR';
+  controller: 'PID' | 'LQR' | 'MPC';
   pidGains?: PidGains;
   allocatorConfig?: AllocatorConfig;
   ekfConfig?: EkfConfig;
@@ -46,6 +49,9 @@ export interface FswConfig {
   lqrConfig?: LqrConfig;
   mekfConfig?: MekfConfig;
   attitudeControllerConfig?: AttitudeControllerConfig;
+  mpcConfig?: MpcConfig;
+  /** Required torque reserve used while probing MPC acceleration authority. */
+  torqueReserve_Nm?: number;
   massModel: FswMassModel;
   /**
    * Ceiling on MANUAL-mode commanded translation force (N). Manual velocity
@@ -67,7 +73,7 @@ const ZERO_VECTOR: Vec3 = [0, 0, 0];
 const DEG_PER_RAD = 180 / Math.PI;
 
 function validateConfig(config: FswConfig): void {
-  if (config.controller !== 'PID' && config.controller !== 'LQR') throw new RangeError('controller must be PID or LQR');
+  if (config.controller !== 'PID' && config.controller !== 'LQR' && config.controller !== 'MPC') throw new RangeError('controller must be PID, LQR, or MPC');
   if (!Number.isFinite(config.massModel.dryMass_kg) || config.massModel.dryMass_kg <= 0) throw new RangeError('dryMass_kg must be positive');
   if (!Number.isFinite(config.massModel.initialProp_kg) || config.massModel.initialProp_kg < 0) throw new RangeError('initialProp_kg must be non-negative');
 }
@@ -163,7 +169,7 @@ export function createFsw(config: FswConfig): FswTick {
   if (!(manualForceLimit_N > 0) || !Number.isFinite(manualForceLimit_N)) {
     throw new RangeError('manualForceLimit_N must be finite and positive');
   }
-  let selectedController: 'PID' | 'LQR' = config.controller;
+  let selectedController: 'PID' | 'LQR' | 'MPC' = config.controller;
   let propEstimate_kg = config.massModel.initialProp_kg;
   let lastSensorTime_s: number | null = null;
   let previousOnTimes: ThrusterCommand = { ...ZERO_COMMAND };
@@ -173,6 +179,35 @@ export function createFsw(config: FswConfig): FswTick {
   let manualCommand: ManualCommand = { translation: [0, 0, 0], rotation: [0, 0, 0] };
   let lastAppliedMode: ControlMode = 'AUTO';
   let lastAppliedSubMode: ManualSubMode = 'RATE';
+  let mpc: MpcController | null = null;
+  let mpcFallback = false;
+  const corridorMonitor = createCorridorMonitor({ dt_s: commandWindow_s });
+  let abortState: AbortState = 'ARMED';
+  let abortRequested = false;
+  let abortElapsed_s = 0;
+  let abortTargetVelocity_hill_mps: Vec3 = [0, 0, 0];
+  const ABORT_COMPLETION_TOLERANCE_MPS = 0.01;
+  const ABORT_TIMEOUT_S = 30;
+  const ABORT_MAX_FORCE_N = 60;
+
+  const createConfiguredMpc = (): MpcController | null => {
+    const availability = mergedAvailability(specs, allocatorConfig, operatorAvailability);
+    const authority = probeAccelerationAuthority(
+      { ...allocatorConfig, availableMask: availability },
+      config.massModel.dryMass_kg + propEstimate_kg,
+      config.torqueReserve_Nm ?? 0.1,
+    );
+    // Loss of a controllable axis (heavy isolation) makes the octahedron
+    // degenerate; MPC cannot be built. Degrade to LQR fallback instead of
+    // letting createMpc throw inside the flight tick.
+    if (authority.symmetric_mps2.some((radius) => !(radius > 0))) return null;
+    return createMpc({
+      ...(config.mpcConfig ?? {}),
+      meanMotionRadS,
+      authority,
+    });
+  };
+  let mpcUnavailable = false;
 
   const tick = ((sensor: SensorFrame) => {
     const dt_s = finiteDt(sensor, lastSensorTime_s, commandWindow_s);
@@ -211,11 +246,64 @@ export function createFsw(config: FswConfig): FswTick {
       attitudeCovariance: att_diag.covariance.slice(0, 3).map((row) => row.slice(0, 3)),
     });
     const nav_diag = ekf.getNavDiag();
+    const corridor = corridorMonitor.corridorMonitor(nav_diag.state, dt_s);
+    if (abortRequested && abortState === 'ARMED') {
+      abortTargetVelocity_hill_mps = computeSafingBurn(nav_diag.state, meanMotionRadS).targetVelocity_hill_mps;
+      abortState = 'BURNING';
+      abortElapsed_s = 0;
+    }
+    if (abortState === 'ARMED' && controlMode === 'AUTO' && corridor.abortTrigger) {
+      abortTargetVelocity_hill_mps = computeSafingBurn(nav_diag.state, meanMotionRadS).targetVelocity_hill_mps;
+      abortState = 'BURNING';
+      abortRequested = true;
+      abortElapsed_s = 0;
+    }
     const translationController: StateController = selectedController === 'PID' ? pid : lqr;
     let commandedForce_hill_N: Vec3;
     let commandedTorque_body_Nm: Vec3 = [...ZERO_VECTOR];
-    if (controlMode === 'AUTO') {
-      commandedForce_hill_N = translationController.step(nav_diag.state, reference, dt_s);
+    if (abortState === 'BURNING') {
+      const velocityError = abortTargetVelocity_hill_mps.map((value, index) => value - nav_diag.state[index + 3]!) as Vec3;
+      const errorNorm_mps = Math.hypot(...velocityError);
+      if (errorNorm_mps <= ABORT_COMPLETION_TOLERANCE_MPS || abortElapsed_s >= ABORT_TIMEOUT_S) {
+        abortState = 'COASTING';
+        commandedForce_hill_N = [...ZERO_VECTOR];
+      } else {
+        const massEstimate_kg = config.massModel.dryMass_kg + propEstimate_kg;
+        const scale = Math.min(1, ABORT_MAX_FORCE_N / Math.max(1e-9, massEstimate_kg * errorNorm_mps));
+        commandedForce_hill_N = velocityError.map((value) => value * massEstimate_kg * scale) as Vec3;
+        abortElapsed_s += dt_s;
+      }
+      // The docking attitude IS the LVLH hold (identity q_BH: nose +ŷ into
+      // the −ŷ-facing station port) — no MPC-specific attitude target exists.
+      commandedTorque_body_Nm = attitudeController.stepAuto(att_diag.q_ref_BI, sensor.t_s, omega_est_body_rps);
+    } else if (abortState === 'COASTING') {
+      commandedForce_hill_N = [...ZERO_VECTOR];
+      const rateDamping_Nm = attitudeController.step(
+        q_BH,
+        omega_est_body_rps,
+        q_BH,
+        rotateVector(q_BH, [0, 0, meanMotionRadS]),
+      );
+      commandedTorque_body_Nm = rateDamping_Nm;
+    } else if (controlMode === 'AUTO') {
+      if (selectedController === 'MPC') {
+        if (mpc === null && !mpcUnavailable) {
+          mpc = createConfiguredMpc();
+          mpcUnavailable = mpc === null;
+        }
+        const mpcResult = mpc?.step(nav_diag.state, sensor.t_s) ?? null;
+        if (mpcResult !== null && mpcResult.status === 'optimal') {
+          const massEstimate_kg = config.massModel.dryMass_kg + propEstimate_kg;
+          commandedForce_hill_N = mpcResult.accel_hill_mps2.map((value) => value * massEstimate_kg) as Vec3;
+          mpcFallback = false;
+        } else {
+          commandedForce_hill_N = lqr.step(nav_diag.state, reference, dt_s);
+          mpcFallback = true;
+        }
+      } else {
+        commandedForce_hill_N = translationController.step(nav_diag.state, reference, dt_s);
+        mpcFallback = false;
+      }
       commandedTorque_body_Nm = attitudeController.stepAuto(att_diag.q_ref_BI, sensor.t_s, omega_est_body_rps);
     } else if (manualSubMode === 'RATE') {
       if (lastAppliedMode !== 'MANUAL' || lastAppliedSubMode !== 'RATE') {
@@ -300,8 +388,11 @@ export function createFsw(config: FswConfig): FswTick {
       nav_r_hill_m: [nav_diag.state[0], nav_diag.state[1], nav_diag.state[2]],
       nav_cov_pos_m2: navCovPos_m2,
       nees: null,
-      corridor_err_m: null,
+      corridor_err_m: corridor.corridor_err_m,
       controller: selectedController,
+      mpc_fallback: selectedController === 'MPC' && controlMode === 'AUTO' ? mpcFallback : false,
+      outcome: 'NONE',
+      abort: abortState,
       control_mode: controlMode,
       prop_kg: propEstimate_kg,
       thruster_duty: thrusterDuty,
@@ -313,16 +404,22 @@ export function createFsw(config: FswConfig): FswTick {
       docking: dockingTelemetry(sensor, nav_diag.state, q_BH, omega_est_body_rps, meanMotionRadS),
       att_nees: null,
     };
-    return { thrusters: allocation.onTimes, telemetry, nav_diag, att_diag };
+    return { thrusters: allocation.onTimes, telemetry, nav_diag, att_diag, abort: abortState !== 'ARMED', abort_state: abortState };
   }) as FswTick;
 
-  tick.setController = (controller: 'PID' | 'LQR') => {
-    if (controller !== 'PID' && controller !== 'LQR') throw new RangeError('controller must be PID or LQR');
+  tick.setController = (controller: 'PID' | 'LQR' | 'MPC') => {
+    if (controller !== 'PID' && controller !== 'LQR' && controller !== 'MPC') throw new RangeError('controller must be PID, LQR, or MPC');
     selectedController = controller;
+    if (controller !== 'MPC') {
+      mpcFallback = false;
+    }
   };
   tick.setJetAvailability = (id: string, available: boolean) => {
     if (!specs.some((spec) => spec.id === id)) throw new RangeError(`unknown thruster ${id}`);
     operatorAvailability[id] = available;
+    mpc = null;
+    mpcUnavailable = false; // availability changed — reprobe on next MPC tick
+    if (selectedController !== 'MPC') mpcFallback = false;
   };
   tick.setControlMode = (mode: ControlMode) => {
     if (mode !== 'AUTO' && mode !== 'MANUAL') throw new RangeError('control mode must be AUTO or MANUAL');
@@ -335,6 +432,9 @@ export function createFsw(config: FswConfig): FswTick {
   tick.setManualCommand = (command: ManualCommand) => {
     validateManualCommand(command);
     manualCommand = cloneManualCommand(command);
+  };
+  tick.commandAbort = () => {
+    if (abortState === 'ARMED') abortRequested = true;
   };
   return tick;
 }

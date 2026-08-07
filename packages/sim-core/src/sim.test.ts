@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { hillToBody, rotateVector, smallAngleExp } from './attitude.js';
 import { createSimLoop, type SimConfig } from './sim.js';
+import { propagateCW } from './cw.js';
 import { MEAN_MOTION_RAD_S } from './dynamics.js';
+import { computeSafingBurn } from './monitors.js';
 
 const initialState: [number, number, number, number, number, number] = [0, -250, 12, 0, 0, 0];
 
@@ -159,4 +161,171 @@ describe('SimLoop', () => {
     expect(Math.hypot(q_BH[1], q_BH[2], q_BH[3])).toBeLessThan(0.08);
     expect(rateError).toBeLessThan(0.01);
   }, 30_000);
+
+  it('latches DOCKED for a contact inside the truth capture envelope', () => {
+    const dockingConfig: SimConfig = {
+      ...config(),
+      initial: {
+        ...config().initial,
+        r_hill_m: [0, -10.44, 0],
+        v_hill_mps: [0, 0.05, 0],
+      },
+      fsw: {
+        ...config().fsw,
+        guidanceConfig: { initialState: [0, -10.44, 0, 0, 0.05, 0] },
+        ekfConfig: {
+          initialNavPrior: { state: [0, -10.44, 0, 0, 0.05, 0], covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        },
+      },
+    };
+    const sim = createSimLoop(dockingConfig, 1001);
+    const frames = sim.stepTo(0.1);
+
+    expect(frames.at(-1)!.outcome).toBe('DOCKED');
+    expect(sim.getTruthState().v_hill_mps).toEqual([0, 0, 0]);
+  });
+
+  it('latches COLLISION for hot contact outside the capture envelope', () => {
+    const collisionConfig: SimConfig = {
+      ...config(),
+      initial: {
+        ...config().initial,
+        r_hill_m: [0, -10.4, 0],
+        v_hill_mps: [0, 0.5, 0],
+      },
+      fsw: {
+        ...config().fsw,
+        controller: 'PID',
+        guidanceConfig: { initialState: [0, -10.4, 0, 0, 0.5, 0] },
+        ekfConfig: {
+          initialNavPrior: { state: [0, -10.4, 0, 0, 0.5, 0], covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        },
+      },
+    };
+    const sim = createSimLoop(collisionConfig, 1002);
+
+    expect(sim.stepTo(0.1).at(-1)!.outcome).toBe('COLLISION');
+  });
+
+  it('lets contact win arbitration when an abort was commanded first', () => {
+    const dockingConfig: SimConfig = {
+      ...config(),
+      initial: {
+        ...config().initial,
+        r_hill_m: [0, -10.44, 0],
+        v_hill_mps: [0, 0.05, 0],
+      },
+      fsw: {
+        ...config().fsw,
+        guidanceConfig: { initialState: [0, -10.44, 0, 0, 0.05, 0] },
+        ekfConfig: {
+          initialNavPrior: { state: [0, -10.44, 0, 0, 0.05, 0], covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        },
+      },
+    };
+    const sim = createSimLoop(dockingConfig, 1003);
+    sim.commandAbort();
+
+    expect(sim.stepTo(0.1).at(-1)!.outcome).toBe('DOCKED');
+  });
+
+  it('flies the headline MPC approach to a captured dock', () => {
+    const headline: SimConfig = {
+      ...config(),
+      initial: {
+        ...config().initial,
+        r_hill_m: [0, -250, 12],
+        v_hill_mps: [0, 0.1, 0],
+      },
+      fsw: {
+        ...config().fsw,
+        controller: 'MPC',
+        guidanceConfig: { initialState: [0, -250, 12, 0, 0.1, 0] },
+        ekfConfig: {
+          initialNavPrior: { state: [0, -250, 12, 0, 0.1, 0], covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        },
+        mpcConfig: {
+          horizonSteps: 10,
+          maxIterations: 250,
+          terminalTarget_hill_m: [0, -10.4, 0],
+        },
+      },
+    };
+    const sim = createSimLoop(headline, 1004);
+    const frames = sim.stepTo(1200);
+    const outcomeFrame = frames.find((frame) => frame.outcome !== 'NONE');
+    expect(outcomeFrame?.outcome).toBe('DOCKED');
+    expect(sim.getTruthState().v_hill_mps).toEqual([0, 0, 0]);
+  }, 120_000);
+
+  it('latches ABORT for an AUTO trajectory that leaves the hard corridor', () => {
+    const abortConfig: SimConfig = {
+      ...config(),
+      initial: {
+        ...config().initial,
+        r_hill_m: [100, -50, 0],
+        v_hill_mps: [0, 0.1, 0],
+      },
+      fsw: {
+        ...config().fsw,
+        controller: 'LQR',
+        guidanceConfig: { initialState: [100, -50, 0, 0, 0.1, 0] },
+        ekfConfig: {
+          initialNavPrior: { state: [100, -50, 0, 0, 0.1, 0], covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        },
+      },
+    };
+    const sim = createSimLoop(abortConfig, 1005);
+    const abortFrame = sim.stepTo(0.1).find((frame) => frame.outcome === 'ABORT');
+
+    expect(abortFrame?.outcome).toBe('ABORT');
+    const abortEpoch = sim.getTruthState();
+    const burn = computeSafingBurn([
+      ...abortEpoch.r_hill_m,
+      ...abortEpoch.v_hill_mps,
+    ], MEAN_MOTION_RAD_S);
+    const postBurn = [
+      ...abortEpoch.r_hill_m,
+      abortEpoch.v_hill_mps[0] + burn.deltaV_hill_mps[0],
+      abortEpoch.v_hill_mps[1] + burn.deltaV_hill_mps[1],
+      abortEpoch.v_hill_mps[2] + burn.deltaV_hill_mps[2],
+    ] as [number, number, number, number, number, number];
+    const epochRange_m = Math.hypot(...abortEpoch.r_hill_m);
+    for (let t_s = 0; t_s <= 4 * Math.PI / MEAN_MOTION_RAD_S; t_s += 60) {
+      const propagated = propagateCW(
+        [postBurn[0], postBurn[1], postBurn[2]],
+        [postBurn[3], postBurn[4], postBurn[5]],
+        MEAN_MOTION_RAD_S,
+        t_s,
+      );
+      expect(Math.hypot(...propagated.r)).toBeGreaterThanOrEqual(0.8 * epochRange_m);
+    }
+  });
+
+  it('keeps a DOCKED outcome and latch time deterministic for identical seeds', () => {
+    const dockingConfig: SimConfig = {
+      ...config(),
+      initial: {
+        ...config().initial,
+        r_hill_m: [0, -10.44, 0],
+        v_hill_mps: [0, 0.05, 0],
+      },
+      fsw: {
+        ...config().fsw,
+        guidanceConfig: { initialState: [0, -10.44, 0, 0, 0.05, 0] },
+        ekfConfig: {
+          initialNavPrior: { state: [0, -10.44, 0, 0, 0.05, 0], covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        },
+      },
+    };
+    const first = createSimLoop(dockingConfig, 1006);
+    const second = createSimLoop(dockingConfig, 1006);
+    const firstFrames = first.stepTo(0.1);
+    const secondFrames = second.stepTo(0.1);
+
+    expect(firstFrames).toEqual(secondFrames);
+    expect(firstFrames.find((frame) => frame.outcome !== 'NONE')?.t_s)
+      .toBe(secondFrames.find((frame) => frame.outcome !== 'NONE')?.t_s);
+    expect(first.getTruthState()).toEqual(second.getTruthState());
+  });
 });

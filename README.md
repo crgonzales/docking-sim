@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.4.2** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.5.0** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim
 
@@ -23,6 +23,14 @@ Inside:
   allocation, **manual fly** (AUTO/MANUAL, RATE fly-by-wire or PULSE direct),
   truth render channel, switchable cameras, and a docking-camera PiP with
   capture-envelope alignment display
+- Phase 4 (v0.5.0): **constrained MPC terminal approach** (pure-TS active-set
+  QP, corridor + capture-envelope constraints, probed thrust authority),
+  two-level corridor monitoring with **passive abort** (keep-out-proven safing
+  burn), and truth-side contact outcomes — fly it to a real **DOCKED /
+  COLLISION / ABORT** ending with HUD banners and live caution/warning tiles
+- project docs structure skills in `local tooling`, project docs under `docs/`
+- Guided-scenario spec for Phase 5 (`docs/scenario-mode-spec.md`)
+- CI workflow (install + test)
 
 ## Flying it (manual controls)
 
@@ -32,20 +40,22 @@ KSP-style layout (rotation on WASD, translation on Shift/Ctrl + IJKL):
 | --- | --- |
 | `M` | toggle AUTO / MANUAL |
 | `T` | toggle RATE (fly-by-wire w/ hold) / PULSE (direct) |
+| `V` | cycle controller: PID → LQR → MPC |
 | `C` | cycle camera: cinematic → chase → cockpit |
+| `H` / `?` | keybinds overlay |
+| `Backspace` | ABORT (passive safing sequence) |
 | `Shift` / `Ctrl` | thrust forward / back (±ŷ) |
 | `W`/`S` | pitch down / up |
 | `A`/`D` | yaw left / right |
 | `Q`/`E` | roll left / right |
 | `I`/`K` | translate up / down (±ẑ) |
 | `J`/`L` | translate left / right (∓x̂) |
-| right-drag | pitch / yaw (additive) |
+| right-drag | orbit camera (chase/cinematic) |
+| scroll | zoom camera |
 
+Ship rotation is keys-only; the mouse drives the camera.
 ⚠ Browser caveat: avoid `Ctrl+W` combos (reversing while pitching down) —
 the browser may close the tab before the page sees the keystroke.
-- project docs structure skills in `local tooling`, project docs under `docs/`
-- Guided-scenario spec for Phase 5 (`docs/scenario-mode-spec.md`)
-- CI workflow (install + test)
 
 ## Run it
 
@@ -66,5 +76,5 @@ in `local tooling tooling/scripts/start.sh`.
 
 ## Roadmap
 
-See `docs/ARCHI.md` (authoritative). Next: Phase 4 — MPC terminal approach +
-corridor constraint + passive-abort safety.
+See `docs/ARCHI.md` (authoritative). Next: Phase 5 — Monte Carlo + guided
+scenario mode (`docs/scenario-mode-spec.md`) + portfolio video.

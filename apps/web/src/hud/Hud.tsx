@@ -1,6 +1,8 @@
 import './hud.css';
 import { CautionWarningPanel } from './CautionWarningPanel';
+import { KeybindsOverlay } from './KeybindsOverlay';
 import { ModeBar } from './ModeBar';
+import { OutcomeBanner } from './OutcomeBanner';
 import { TelemetryStrip } from './TelemetryStrip';
 import { useViewStore } from '../viewStore';
 
@@ -11,7 +13,10 @@ export function Hud() {
     <div className="hud">
       <TelemetryStrip />
       <CautionWarningPanel />
+      <KeybindsOverlay />
+      <OutcomeBanner />
       <ModeBar />
+      <div className="hud-controls-hint">H CONTROLS</div>
       {viewMode === 'COCKPIT' && <div className="cockpit-viewport-frame" aria-hidden="true" />}
     </div>
   );

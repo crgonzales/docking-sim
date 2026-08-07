@@ -39,7 +39,7 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
 
 TypeScript + Vite + pnpm workspace. Web: React 18, react-three-fiber, drei,
 @react-three/postprocessing (bloom), zustand; uPlot planned. Tests: Vitest.
-QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
+QP: in-house pure-TS active-set solver (`qp.ts`, KKT-oracle-tested). CI: GitHub Actions (install +
 `pnpm -r test`). Web telemetry seam: zustand bus in `apps/web/src/telemetry/`
 (stub emitter in Phase 1; the real sim loop replaces one file in Phase 2).
 
@@ -48,7 +48,7 @@ QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
 1. ~~Restructure + cinematic visual pass (Earth, starfield, craft, HUD)~~ ✅ v0.2.0 (primitive craft; normalized glTF models are a documented follow-up — see `apps/web/public/assets/ASSETS.md`)
 2. ~~Discrete RCS thrusters + allocator, sensor models, EKF~~ ✅ v0.3.0 (16-jet canted RCS, NNLS allocator, seeded sensors + degrade hooks, 6-state EKF, PID/LQR, `SimLoop` command/injection seam; attitude = kinematic LVLH hold pending Phase 3)
 3. ~~6-DOF attitude + MEKF + docking camera + manual fly~~ ✅ v0.4.0 (rigid-body truth + thruster torques, MEKF w/ gyro-bias states, 6-target allocator, AUTO/MANUAL-RATE/PULSE via deterministic command API, truth render channel, camera rig + docking PiP)
-4. MPC terminal approach + passive abort safety
+4. ~~MPC terminal approach + passive abort safety~~ ✅ v0.5.0 (active-set QP + 1 Hz condensed CW MPC w/ soft corridor/terminal constraints + probed octahedral authority; two-level corridor monitor, keep-out-proven passive abort, truth-side DOCKED/COLLISION/ABORT outcome latch)
 5. Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`) + video
 
 ## Testing gate (oracle tests, not vibes)
@@ -64,5 +64,8 @@ QP: quadprog now, OSQP-WASM if needed. CI: GitHub Actions (install +
 - Quaternion norm drift bound; torque-free full-vector momentum conservation;
   MEKF 50-run attitude ANEES in the 95% χ²₆ₙ/N band (implemented:
   `dynamics.test.ts`, `mekf.test.ts`)
+- QP KKT oracles; MPC constraint satisfaction + headline 250 m MPC-docks-green
+  run; abort passive-safety keep-out over 2 orbits (implemented: `qp.test.ts`,
+  `mpc.test.ts`, `monitors.test.ts`, `sim.test.ts`)
 - Scenario mode: determinism, zero-input never docks, perfect-operator docks
   (Phase 5)

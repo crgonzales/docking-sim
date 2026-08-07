@@ -7,7 +7,7 @@ import {
   type SimConfig,
   type SimLoop,
 } from '@docking/sim-core';
-import { useTelemetryBus } from './bus';
+import { getLatestFrame, useTelemetryBus } from './bus';
 
 export const SIM_SEED = 20260806;
 const SIM_DT_S = 1 / FSW_HZ;
@@ -77,4 +77,15 @@ export function setManualSubMode(mode: ManualSubMode): void {
 
 export function setManualCommand(command: ManualCommand): void {
   sim?.setManualCommand(command);
+}
+
+export function cycleController(): void {
+  const controllers = ['PID', 'LQR', 'MPC'] as const;
+  const current = getLatestFrame()?.controller ?? SIM_CONFIG.fsw.controller;
+  const next = controllers[(controllers.indexOf(current) + 1) % controllers.length]!;
+  sim?.setController(next);
+}
+
+export function commandAbort(): void {
+  sim?.commandAbort();
 }

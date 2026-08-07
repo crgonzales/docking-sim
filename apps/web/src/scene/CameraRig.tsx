@@ -4,41 +4,59 @@ import { conjugateQuaternion, rotateVector } from '@docking/sim-core';
 import { useTelemetryBus } from '../telemetry/bus';
 import { useViewStore } from '../viewStore';
 
-const CINEMATIC_POSITION = new Vector3(40, -320, 60);
-const CINEMATIC_TARGET = new Vector3(0, -80, 0);
-const CHASE_OFFSET_BODY: [number, number, number] = [10, -32, 14];
+const STATION_PORT = new Vector3(0, -8.7, 0);
 const COCKPIT_OFFSET_BODY: [number, number, number] = [0, 1.5, 0];
 
-/** Camera controller for cinematic, attitude-aware chase, and cockpit views. */
+function orbitOffset(azimuth_rad: number, elevation_rad: number, distance_m: number): Vector3 {
+  const horizontal = Math.cos(elevation_rad) * distance_m;
+  return new Vector3(
+    Math.sin(azimuth_rad) * horizontal,
+    -Math.cos(azimuth_rad) * horizontal,
+    Math.sin(elevation_rad) * distance_m,
+  );
+}
+
+/** Camera controller for attitude-independent orbit views and the cockpit. */
 export function CameraRig() {
   const { camera } = useThree();
   const mode = useViewStore((state) => state.mode);
+  const orbit = useViewStore((state) => state.orbits[state.mode]);
   const renderState = useTelemetryBus((state) => state.renderState);
 
   useFrame((_, dt) => {
-    if (mode === 'CINEMATIC') {
-      camera.near = 0.5;
+    if (!renderState) return;
+    const chaser = new Vector3(...renderState.r_hill_m);
+
+    if (mode === 'COCKPIT') {
+      const q_HB = conjugateQuaternion(renderState.q_BH);
+      const bodyForward = new Vector3(...rotateVector(q_HB, [0, 1, 0]));
+      const bodyUp = new Vector3(...rotateVector(q_HB, [0, 0, 1]));
+      const desiredPosition = chaser.clone().add(new Vector3(...rotateVector(q_HB, COCKPIT_OFFSET_BODY)));
+      camera.position.lerp(desiredPosition, 1 - Math.exp(-10 * dt));
+      camera.near = 0.05;
       camera.updateProjectionMatrix();
-      camera.position.lerp(CINEMATIC_POSITION, 1 - Math.exp(-3 * dt));
-      camera.up.set(0, 0, 1);
-      camera.lookAt(CINEMATIC_TARGET);
+      camera.up.copy(bodyUp);
+      camera.lookAt(camera.position.clone().add(bodyForward.multiplyScalar(20)));
       return;
     }
-    if (!renderState) return;
-    const q_HB = conjugateQuaternion(renderState.q_BH);
-    const chaser = new Vector3(...renderState.r_hill_m);
-    const bodyForward = new Vector3(...rotateVector(q_HB, [0, 1, 0]));
-    const bodyUp = new Vector3(...rotateVector(q_HB, [0, 0, 1]));
-    const bodyOffset = mode === 'CHASE' ? CHASE_OFFSET_BODY : COCKPIT_OFFSET_BODY;
-    const desiredPosition = chaser.clone().add(new Vector3(...rotateVector(q_HB, bodyOffset)));
-    camera.position.lerp(desiredPosition, 1 - Math.exp(-(mode === 'CHASE' ? 3 : 10) * dt));
-    camera.near = mode === 'COCKPIT' ? 0.05 : 0.5;
+
+    camera.near = 0.5;
     camera.updateProjectionMatrix();
-    camera.up.copy(bodyUp);
-    const target = mode === 'CHASE'
-      ? chaser
-      : camera.position.clone().add(bodyForward.multiplyScalar(20));
-    camera.lookAt(target);
+    const desiredPosition = chaser.clone().add(orbitOffset(
+      orbit.azimuth_rad,
+      orbit.elevation_rad,
+      orbit.distance_m,
+    ));
+    camera.position.lerp(desiredPosition, 1 - Math.exp(-(mode === 'CHASE' ? 3 : 2) * dt));
+    camera.up.set(0, 0, 1);
+    if (mode === 'CHASE') {
+      camera.lookAt(chaser);
+    } else {
+      // Keep the cinematic framing on the approach corridor rather than on
+      // the vehicle alone: the target is 70% of the way from chaser to port.
+      const between = chaser.clone().lerp(STATION_PORT, 0.7);
+      camera.lookAt(between);
+    }
   });
 
   return null;

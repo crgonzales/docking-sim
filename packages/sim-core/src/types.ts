@@ -7,6 +7,7 @@
  */
 import type { NavDiag } from './ekf.js';
 import type { AttDiag } from './mekf.js';
+import type { AbortState } from './monitors.js';
 
 export type { NavDiag } from './ekf.js';
 export type { AttDiag } from './mekf.js';
@@ -65,12 +66,13 @@ export type ThrusterCommand = Record<string, number>;
 
 /** The single FSW entry point. Pure: sensors in, commands + telemetry out. */
 export interface FswTick {
-  (sensors: SensorFrame): { thrusters: ThrusterCommand; telemetry: TelemetryFrame; nav_diag: NavDiag; att_diag: AttDiag };
-  setController(controller: 'PID' | 'LQR'): void;
+  (sensors: SensorFrame): { thrusters: ThrusterCommand; telemetry: TelemetryFrame; nav_diag: NavDiag; att_diag: AttDiag; abort: boolean; abort_state: AbortState };
+  setController(controller: 'PID' | 'LQR' | 'MPC'): void;
   setJetAvailability(id: string, available: boolean): void;
   setControlMode(mode: ControlMode): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
+  commandAbort(): void;
 }
 
 /** What the UI, scenario director, and Monte Carlo harness observe. */
@@ -81,6 +83,9 @@ export interface TelemetryFrame {
   nees: number | null;
   corridor_err_m: number | null;
   controller: 'PID' | 'LQR' | 'MPC';
+  mpc_fallback: boolean;
+  outcome: 'NONE' | 'DOCKED' | 'COLLISION' | 'ABORT';
+  abort: AbortState;
   control_mode: 'AUTO' | 'MANUAL';
   prop_kg: number;
   thruster_duty: Record<string, number>;

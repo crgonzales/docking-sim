@@ -308,6 +308,7 @@ function makeAllocator(config: AllocatorConfig): ThrusterAllocator {
   // FSW-side min-impulse accumulator state (like a PID integrator): carries
   // sub-min-impulse on-time demand across ticks so average thrust is honored.
   const impulseCarry_s: Record<string, number> = {};
+  const impulseCarryTorqueSign: Record<string, number> = {};
   return {
     allocate(commandedForce_N, commandedTorque_Nm, availableMask) {
       const specs = resolveAvailableSpecs(config, availableMask);
@@ -350,6 +351,21 @@ function makeAllocator(config: AllocatorConfig): ThrusterAllocator {
       for (const spec of config.specs ?? DRACO_THRUSTER_SPECS) {
         const availableIndex = specs.findIndex((availableSpec) => availableSpec.id === spec.id);
         const solved = availableIndex >= 0 ? solvedOnTimes[availableIndex] ?? 0 : 0;
+        // A carry is only meaningful while this jet contributes to the same
+        // torque direction.  When the requested torque crosses that jet's
+        // contribution sign, discard stale sub-quantum on-time instead of
+        // letting the old demand smear into the opposite maneuver.  The
+        // min-impulse quantum itself is unchanged.
+        const torqueContribution = cross(spec.position_body_m, spec.direction_body);
+        const torqueContext = torqueContribution[0] * commandedTorque_Nm[0]
+          + torqueContribution[1] * commandedTorque_Nm[1]
+          + torqueContribution[2] * commandedTorque_Nm[2];
+        const contextSign = Math.abs(torqueContext) > 1e-9 ? Math.sign(torqueContext) : 0;
+        const previousSign = impulseCarryTorqueSign[spec.id] ?? 0;
+        if (contextSign !== 0 && previousSign !== 0 && contextSign !== previousSign) {
+          impulseCarry_s[spec.id] = 0;
+        }
+        if (contextSign !== 0) impulseCarryTorqueSign[spec.id] = contextSign;
         preQuantizedOnTimes_s[spec.id] = solved;
         // Min-impulse handling via a per-jet impulse ACCUMULATOR (PWM across
         // FSW cycles, the standard real-RCS approach): sub-minimum demand is

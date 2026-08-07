@@ -15,7 +15,7 @@ function diagonal(values: number[]): number[][] {
   return values.map((value, row) => values.map((_, column) => row === column ? value : 0));
 }
 
-function makeConfig(controller: 'PID' | 'LQR' = 'LQR'): FswConfig {
+function makeConfig(controller: FswConfig['controller'] = 'LQR'): FswConfig {
   return {
     controller,
     massModel: { dryMass_kg: 976, initialProp_kg: 24 },
@@ -96,7 +96,9 @@ describe('FSW composition', () => {
     expect(output.telemetry.thruster_duty.J1).toBe(0);
     expect(output.thrusters.J1).toBe(0);
     expect(output.telemetry.nees).toBeNull();
-    expect(output.telemetry.corridor_err_m).toBeNull();
+    expect(output.telemetry.corridor_err_m).toBe(0);
+    expect(output.telemetry.abort).toBe('ARMED');
+    expect(output.telemetry.outcome).toBe('NONE');
   });
 
   it('switches controller selection without rebuilding the FSW closure', () => {
@@ -176,5 +178,91 @@ describe('FSW composition', () => {
   it('keeps TruthState out of the FSW implementation', () => {
     const source = readFileSync(new URL('./fsw.ts', import.meta.url), 'utf8');
     expect(source).not.toContain('TruthState');
+  });
+
+  it('selects MPC and reports a non-fallback solve in AUTO', () => {
+    const fsw = createFsw({
+      ...makeConfig('MPC'),
+      mpcConfig: { horizonSteps: 4, maxIterations: 150 },
+    });
+    const output = fsw(zeroNoiseSensor(17).sample(makeTruth()));
+
+    expect(output.telemetry.controller).toBe('MPC');
+    expect(output.telemetry.mpc_fallback).toBe(false);
+  });
+
+  it('holds the MPC command between one-second solve ticks', () => {
+    const fsw = createFsw({
+      ...makeConfig('MPC'),
+      mpcConfig: { horizonSteps: 4, maxIterations: 150 },
+    });
+    const sensors = zeroNoiseSensor(18);
+    const truth = makeTruth();
+    const first = fsw(sensors.sample({ ...truth, t_s: 0 }));
+    const between = fsw(sensors.sample({ ...truth, t_s: 0.1 }));
+
+    expect(first.telemetry.mpc_fallback).toBe(false);
+    expect(between.telemetry.mpc_fallback).toBe(false);
+    expect(between.telemetry.controller).toBe('MPC');
+  });
+
+  it('falls back to LQR when the MPC iteration cap is hit', () => {
+    const fsw = createFsw({
+      ...makeConfig('MPC'),
+      mpcConfig: { horizonSteps: 4, maxIterations: 1 },
+    });
+    const output = fsw(zeroNoiseSensor(19).sample(makeTruth()));
+
+    expect(output.telemetry.controller).toBe('MPC');
+    expect(output.telemetry.mpc_fallback).toBe(true);
+  });
+
+  it('re-probes MPC authority after jet availability changes', () => {
+    const fsw = createFsw({
+      ...makeConfig('MPC'),
+      mpcConfig: { horizonSteps: 4, maxIterations: 150 },
+    });
+    const sensors = zeroNoiseSensor(20);
+    const truth = makeTruth();
+    fsw(sensors.sample({ ...truth, t_s: 0 }));
+    fsw.setJetAvailability('J1', false);
+    const output = fsw(sensors.sample({ ...truth, t_s: 0.1 }));
+
+    expect(output.telemetry.controller).toBe('MPC');
+    expect(output.telemetry.mpc_fallback).toBe(false);
+    expect(output.thrusters.J1).toBe(0);
+  });
+
+  it('enters the abort latch idempotently from the command surface', () => {
+    const fsw = createFsw(makeConfig());
+    const sensors = zeroNoiseSensor(21);
+    const truth = makeTruth();
+    fsw.commandAbort();
+    fsw.commandAbort();
+    const first = fsw(sensors.sample({ ...truth, t_s: 0 }));
+    const second = fsw(sensors.sample({ ...truth, t_s: 0.1 }));
+
+    expect(first.abort).toBe(true);
+    expect(first.abort_state).toBe('BURNING');
+    expect(second.abort).toBe(true);
+    expect(['BURNING', 'COASTING']).toContain(second.abort_state);
+  });
+
+  it('shows corridor caution but never auto-aborts in MANUAL mode', () => {
+    const violating: [number, number, number, number, number, number] = [20, -20, 0, 0, 0, 0];
+    const fsw = createFsw({
+      ...makeConfig(),
+      guidanceConfig: { initialState: violating },
+      ekfConfig: {
+        initialNavPrior: { state: violating, covariance: diagonal([10_000, 10_000, 10_000, 10, 10, 10]) },
+        q: diagonal([0, 0, 0, 0, 0, 0]),
+      },
+    });
+    fsw.setControlMode('MANUAL');
+    const output = fsw(zeroNoiseSensor(22).sample({ ...makeTruth(), r_hill_m: [20, -20, 0] }));
+
+    expect(output.telemetry.corridor_err_m).toBeGreaterThan(0);
+    expect(output.abort).toBe(false);
+    expect(output.abort_state).toBe('ARMED');
   });
 });

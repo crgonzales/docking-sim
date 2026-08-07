@@ -1,5 +1,15 @@
 import { FSW_HZ, TRUTH_HZ } from './constants.js';
-import { errorQuaternion, hillToBody, smallAngleLog } from './attitude.js';
+import {
+  conjugateQuaternion,
+  DEFAULT_MEAN_MOTION_RAD_S,
+  errorQuaternion,
+  hillFromInertial,
+  hillToBody,
+  multiplyQuaternion,
+  rotateVector,
+  smallAngleLog,
+} from './attitude.js';
+import { insideCaptureEnvelope } from './corridor.js';
 import { createFsw, type FswConfig } from './fsw.js';
 import { inverseMatrix } from './linalg.js';
 import { createRng } from './rng.js';
@@ -44,7 +54,8 @@ export interface SimConfig {
 
 export interface SimLoop {
   stepTo(t_s: number): TelemetryFrame[];
-  setController(controller: 'PID' | 'LQR'): void;
+  setController(controller: 'PID' | 'LQR' | 'MPC'): void;
+  commandAbort(): void;
   setControlMode(mode: ControlMode): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
@@ -56,9 +67,21 @@ export interface SimLoop {
   getRenderState(): RenderState;
 }
 
+export type SimOutcome = 'NONE' | 'DOCKED' | 'COLLISION' | 'ABORT';
+
 const IDENTITY_QUATERNION: Quat = [1, 0, 0, 0];
 const TRUTH_TICK_S = 1 / TRUTH_HZ;
 const FSW_TICKS_PER_WINDOW = TRUTH_HZ / FSW_HZ;
+const STATION_PORT_HILL: Vec3 = [0, -8.7, 0];
+const CHASER_PORT_BODY: Vec3 = [0, 1.7, 0];
+/**
+ * Docked attitude: identity q_BH — the chaser's +ŷ docking axis points INTO
+ * the station port (which faces −ŷ), per the Phase 1 geometry and the FSW
+ * docking-telemetry convention (misalign measured from identity q_BH).
+ * The chaser approaches from −ŷ, so its COM docks at y = −8.7 − 1.7 = −10.4.
+ */
+const DOCKING_Q_BH: Quat = [1, 0, 0, 0];
+const DEG_PER_RAD = 180 / Math.PI;
 
 function cloneVec3(value: Vec3): Vec3 {
   return [...value];
@@ -83,6 +106,18 @@ function validateInitial(initial: SimInitialConditions): void {
   if (initial.t_s !== undefined && (!Number.isFinite(initial.t_s) || initial.t_s < 0)) {
     throw new RangeError('initial time must be finite and non-negative');
   }
+}
+
+function dot(left: Vec3, right: Vec3): number {
+  return left[0] * right[0] + left[1] * right[1] + left[2] * right[2];
+}
+
+function subtract(left: Vec3, right: Vec3): Vec3 {
+  return [left[0] - right[0], left[1] - right[1], left[2] - right[2]];
+}
+
+function dockingQBi(t_s: number, meanMotionRadS: number): Quat {
+  return multiplyQuaternion(DOCKING_Q_BH, conjugateQuaternion(hillFromInertial(t_s, meanMotionRadS)));
 }
 
 
@@ -145,8 +180,61 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
   };
   let truthTickIndex = 0;
   let remainingOnTimes: ThrusterCommand = {};
+  let outcome: SimOutcome = 'NONE';
+  let docked = false;
+  const meanMotionRadS = config.fsw.attitudeControllerConfig?.meanMotionRadS ?? DEFAULT_MEAN_MOTION_RAD_S;
+
+  const evaluateContact = (): void => {
+    if (outcome !== 'NONE') return;
+    const meanMotion = meanMotionRadS;
+    const q_BH = hillToBody(truth.q_BI, truth.t_s, meanMotion);
+    const q_HB = conjugateQuaternion(q_BH);
+    const chaserPort_hill_m = truth.r_hill_m.map((value, index) => value + rotateVector(q_HB, CHASER_PORT_BODY)[index]!) as Vec3;
+    const portDelta_hill_m = subtract(chaserPort_hill_m, STATION_PORT_HILL);
+    if (Math.hypot(...portDelta_hill_m) > 0.05) return;
+    const dockingAxis_hill = rotateVector(q_HB, [0, 1, 0]);
+    // Closing = motion along the docking axis toward the station: the axis
+    // points +ŷ (into the port), so a positive projection is closing.
+    const closing_mps = dot(truth.v_hill_mps, dockingAxis_hill);
+    const lateral_m = Math.hypot(portDelta_hill_m[0], portDelta_hill_m[2]);
+    // Misalign = FULL attitude error from the aligned (identity-q_BH) docked
+    // orientation — matching FSW telemetry. An axis-only angle would let a
+    // craft rolled 180° about its docking axis pass as perfectly aligned;
+    // real docking mechanisms have roll capture limits too.
+    const misalign_deg = Math.hypot(...smallAngleLog(q_BH)) * DEG_PER_RAD;
+    const omega_lvh_body_rps = rotateVector(q_BH, [0, 0, meanMotion]);
+    const rate_dps = Math.hypot(
+      truth.w_body_rps[0] - omega_lvh_body_rps[0],
+      truth.w_body_rps[1] - omega_lvh_body_rps[1],
+      truth.w_body_rps[2] - omega_lvh_body_rps[2],
+    ) * DEG_PER_RAD;
+    const capture = insideCaptureEnvelope(closing_mps, lateral_m, misalign_deg, rate_dps);
+    outcome = capture.inside ? 'DOCKED' : 'COLLISION';
+    if (outcome === 'DOCKED') {
+      docked = true;
+      const q_BI = dockingQBi(truth.t_s, meanMotion);
+      const q_HB_docked = conjugateQuaternion(DOCKING_Q_BH);
+      const portOffset_hill = rotateVector(q_HB_docked, CHASER_PORT_BODY);
+      truth = {
+        ...truth,
+        r_hill_m: subtract(STATION_PORT_HILL, portOffset_hill),
+        v_hill_mps: [0, 0, 0],
+        q_BI,
+        w_body_rps: rotateVector(DOCKING_Q_BH, [0, 0, meanMotion]),
+      };
+    }
+  };
 
   const applyOneTruthTick = (): void => {
+    if (docked) {
+      // Docked = rigidly attached to the station: the inertial attitude must
+      // keep rotating with the LVLH frame (recomputed each tick), or q_BH
+      // would drift at orbital rate and contradict the pinned w_body_rps.
+      const t_next = truth.t_s + TRUTH_TICK_S;
+      truth = { ...truth, t_s: t_next, q_BI: dockingQBi(t_next, meanMotionRadS) };
+      truthTickIndex += 1;
+      return;
+    }
     const commandForTick: ThrusterCommand = {};
     for (const spec of specs) {
       const state = states[spec.id] ?? 'nominal';
@@ -173,6 +261,7 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
       inertia_kg_m2: config.inertia_kg_m2,
       propellantRate_kg_s: application.propellantRate_kg_s,
     });
+    evaluateContact();
     for (const spec of specs) {
       if ((states[spec.id] ?? 'nominal') === 'nominal') {
         remainingOnTimes[spec.id] = Math.max(0, (remainingOnTimes[spec.id] ?? 0) - TRUTH_TICK_S);
@@ -190,6 +279,8 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     // level, not FSW's commanded-consumption estimate — otherwise stuck jets
     // silently diverge the gauge from reality.
     output.telemetry.prop_kg = truth.prop_kg;
+    if (outcome === 'NONE' && output.abort) outcome = 'ABORT';
+    output.telemetry.outcome = outcome;
     return output.telemetry;
   };
 
@@ -207,6 +298,9 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     },
     setController(controller) {
       fsw.setController(controller);
+    },
+    commandAbort() {
+      fsw.commandAbort();
     },
     setControlMode(mode) {
       fsw.setControlMode(mode);
