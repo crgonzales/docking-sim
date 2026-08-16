@@ -6,12 +6,14 @@ import { ModeSwitcher } from './hud/ModeSwitcher';
 import { attachManualControls } from './input/manualControls';
 import { SceneRoot } from './scene/SceneRoot';
 import { DockingCameraPiP } from './scene/DockingCameraPiP';
+import { useFlightAudio } from './hud/flightAudio';
 import { startSimEmitter, stopSimEmitter } from './telemetry/simEmitter';
 import { startScenario, stopScenario } from './telemetry/scenarioEmitter';
 
 export function App() {
   const inputElement = useRef<HTMLDivElement>(null);
   const mode = useAppModeStore((state) => state.mode);
+  useFlightAudio(mode);
 
   useEffect(() => {
     if (mode === 'SANDBOX') startSimEmitter();

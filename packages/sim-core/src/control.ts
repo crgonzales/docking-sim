@@ -50,10 +50,55 @@ export interface LqrController extends StateController {
   readonly closedLoopMatrix: Matrix6;
 }
 
+export type ManualAuthority = 'LOW' | 'HIGH';
+
+export interface ManualLimitPreset {
+  maxRate_rps: number | Vec3;
+  maxVelocity_mps: number | Vec3;
+  pulseForce_N: number | Vec3;
+  pulseTorque_Nm: number | Vec3;
+  manualForceLimit_N: number;
+  kp?: Vec3;
+  kd?: Vec3;
+}
+
+export const MANUAL_AUTHORITY_PRESETS: Record<ManualAuthority, ManualLimitPreset> = {
+  LOW: {
+    maxRate_rps: 1.5 * Math.PI / 180,
+    maxVelocity_mps: 0.5,
+    pulseForce_N: 40,
+    pulseTorque_Nm: 8,
+    manualForceLimit_N: 60,
+  },
+  HIGH: {
+    maxRate_rps: 8 * Math.PI / 180,
+    maxVelocity_mps: 1,
+    pulseForce_N: 55,
+    pulseTorque_Nm: 45,
+    manualForceLimit_N: 75,
+    kp: [250, 167, 250],
+    kd: [2000, 1333, 2000],
+  },
+};
+
+export interface ResolvedManualLimits {
+  maxRate_rps: Vec3;
+  maxVelocity_mps: Vec3;
+  pulseForce_N: Vec3;
+  pulseTorque_Nm: Vec3;
+  manualForceLimit_N: number;
+  kp_Nm_per_rad: Vec3;
+  kd_Nms_per_rad: Vec3;
+}
+
 export interface AttitudeControllerConfig {
   meanMotionRadS?: number;
   kp_Nm_per_rad?: number | Vec3;
   kd_Nms_per_rad?: number | Vec3;
+  manualKp_Nm_per_rad?: number | Vec3;
+  manualKd_Nms_per_rad?: number | Vec3;
+  manualForceLimit_N?: number;
+  initialManualAuthority?: ManualAuthority;
   maxTorque_Nm?: number | Vec3;
   maxRate_rps?: number | Vec3;
   maxVelocity_mps?: number | Vec3;
@@ -82,6 +127,8 @@ export interface ManualPulseCommand {
 export interface AttitudeController {
   /** Quaternion-error PD; q_BH and q_target_BH rotate Hill→body vectors. */
   step(q_BH_est: Quat, omega_est_body_rps: Vec3, q_target_BH?: Quat, omega_ref_body_rps?: Vec3): Vec3;
+  /** Quaternion-error PD using the active authority's manual gains. */
+  stepManualDamping(q_BH_est: Quat, omega_est_body_rps: Vec3, q_target_BH?: Quat, omega_ref_body_rps?: Vec3): Vec3;
   /** AUTO LVLH hold from q_BI, using the shared inertial/Hill frame chain. */
   stepAuto(q_BI_est: Quat, t_s: number, omega_est_body_rps: Vec3): Vec3;
   /** Capture a fresh RATE target and reset all controller/reference state. */
@@ -97,6 +144,9 @@ export interface AttitudeController {
   /** Shape normalized RATE/PULSE pilot inputs without changing state. */
   shapeRate(command: ManualCommand): RateCommandTargets;
   shapePulse(command: ManualCommand): ManualPulseCommand;
+  getResolvedManualLimits(): ResolvedManualLimits;
+  setAuthority(level: ManualAuthority): void;
+  getAuthority(): ManualAuthority;
   getReference(): ManualRateReference | null;
   reset(): void;
 }
@@ -214,21 +264,43 @@ export function createAttitudeController(config: AttitudeControllerConfig = {}):
   const kp_Nm_per_rad = asVec3(config.kp_Nm_per_rad ?? [120, 80, 120]);
   const kd_Nms_per_rad = asVec3(config.kd_Nms_per_rad ?? [180, 120, 180]);
   const maxTorque_Nm = asVec3(config.maxTorque_Nm ?? Number.POSITIVE_INFINITY);
-  const maxRate_rps = asVec3(config.maxRate_rps ?? (1.5 * Math.PI / 180));
-  const maxVelocity_mps = asVec3(config.maxVelocity_mps ?? 0.5);
-  const pulseForce_N = asVec3(config.pulseForce_N ?? 40);
-  const pulseTorque_Nm = asVec3(config.pulseTorque_Nm ?? 8);
+  const manualKp_Nm_per_rad = config.manualKp_Nm_per_rad === undefined ? undefined : asVec3(config.manualKp_Nm_per_rad);
+  const manualKd_Nms_per_rad = config.manualKd_Nms_per_rad === undefined ? undefined : asVec3(config.manualKd_Nms_per_rad);
+  const initialManualAuthority = config.initialManualAuthority ?? 'LOW';
+  if (initialManualAuthority !== 'LOW' && initialManualAuthority !== 'HIGH') throw new RangeError('initialManualAuthority must be LOW or HIGH');
   if (!Number.isFinite(meanMotionRadS)) throw new RangeError('meanMotionRadS must be finite');
   validatePositiveVector(kp_Nm_per_rad, 'kp_Nm_per_rad');
   validatePositiveVector(kd_Nms_per_rad, 'kd_Nms_per_rad');
+  if (manualKp_Nm_per_rad !== undefined) validatePositiveVector(manualKp_Nm_per_rad, 'manualKp_Nm_per_rad');
+  if (manualKd_Nms_per_rad !== undefined) validatePositiveVector(manualKd_Nms_per_rad, 'manualKd_Nms_per_rad');
   validatePositiveVector(maxTorque_Nm, 'maxTorque_Nm');
-  validatePositiveVector(maxRate_rps, 'maxRate_rps');
-  validatePositiveVector(maxVelocity_mps, 'maxVelocity_mps');
-  validatePositiveVector(pulseForce_N, 'pulseForce_N');
-  validatePositiveVector(pulseTorque_Nm, 'pulseTorque_Nm');
+  if (config.manualForceLimit_N !== undefined && (!Number.isFinite(config.manualForceLimit_N) || config.manualForceLimit_N <= 0)) {
+    throw new RangeError('manualForceLimit_N must be finite and positive');
+  }
+  if (config.maxRate_rps !== undefined) validatePositiveVector(asVec3(config.maxRate_rps), 'maxRate_rps');
+  if (config.maxVelocity_mps !== undefined) validatePositiveVector(asVec3(config.maxVelocity_mps), 'maxVelocity_mps');
+  if (config.pulseForce_N !== undefined) validatePositiveVector(asVec3(config.pulseForce_N), 'pulseForce_N');
+  if (config.pulseTorque_Nm !== undefined) validatePositiveVector(asVec3(config.pulseTorque_Nm), 'pulseTorque_Nm');
 
   const integratorState: Vec3 = [0, 0, 0];
   let reference: ManualRateReference | null = null;
+  let lastReferenceState: { q_BH_est: Quat; r_est_hill_m: Vec3 } | null = null;
+  let authority: ManualAuthority = initialManualAuthority;
+
+  const getResolvedManualLimits = (): ResolvedManualLimits => {
+    const preset = MANUAL_AUTHORITY_PRESETS[authority];
+    return {
+      maxRate_rps: asVec3(config.maxRate_rps ?? preset.maxRate_rps),
+      maxVelocity_mps: asVec3(config.maxVelocity_mps ?? preset.maxVelocity_mps),
+      pulseForce_N: asVec3(config.pulseForce_N ?? preset.pulseForce_N),
+      pulseTorque_Nm: asVec3(config.pulseTorque_Nm ?? preset.pulseTorque_Nm),
+      manualForceLimit_N: config.manualForceLimit_N ?? preset.manualForceLimit_N,
+      // LOW deliberately omits kp/kd: the omission inherits the already
+      // resolved AUTO gains, so custom AUTO gains retain today's behavior.
+      kp_Nm_per_rad: [...(manualKp_Nm_per_rad ?? preset.kp ?? kp_Nm_per_rad)],
+      kd_Nms_per_rad: [...(manualKd_Nms_per_rad ?? preset.kd ?? kd_Nms_per_rad)],
+    };
+  };
 
   const copyReference = (value: ManualRateReference): ManualRateReference => ({
     q_target_BH: cloneQuat(value.q_target_BH),
@@ -238,61 +310,87 @@ export function createAttitudeController(config: AttitudeControllerConfig = {}):
     velocity_ref_hill_mps: [...value.velocity_ref_hill_mps],
   });
 
-  const step = (
+  const stepWithGains = (
     q_BH_est: Quat,
     omega_est_body_rps: Vec3,
     q_target_BH: Quat = [1, 0, 0, 0],
     omega_ref_body_rps: Vec3 = [0, 0, 0],
+    kp: Vec3 = kp_Nm_per_rad,
+    kd: Vec3 = kd_Nms_per_rad,
   ): Vec3 => {
     // errorQuaternion(current, target) is the shortest target-relative error;
     // its vector is the correction direction for the q_BI I→B convention.
     const qError = errorQuaternion(q_BH_est, q_target_BH);
     const torque: Vec3 = [
-      -kp_Nm_per_rad[0]! * qError[1] - kd_Nms_per_rad[0]! * (omega_est_body_rps[0] - omega_ref_body_rps[0]) + integratorState[0],
-      -kp_Nm_per_rad[1]! * qError[2] - kd_Nms_per_rad[1]! * (omega_est_body_rps[1] - omega_ref_body_rps[1]) + integratorState[1],
-      -kp_Nm_per_rad[2]! * qError[3] - kd_Nms_per_rad[2]! * (omega_est_body_rps[2] - omega_ref_body_rps[2]) + integratorState[2],
+      -kp[0]! * qError[1] - kd[0]! * (omega_est_body_rps[0] - omega_ref_body_rps[0]) + integratorState[0],
+      -kp[1]! * qError[2] - kd[1]! * (omega_est_body_rps[1] - omega_ref_body_rps[1]) + integratorState[1],
+      -kp[2]! * qError[3] - kd[2]! * (omega_est_body_rps[2] - omega_ref_body_rps[2]) + integratorState[2],
     ];
     return clampTorque(torque, maxTorque_Nm);
   };
 
+  const step = (
+    q_BH_est: Quat,
+    omega_est_body_rps: Vec3,
+    q_target_BH: Quat = [1, 0, 0, 0],
+    omega_ref_body_rps: Vec3 = [0, 0, 0],
+  ): Vec3 => stepWithGains(q_BH_est, omega_est_body_rps, q_target_BH, omega_ref_body_rps);
+
+  const stepManualDamping = (
+    q_BH_est: Quat,
+    omega_est_body_rps: Vec3,
+    q_target_BH: Quat = [1, 0, 0, 0],
+    omega_ref_body_rps: Vec3 = [0, 0, 0],
+  ): Vec3 => {
+    const limits = getResolvedManualLimits();
+    return stepWithGains(q_BH_est, omega_est_body_rps, q_target_BH, omega_ref_body_rps, limits.kp_Nm_per_rad, limits.kd_Nms_per_rad);
+  };
+
   const shapeRate = (command: ManualCommand): RateCommandTargets => {
     validateNormalizedCommand(command);
+    const limits = getResolvedManualLimits();
     return {
-      bodyRate_rps: command.rotation.map((value, axis) => value * maxRate_rps[axis]!) as Vec3,
-      velocity_body_mps: command.translation.map((value, axis) => value * maxVelocity_mps[axis]!) as Vec3,
+      bodyRate_rps: command.rotation.map((value, axis) => value * limits.maxRate_rps[axis]!) as Vec3,
+      velocity_body_mps: command.translation.map((value, axis) => value * limits.maxVelocity_mps[axis]!) as Vec3,
     };
   };
 
   const shapePulse = (command: ManualCommand): ManualPulseCommand => {
     validateNormalizedCommand(command);
+    const limits = getResolvedManualLimits();
     return {
-      force_body_N: command.translation.map((value, axis) => value * pulseForce_N[axis]!) as Vec3,
-      torque_body_Nm: command.rotation.map((value, axis) => value * pulseTorque_Nm[axis]!) as Vec3,
+      force_body_N: command.translation.map((value, axis) => value * limits.pulseForce_N[axis]!) as Vec3,
+      torque_body_Nm: command.rotation.map((value, axis) => value * limits.pulseTorque_Nm[axis]!) as Vec3,
     };
+  };
+
+  const captureReference = (q_BH_est: Quat, r_est_hill_m: Vec3): void => {
+    lastReferenceState = { q_BH_est: normalizeQuaternion(q_BH_est), r_est_hill_m: [...r_est_hill_m] };
+    reference = {
+      q_target_BH: [...lastReferenceState.q_BH_est],
+      omega_ref_body_rps: rotateVector(lastReferenceState.q_BH_est, [0, 0, meanMotionRadS]),
+      r_target_hill_m: [...lastReferenceState.r_est_hill_m],
+      velocity_ref_body_mps: [0, 0, 0],
+      velocity_ref_hill_mps: [0, 0, 0],
+    };
+    integratorState[0] = 0;
+    integratorState[1] = 0;
+    integratorState[2] = 0;
   };
 
   return {
     step,
+    stepManualDamping,
     stepAuto(q_BI_est, t_s, omega_est_body_rps) {
       const q_BH_est = hillToBody(q_BI_est, t_s, meanMotionRadS);
       const omega_ref_body_rps = rotateVector(q_BH_est, [0, 0, meanMotionRadS]);
       return step(q_BH_est, omega_est_body_rps, [1, 0, 0, 0], omega_ref_body_rps);
     },
-    captureReference(q_BH_est, r_est_hill_m) {
-      reference = {
-        q_target_BH: normalizeQuaternion(q_BH_est),
-        omega_ref_body_rps: rotateVector(q_BH_est, [0, 0, meanMotionRadS]),
-        r_target_hill_m: [...r_est_hill_m],
-        velocity_ref_body_mps: [0, 0, 0],
-        velocity_ref_hill_mps: [0, 0, 0],
-      };
-      integratorState[0] = 0;
-      integratorState[1] = 0;
-      integratorState[2] = 0;
-    },
+    captureReference,
     stepRate(q_BH_est, omega_est_body_rps, r_est_hill_m, command, dt_s) {
       if (!(dt_s > 0) || !Number.isFinite(dt_s)) throw new RangeError('dt_s must be finite and positive');
       if (reference === null) this.captureReference(q_BH_est, r_est_hill_m);
+      lastReferenceState = { q_BH_est: normalizeQuaternion(q_BH_est), r_est_hill_m: [...r_est_hill_m] };
       const targets = shapeRate(command);
       const current = reference!;
       if (!vectorIsZero(targets.bodyRate_rps)) {
@@ -316,17 +414,32 @@ export function createAttitudeController(config: AttitudeControllerConfig = {}):
       );
       const outputReference = copyReference(current);
       return {
-        torque_body_Nm: step(q_BH_est, omega_est_body_rps, current.q_target_BH, current.omega_ref_body_rps),
+        torque_body_Nm: stepManualDamping(q_BH_est, omega_est_body_rps, current.q_target_BH, current.omega_ref_body_rps),
         reference: outputReference,
       };
     },
     shapeRate,
     shapePulse,
+    getResolvedManualLimits,
+    setAuthority(level) {
+      if (level !== 'LOW' && level !== 'HIGH') throw new RangeError('manual authority must be LOW or HIGH');
+      if (level === authority) return;
+      authority = level;
+      integratorState[0] = 0;
+      integratorState[1] = 0;
+      integratorState[2] = 0;
+      if (lastReferenceState !== null) captureReference(lastReferenceState.q_BH_est, lastReferenceState.r_est_hill_m);
+      else reference = null;
+    },
+    getAuthority() {
+      return authority;
+    },
     getReference() {
       return reference === null ? null : copyReference(reference);
     },
     reset() {
       reference = null;
+      lastReferenceState = null;
       integratorState[0] = 0;
       integratorState[1] = 0;
       integratorState[2] = 0;

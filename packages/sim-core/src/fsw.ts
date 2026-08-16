@@ -15,6 +15,7 @@ import {
   createPidController,
   type AttitudeControllerConfig,
   type LqrConfig,
+  type ManualAuthority,
   type PidGains,
   type StateController,
 } from './control.js';
@@ -165,6 +166,7 @@ export function createFsw(config: FswConfig): FswTick {
   const meanMotionRadS = config.attitudeControllerConfig?.meanMotionRadS ?? MEAN_MOTION_RAD_S;
   const attitudeController = createAttitudeController({
     ...(config.attitudeControllerConfig ?? {}),
+    manualForceLimit_N: config.attitudeControllerConfig?.manualForceLimit_N ?? config.manualForceLimit_N,
     meanMotionRadS,
   });
   const pid = createPidController({ gains: config.pidGains ?? DEFAULT_PID_GAINS });
@@ -176,10 +178,6 @@ export function createFsw(config: FswConfig): FswTick {
   const operatorAvailability: Record<string, boolean> = {};
   specs.forEach((spec) => { operatorAvailability[spec.id] = true; });
 
-  const manualForceLimit_N = config.manualForceLimit_N ?? 60;
-  if (!(manualForceLimit_N > 0) || !Number.isFinite(manualForceLimit_N)) {
-    throw new RangeError('manualForceLimit_N must be finite and positive');
-  }
   let selectedController: 'PID' | 'LQR' | 'MPC' = config.controller;
   let navSource: NavSource = config.navSource ?? 'PRIMARY';
   let propEstimate_kg = config.massModel.initialProp_kg;
@@ -365,7 +363,7 @@ export function createFsw(config: FswConfig): FswTick {
       // error, leaving pure -Kd(omega - omega_LVLH) on top of the pilot's
       // torque command. Without it, canted-jet quantization residue
       // integrates unopposed and tumbles the vehicle.
-      const rateDamping_Nm = attitudeController.step(
+      const rateDamping_Nm = attitudeController.stepManualDamping(
         q_BH,
         omega_est_body_rps,
         q_BH,
@@ -379,7 +377,9 @@ export function createFsw(config: FswConfig): FswTick {
     }
     if (controlMode === 'MANUAL') {
       // Cap manual translation demand so the allocator always retains torque
-      // authority (see FswConfig.manualForceLimit_N).
+      // authority. The controller owns the authority-scaled value and its
+      // config-over-preset precedence; FSW owns this application point.
+      const manualForceLimit_N = attitudeController.getResolvedManualLimits().manualForceLimit_N;
       const forceNorm_N = Math.hypot(...commandedForce_hill_N);
       if (forceNorm_N > manualForceLimit_N) {
         const scale = manualForceLimit_N / forceNorm_N;
@@ -418,6 +418,7 @@ export function createFsw(config: FswConfig): FswTick {
       outcome: 'NONE',
       abort: abortState,
       control_mode: controlMode,
+      manual_authority: attitudeController.getAuthority(),
       nav_source: navSource,
       guidance_frozen: guidanceFrozen,
       corridor_level: corridor.abortTrigger ? 'VIOLATION' : corridor.caution ? 'CAUTION' : 'NOMINAL',
@@ -468,6 +469,10 @@ export function createFsw(config: FswConfig): FswTick {
     validateManualCommand(command);
     manualCommand = cloneManualCommand(command);
   };
+  tick.setManualAuthority = (level: ManualAuthority) => {
+    attitudeController.setAuthority(level);
+  };
+  tick.getManualAuthority = () => attitudeController.getAuthority();
   tick.commandAbort = () => {
     if (abortState === 'ARMED') abortRequested = true;
   };

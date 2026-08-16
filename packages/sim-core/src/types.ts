@@ -8,6 +8,7 @@
 import type { NavDiag } from './ekf.js';
 import type { AttDiag } from './mekf.js';
 import type { AbortState } from './monitors.js';
+import type { ManualAuthority } from './control.js';
 
 export type { NavDiag } from './ekf.js';
 export type { AttDiag } from './mekf.js';
@@ -31,6 +32,8 @@ export interface RenderState {
   v_hill_mps: Vec3;
   /** q_BH rotates Hill vectors into body axes. */
   q_BH: Quat;
+  /** Truth-side fraction of each FSW window for which the jet was active. */
+  thruster_duty: Record<string, number>;
 }
 
 export interface DockingTelemetry {
@@ -76,6 +79,8 @@ export interface FswTick {
   clearGuidanceFault(): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
+  setManualAuthority(level: ManualAuthority): void;
+  getManualAuthority(): ManualAuthority;
   commandAbort(): void;
 }
 
@@ -93,6 +98,7 @@ export interface TelemetryFrame {
   outcome: 'NONE' | 'DOCKED' | 'COLLISION' | 'ABORT';
   abort: AbortState;
   control_mode: 'AUTO' | 'MANUAL';
+  manual_authority: ManualAuthority;
   nav_source: NavSource;
   guidance_frozen: boolean;
   corridor_level: 'NOMINAL' | 'CAUTION' | 'VIOLATION';

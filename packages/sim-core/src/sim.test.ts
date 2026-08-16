@@ -172,7 +172,49 @@ describe('SimLoop', () => {
     expect(render.r_hill_m).toEqual(truth.r_hill_m);
     expect(render.v_hill_mps).toEqual(truth.v_hill_mps);
     expect(render.q_BH).toEqual(hillToBody(truth.q_BI, truth.t_s));
+    const dutyBeforeMutation = render.thruster_duty.J1;
+    render.thruster_duty.J1 = dutyBeforeMutation === undefined ? 1 : dutyBeforeMutation + 1;
+    expect(first.getRenderState().thruster_duty.J1).toBe(dutyBeforeMutation);
     expect(framesFirst.every((frame) => frame.att_nees !== null && Number.isFinite(frame.att_nees))).toBe(true);
+  });
+
+  it('accumulates a short truth-side pulse into a stable FSW-window duty', () => {
+    const pulseConfig: SimConfig = {
+      ...config(),
+      fsw: {
+        ...config().fsw,
+        attitudeControllerConfig: { meanMotionRadS: 0 },
+      },
+    };
+    const sim = createSimLoop(pulseConfig, 1007);
+    sim.setControlMode('MANUAL');
+    sim.setManualSubMode('PULSE');
+    sim.setManualCommand({ translation: [0, 0, 0], rotation: [1, 0, 0] });
+
+    sim.stepTo(0.1);
+    expect(Object.values(sim.getRenderState().thruster_duty).every((duty) => duty === 0)).toBe(true);
+    sim.stepTo(0.4);
+    const duty = Object.values(sim.getRenderState().thruster_duty);
+    expect(duty.some((value) => value > 0 && value < 1)).toBe(true);
+  });
+
+  it('reports a stuck-open truth jet even while FSW commands that jet closed', () => {
+    const closedCommandConfig: SimConfig = {
+      ...config(),
+      fsw: {
+        ...config().fsw,
+        attitudeControllerConfig: { meanMotionRadS: 0 },
+      },
+    };
+    const sim = createSimLoop(closedCommandConfig, 1008);
+    sim.setControlMode('MANUAL');
+    sim.setManualSubMode('PULSE');
+    sim.setManualCommand({ translation: [0, 0, 0], rotation: [0, 0, 0] });
+    sim.injectThrusterStuck('J1', 'OPEN');
+
+    const frame = sim.stepTo(0.1).at(-1)!;
+    expect(frame.thruster_duty.J1).toBe(0);
+    expect(sim.getRenderState().thruster_duty.J1).toBeCloseTo(1, 12);
   });
 
   it('damps a tumbling start toward LVLH rate under closed-loop AUTO attitude control', () => {

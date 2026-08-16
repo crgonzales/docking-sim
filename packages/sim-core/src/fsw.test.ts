@@ -109,6 +109,17 @@ describe('FSW composition', () => {
     expect(fsw({ ...sensor, t_s: 0.1 }).telemetry.controller).toBe('LQR');
   });
 
+  it('publishes and switches the active manual authority through the command surface', () => {
+    const fsw = createFsw(makeConfig());
+    const sensors = zeroNoiseSensor(25);
+    const truth = makeTruth();
+    expect(fsw.getManualAuthority()).toBe('LOW');
+    expect(fsw(sensors.sample({ ...truth, t_s: 0 })).telemetry.manual_authority).toBe('LOW');
+    fsw.setManualAuthority('HIGH');
+    expect(fsw.getManualAuthority()).toBe('HIGH');
+    expect(fsw(sensors.sample({ ...truth, t_s: 0.1 })).telemetry.manual_authority).toBe('HIGH');
+  });
+
   it('runs AUTO and MANUAL mode branches through a deterministic command surface', () => {
     const first = createFsw(makeConfig());
     const second = createFsw(makeConfig());
@@ -281,6 +292,27 @@ describe('FSW composition', () => {
     expect(first.abort_state).toBe('BURNING');
     expect(second.abort).toBe(true);
     expect(['BURNING', 'COASTING']).toContain(second.abort_state);
+  });
+
+  it('keeps ABORT COASTING damping identical across manual authority levels', () => {
+    const coastOutput = (authority: 'LOW' | 'HIGH') => {
+      const fsw = createFsw({
+        ...makeConfig(),
+        attitudeControllerConfig: { initialManualAuthority: authority },
+      });
+      const sensors = zeroNoiseSensor(24);
+      const truth = { ...makeTruth(), w_body_rps: [0.02, -0.015, 0.01] as [number, number, number] };
+      fsw.commandAbort();
+      for (let tick = 0; tick < 320; tick += 1) {
+        const output = fsw(sensors.sample({ ...truth, t_s: tick * 0.1 }));
+        if (output.abort_state === 'COASTING') return output;
+      }
+      throw new Error('ABORT did not reach COASTING');
+    };
+
+    const low = coastOutput('LOW');
+    const high = coastOutput('HIGH');
+    expect(high.thrusters).toEqual(low.thrusters);
   });
 
   it('shows corridor caution but never auto-aborts in MANUAL mode', () => {

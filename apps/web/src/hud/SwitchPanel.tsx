@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FINAL_APPROACH_01 } from '@docking/scenario';
-import type { ControlMode, NavSource } from '@docking/sim-core';
+import type { ControlMode, ManualAuthority, NavSource } from '@docking/sim-core';
 import { useAppModeStore } from '../appModeStore';
 import { playClick, setMasterAlarmTone } from './panelAudio';
 import { useScenarioStore } from '../telemetry/scenarioStore';
@@ -9,6 +9,7 @@ import {
   dispatchPlayerAction,
   isolateThruster,
   setControlMode,
+  setManualAuthority,
   setNavSource,
 } from '../telemetry/scenarioEmitter';
 
@@ -103,6 +104,7 @@ export function SwitchPanel() {
   const telemetry = scenarioState?.telemetry;
   const navSource: NavSource = telemetry?.nav_source ?? 'PRIMARY';
   const controlMode: ControlMode = telemetry?.control_mode ?? 'AUTO';
+  const manualAuthority: ManualAuthority = telemetry?.manual_authority ?? 'LOW';
   const controller = telemetry?.controller ?? FINAL_APPROACH_01.initial.controller;
 
   const onJ6Click = (): void => {
@@ -189,6 +191,22 @@ export function SwitchPanel() {
           onClick={onManualClick}
           className={controlClass('AUTO_MANUAL', hintControl)}
         />
+
+        <div className={controlClass('MANUAL_AUTH', hintControl)}>
+          <span className="mission-control-label">MANUAL AUTH</span>
+          <div className="mission-segmented">
+            {(['LOW', 'HIGH'] as const).map((level) => (
+              <button
+                type="button"
+                key={level}
+                className={manualAuthority === level ? 'active' : ''}
+                onClick={() => { playClick(); setManualAuthority(level); }}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <button
           type="button"

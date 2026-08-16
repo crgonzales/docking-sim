@@ -4,6 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import { Group, MathUtils, Quaternion } from 'three';
 import { conjugateQuaternion } from '@docking/sim-core';
 import { useTelemetryBus } from '../telemetry/bus';
+import { ThrusterPlumes } from './ThrusterPlumes';
 
 /**
  * Target station (origin) and chaser (bus-driven) in the Hill frame:
@@ -150,6 +151,7 @@ function Chaser() {
 
   return (
     <group ref={ref} position={[0, -250, 12]}>
+      <ThrusterPlumes />
       {USE_GLTF_MODELS ? (
         <CraftErrorBoundary fallback={<PrimitiveChaser />}>
           <Suspense fallback={null}>

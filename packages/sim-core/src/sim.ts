@@ -11,6 +11,7 @@ import {
 } from './attitude.js';
 import { insideCaptureEnvelope } from './corridor.js';
 import { createFsw, type FswConfig } from './fsw.js';
+import type { ManualAuthority } from './control.js';
 import { inverseMatrix } from './linalg.js';
 import { createRng } from './rng.js';
 import { createSensorModel, type SensorDegradeConfig, type SensorModel, type SensorModelConfig } from './sensors.js';
@@ -63,6 +64,7 @@ export interface SimLoop {
   clearGuidanceFault(): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
+  setManualAuthority(level: ManualAuthority): void;
   isolateThruster(id: string): void;
   injectThrusterStuck(id: string, state: 'OPEN' | 'CLOSED'): void;
   injectVelocityBias(dv_mps: Vec3): void;
@@ -77,6 +79,7 @@ export type SimOutcome = 'NONE' | 'DOCKED' | 'COLLISION' | 'ABORT';
 const IDENTITY_QUATERNION: Quat = [1, 0, 0, 0];
 const TRUTH_TICK_S = 1 / TRUTH_HZ;
 const FSW_TICKS_PER_WINDOW = TRUTH_HZ / FSW_HZ;
+const FSW_WINDOW_S = FSW_TICKS_PER_WINDOW * TRUTH_TICK_S;
 const STATION_PORT_HILL: Vec3 = [0, -8.7, 0];
 const CHASER_PORT_BODY: Vec3 = [0, 1.7, 0];
 /**
@@ -185,6 +188,8 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
   };
   let truthTickIndex = 0;
   let remainingOnTimes: ThrusterCommand = {};
+  let accumulatedActiveOnTime_s: Record<string, number> = Object.fromEntries(specs.map((spec) => [spec.id, 0]));
+  let latchedThrusterDuty: Record<string, number> = Object.fromEntries(specs.map((spec) => [spec.id, 0]));
   let outcome: SimOutcome = 'NONE';
   let docked = false;
   let pendingVelocityBias_mps: Vec3 | null = null;
@@ -267,6 +272,10 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
       // jets would never fire in truth.
       minOnTime_s: 0,
     });
+    for (const spec of specs) {
+      accumulatedActiveOnTime_s[spec.id] = (accumulatedActiveOnTime_s[spec.id] ?? 0)
+        + (application.activeOnTime_s[spec.id] ?? 0);
+    }
     truth = stepTruth(truth, {
       dt_s: TRUTH_TICK_S,
       externalSpecificForce_body_mps2: application.specificForce_body_mps2,
@@ -281,6 +290,14 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
       }
     }
     truthTickIndex += 1;
+  };
+
+  const latchThrusterDuty = (): void => {
+    latchedThrusterDuty = Object.fromEntries(specs.map((spec) => [
+      spec.id,
+      Math.max(0, Math.min(1, (accumulatedActiveOnTime_s[spec.id] ?? 0) / FSW_WINDOW_S)),
+    ]));
+    accumulatedActiveOnTime_s = Object.fromEntries(specs.map((spec) => [spec.id, 0]));
   };
 
   const runFswTick = (): TelemetryFrame => {
@@ -305,7 +322,10 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
       const frames: TelemetryFrame[] = [];
       while (truthTickIndex < targetTickIndex) {
         applyOneTruthTick();
-        if (truthTickIndex % FSW_TICKS_PER_WINDOW === 0) frames.push(runFswTick());
+        if (truthTickIndex % FSW_TICKS_PER_WINDOW === 0) {
+          latchThrusterDuty();
+          frames.push(runFswTick());
+        }
       }
       return frames;
     },
@@ -332,6 +352,9 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     },
     setManualCommand(command) {
       fsw.setManualCommand(command);
+    },
+    setManualAuthority(level) {
+      fsw.setManualAuthority(level);
     },
     isolateThruster(id) {
       if (!specs.some((spec) => spec.id === id)) throw new RangeError(`unknown thruster ${id}`);
@@ -362,6 +385,7 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
         r_hill_m: cloneVec3(truth.r_hill_m),
         v_hill_mps: cloneVec3(truth.v_hill_mps),
         q_BH: hillToBody(truth.q_BI, truth.t_s),
+        thruster_duty: { ...latchedThrusterDuty },
       };
     },
   };

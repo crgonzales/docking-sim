@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.7.0` | 2    | feat: flight feel — selectable manual authority, truth-driven thruster plumes & procedural RCS audio |
 | `0.6.0` | 1    | feat: Phase 5 guided scenario mode, Monte Carlo analysis & mission switch panel |
 | `0.5.0` | 1    | feat: Phase 4 MPC terminal approach, passive abort safety & flight-deck UX |
 | `0.4.2` | 1    | feat: KSP-style manual controls (Shift/Ctrl thrust, WASD pitch/yaw, QE roll, IJKL translate) |
@@ -12,6 +13,14 @@
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
+
+- **v0.7.0 (Flight Feel - Week 2, 15-08-2026)**:
+  - **Controls**: measurement found manual flight limited by both a 1.5 deg/s cap (~6% of available torque) and a slow, underdamped attitude loop (32% overshoot, >15 s to settle); manual now resolves through LOW/HIGH authority presets with their own gains, hitting commanded rate in 1.5 s at <=10% overshoot on HIGH while LOW reproduces v0.6.0 exactly
+  - **Safety**: manual gains route through a new `stepManualDamping`, leaving `step()`/`stepAuto()` on AUTO gains — `fsw.ts` shares `step()` with ABORT COASTING damping, and a test asserts abort torque is authority-invariant
+  - **Plumes**: per-jet duty accumulated across truth ticks and latched at the FSW boundary (single-tick sampling would alias short pulses); truth-sourced, so a stuck-open jet renders even when FSW thinks it is closed; shader falloff with hot core, allocation-free render loop
+  - **Audio**: shared AudioContext + master gain so one mute covers all layers; a single pooled noise voice tracks aggregate duty rather than one node per jet per tick; contact thump on DOCKED/COLLISION only, stingers from scenario state, teardown on HUD unmount
+  - **Review**: review loop 2 rounds -> APPROVED with observations (`CR_w2_v0.7.0.md`); 125 tests
+  - **Open**: 60 fps benchmark and integrated flight/audio check need real hardware; plume visual pass landed post-verdict and was not re-reviewed
 
 - **v0.6.0 (Phase 5: Guided Scenario + Monte Carlo - Week 1, 07-08-2026)**:
   - **Scenario**: new pure-TS `@docking/scenario` package — spec-v1 schema + strict validator, `FINAL_APPROACH_01` ("Final Approach" timed emergency), `ScenarioDirector` acting only through public SimLoop APIs (honesty invariant compile- and test-enforced), deterministic perfect-operator bot

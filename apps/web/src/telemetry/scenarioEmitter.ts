@@ -3,6 +3,7 @@ import {
   createSimLoop,
   type ControlMode,
   type ManualCommand,
+  type ManualAuthority,
   type ManualSubMode,
   type NavSource,
   type SimLoop,
@@ -104,6 +105,10 @@ export function setManualSubMode(mode: ManualSubMode): void {
 
 export function setManualCommand(command: ManualCommand): void {
   sim?.setManualCommand(command);
+}
+
+export function setManualAuthority(level: ManualAuthority): void {
+  sim?.setManualAuthority(level);
 }
 
 export function commandAbort(): void {

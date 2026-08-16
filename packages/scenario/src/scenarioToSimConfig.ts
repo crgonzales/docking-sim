@@ -52,6 +52,12 @@ export function scenarioToSimConfig(initial: InitialConditions): SimConfig {
           covariance: cloneMatrix(SANDBOX_NAV_COVARIANCE),
         },
       },
+      // Keep scenario normalized manual commands on the legacy LOW preset.
+      // Pin the level only so a mission operator can still switch to HIGH;
+      // manual limit overrides would outrank the authority presets.
+      attitudeControllerConfig: {
+        initialManualAuthority: 'LOW',
+      },
       // No mekfConfig: like the sandbox config, the MEKF lazy-initializes
       // from the first star-tracker sample rather than a truth-known prior.
     },

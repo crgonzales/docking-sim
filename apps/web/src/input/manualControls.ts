@@ -1,4 +1,4 @@
-import { FSW_HZ, type ManualCommand } from '@docking/sim-core';
+import { FSW_HZ, type ManualAuthority, type ManualCommand } from '@docking/sim-core';
 import { getLatestFrame } from '../telemetry/bus';
 import { useAppModeStore } from '../appModeStore';
 import {
@@ -6,6 +6,7 @@ import {
   cycleController,
   setControlMode,
   setManualCommand,
+  setManualAuthority,
   setManualSubMode,
 } from '../telemetry/simEmitter';
 import {
@@ -13,6 +14,7 @@ import {
   cycleController as scenarioCycleController,
   setControlMode as scenarioSetControlMode,
   setManualCommand as scenarioSetManualCommand,
+  setManualAuthority as scenarioSetManualAuthority,
   setManualSubMode as scenarioSetManualSubMode,
 } from '../telemetry/scenarioEmitter';
 import { bindingForCode, bindingForKey, codesFor } from './bindings';
@@ -50,6 +52,11 @@ function forwardManualCommand(command: ManualCommand): void {
   else setManualCommand(command);
 }
 
+function forwardManualAuthority(level: ManualAuthority): void {
+  if (useAppModeStore.getState().mode === 'MISSION') scenarioSetManualAuthority(level);
+  else setManualAuthority(level);
+}
+
 function forwardAbort(): void {
   if (useAppModeStore.getState().mode === 'MISSION') scenarioCommandAbort();
   else commandAbort();
@@ -68,8 +75,10 @@ export function attachManualControls(element: HTMLElement): () => void {
   let lastY = 0;
   let controlMode = getLatestFrame()?.control_mode ?? 'AUTO';
   let manualSubMode = getLatestFrame()?.manual_sub_mode ?? 'RATE';
+  let manualAuthority: ManualAuthority = getLatestFrame()?.manual_authority ?? 'LOW';
   let modeCommandPending = false;
   let subModeCommandPending = false;
+  let authorityCommandPending = false;
 
   const emitCommand = (): void => {
     const frame = getLatestFrame();
@@ -83,6 +92,10 @@ export function attachManualControls(element: HTMLElement): () => void {
     if (frame?.manual_sub_mode !== null && frame?.manual_sub_mode !== undefined) {
       if (subModeCommandPending && frame.manual_sub_mode === manualSubMode) subModeCommandPending = false;
       if (!subModeCommandPending && frame.manual_sub_mode !== manualSubMode) manualSubMode = frame.manual_sub_mode;
+    }
+    if (frame?.manual_authority !== undefined) {
+      if (authorityCommandPending && frame.manual_authority === manualAuthority) authorityCommandPending = false;
+      if (!authorityCommandPending && frame.manual_authority !== manualAuthority) manualAuthority = frame.manual_authority;
     }
     if (controlMode !== 'MANUAL') return;
 
@@ -122,6 +135,11 @@ export function attachManualControls(element: HTMLElement): () => void {
         manualSubMode = manualSubMode === 'RATE' ? 'PULSE' : 'RATE';
         subModeCommandPending = true;
         forwardManualSubMode(manualSubMode);
+        break;
+      case 'toggleManualAuthority':
+        manualAuthority = manualAuthority === 'LOW' ? 'HIGH' : 'LOW';
+        authorityCommandPending = true;
+        forwardManualAuthority(manualAuthority);
         break;
       case 'cycleController':
         forwardCycleController();

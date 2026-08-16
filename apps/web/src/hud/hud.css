@@ -139,6 +139,33 @@
   background: rgba(240, 180, 41, 0.12);
 }
 
+.hud-audio-control {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: auto;
+}
+
+.hud-audio-control button,
+.hud-audio-control input {
+  pointer-events: auto;
+}
+
+.hud-audio-control button {
+  padding: 3px 7px;
+  border: 1px solid var(--hud-green-dim);
+  color: var(--hud-green);
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.hud-audio-control input[type='range'] {
+  width: 72px;
+  accent-color: var(--hud-green);
+}
+
 .hud-clock {
   min-width: 130px;
   text-align: right;

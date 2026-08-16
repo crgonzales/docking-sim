@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { hillToBody, smallAngleExp } from './attitude.js';
 import { stepTruth } from './dynamics.js';
 import { createGuidance } from './guidance.js';
-import { createAttitudeController, createLqrController, createPidController } from './control.js';
+import {
+  createAttitudeController,
+  createLqrController,
+  createPidController,
+  MANUAL_AUTHORITY_PRESETS,
+} from './control.js';
 import type { State6 } from './ekf.js';
 import type { TruthState, Vec3 } from './types.js';
 
@@ -117,19 +122,69 @@ describe('guidance controllers', () => {
     expect(Math.hypot(...recaptured.torque_body_Nm)).toBeLessThan(8);
   });
 
+  it('switches authority without a rate-reference jump', () => {
+    const q_BH: [number, number, number, number] = [1, 0, 0, 0];
+    const r_hill_m: Vec3 = [4, -8, 2];
+    const omega_body_rps: Vec3 = [0.01, -0.02, 0.015];
+    const controller = createAttitudeController({ initialManualAuthority: 'LOW' });
+    controller.captureReference(q_BH, r_hill_m);
+    controller.stepRate(q_BH, omega_body_rps, r_hill_m, {
+      translation: [0, 0, 0],
+      rotation: [1, 0, 0],
+    }, 0.1);
+
+    controller.setAuthority('HIGH');
+    expect(controller.getAuthority()).toBe('HIGH');
+    const recaptured = controller.getReference();
+    expect(recaptured).toEqual({
+      q_target_BH: q_BH,
+      omega_ref_body_rps: recaptured!.omega_ref_body_rps,
+      r_target_hill_m: r_hill_m,
+      velocity_ref_body_mps: [0, 0, 0],
+      velocity_ref_hill_mps: [0, 0, 0],
+    });
+    const switched = controller.stepRate(q_BH, omega_body_rps, r_hill_m, {
+      translation: [0, 0, 0],
+      rotation: [0, 0, 0],
+    }, 0.1);
+    expect(switched.reference.q_target_BH).toEqual(q_BH);
+    expect(switched.reference.r_target_hill_m).toEqual(r_hill_m);
+
+    const switchedTruth = stepTruth({
+      t_s: 0,
+      r_hill_m,
+      v_hill_mps: [0, 0, 0],
+      q_BI: q_BH,
+      w_body_rps: omega_body_rps,
+      prop_kg: 24,
+    }, { dt_s: 0.01, torque_body_Nm: switched.torque_body_Nm });
+    expect(Math.hypot(
+      switchedTruth.w_body_rps[0] - omega_body_rps[0],
+      switchedTruth.w_body_rps[1] - omega_body_rps[1],
+      switchedTruth.w_body_rps[2] - omega_body_rps[2],
+    )).toBeLessThan(0.01);
+  });
+
   it('compensates the LVLH base rate when holding still in Hill', () => {
     const controller = createAttitudeController();
     const meanMotionRadS = 0.001;
     const hold = createAttitudeController({ meanMotionRadS });
     const torque = hold.stepAuto([1, 0, 0, 0], 0, [0, 0, meanMotionRadS]);
     expect(Math.hypot(...torque)).toBeLessThan(1e-9);
+    const low = controller.getResolvedManualLimits();
+    const lowPreset = MANUAL_AUTHORITY_PRESETS.LOW;
+    const expand = (value: number | Vec3): Vec3 => typeof value === 'number' ? [value, value, value] : [...value];
+    expect(low.maxRate_rps).toEqual(expand(lowPreset.maxRate_rps));
+    expect(low.maxVelocity_mps).toEqual(expand(lowPreset.maxVelocity_mps));
+    expect(low.pulseForce_N).toEqual(expand(lowPreset.pulseForce_N));
+    expect(low.pulseTorque_Nm).toEqual(expand(lowPreset.pulseTorque_Nm));
     expect(controller.shapeRate({ translation: [1, -1, 0.5], rotation: [1, 0, -1] })).toEqual({
-      bodyRate_rps: [1.5 * Math.PI / 180, 0, -1.5 * Math.PI / 180],
-      velocity_body_mps: [0.5, -0.5, 0.25],
+      bodyRate_rps: [low.maxRate_rps[0], 0, -low.maxRate_rps[2]],
+      velocity_body_mps: [low.maxVelocity_mps[0], -low.maxVelocity_mps[1], low.maxVelocity_mps[2] / 2],
     });
     expect(controller.shapePulse({ translation: [1, 0, -1], rotation: [0, 0.5, 0] })).toEqual({
-      force_body_N: [40, 0, -40],
-      torque_body_Nm: [0, 4, 0],
+      force_body_N: [low.pulseForce_N[0], 0, -low.pulseForce_N[2]],
+      torque_body_Nm: [0, low.pulseTorque_Nm[1] / 2, 0],
     });
   });
 });

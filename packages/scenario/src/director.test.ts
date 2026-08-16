@@ -18,6 +18,7 @@ function frame(t_s: number, overrides: Partial<TelemetryFrame> = {}): TelemetryF
     outcome: 'NONE',
     abort: 'ARMED',
     control_mode: 'AUTO',
+    manual_authority: 'LOW',
     nav_source: 'PRIMARY',
     guidance_frozen: false,
     corridor_level: 'NOMINAL',
@@ -47,6 +48,7 @@ function makePort(nextFrame: (t_s: number) => TelemetryFrame): ScenarioSimPort &
     clearGuidanceFault: vi.fn(),
     setManualSubMode: vi.fn(),
     setManualCommand: vi.fn(),
+    setManualAuthority: vi.fn(),
     isolateThruster: vi.fn(),
     injectThrusterStuck: vi.fn(),
     injectVelocityBias: vi.fn(() => { port.velocityBiases += 1; }),
@@ -140,4 +142,3 @@ describe('ScenarioDirector', () => {
     expect(director.tick(1).outcome).toBeNull();
   });
 });
-

@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.6.0** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.7.0** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim
 
@@ -36,6 +36,13 @@ Inside:
   **Monte Carlo analysis screen** (seeded batch runs in a Web Worker pool,
   outcome/grade/prop/time-margin histograms) — spec in
   `docs/scenario-mode-spec.md`, mission modes: SANDBOX / MISSION / ANALYSIS
+- Flight feel (v0.7.0): **selectable manual authority** (`G` toggles LOW/HIGH —
+  LOW keeps the docking-realistic 1.5 °/s proximity-ops limits, HIGH opens up the
+  vehicle's real 9–15 °/s² torque authority, with AUTO untouched either way),
+  **truth-driven thruster plumes** (per-jet duty accumulated from actual firings,
+  so a stuck-open jet visibly fires even when flight software thinks it is closed)
+  and a **procedural RCS soundscape** (pooled WebAudio voices tracking jet duty,
+  ambient hum, contact thump, outcome stingers)
 - Project docs under `docs/` — architecture, plans, changelogs, code reviews
 - CI workflow (install + test)
 
@@ -47,6 +54,7 @@ KSP-style layout (rotation on WASD, translation on Shift/Ctrl + IJKL):
 | --- | --- |
 | `M` | toggle AUTO / MANUAL |
 | `T` | toggle RATE (fly-by-wire w/ hold) / PULSE (direct) |
+| `G` | toggle LOW / HIGH manual authority (docking-realistic vs. punchy) |
 | `V` | cycle controller: PID → LQR → MPC |
 | `C` | cycle camera: cinematic → chase → cockpit |
 | `H` / `?` | keybinds overlay |

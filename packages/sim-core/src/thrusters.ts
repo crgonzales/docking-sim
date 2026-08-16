@@ -20,6 +20,9 @@ export interface ThrusterSpec {
   thrust_N: number;
 }
 
+/** Public jet placement consumed by renderers; force magnitude stays sim-side. */
+export type ThrusterGeometry = Pick<ThrusterSpec, 'id' | 'position_body_m' | 'direction_body'>;
+
 export interface ThrusterModelConfig {
   specs?: readonly ThrusterSpec[];
   minOnTime_s?: number;
@@ -91,6 +94,15 @@ export const DRACO_THRUSTER_SPECS: readonly ThrusterSpec[] = Object.freeze([
   ...cornerJets(1, -1, 2),
   ...cornerJets(1, 1, 3),
 ]);
+
+/** Body-frame jet geometry for consumers that do not need propulsion data. */
+export const DRACO_THRUSTER_GEOMETRY: readonly ThrusterGeometry[] = Object.freeze(
+  DRACO_THRUSTER_SPECS.map(({ id, position_body_m, direction_body }) => ({
+    id,
+    position_body_m: [...position_body_m] as Vec3,
+    direction_body: [...direction_body] as Vec3,
+  })),
+);
 
 export const DEFAULT_THRUSTER_SPECS = DRACO_THRUSTER_SPECS;
 

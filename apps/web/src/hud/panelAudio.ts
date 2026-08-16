@@ -1,42 +1,41 @@
 /** Minimal WebAudio panel sounds: switch clicks and the master-alarm tone.
- *  Synthesized (no assets); the AudioContext resumes lazily on the first
- *  user gesture, so pre-interaction alarm starts fail silently by design. */
+ *  Synthesized (no assets); the shared AudioContext resumes lazily on the
+ *  first user gesture, so pre-interaction alarm starts fail silently by design. */
 
-let ctx: AudioContext | null = null;
+import { getAudioContext, getMasterGain } from './audioContext';
+
 let alarmOscillator: OscillatorNode | null = null;
 let alarmGain: GainNode | null = null;
 
-function audioContext(): AudioContext | null {
-  if (typeof AudioContext === 'undefined') return null;
-  if (ctx === null) ctx = new AudioContext();
-  if (ctx.state === 'suspended') void ctx.resume().catch(() => undefined);
-  return ctx;
-}
-
 /** Short filtered blip approximating a mechanical switch click. */
 export function playClick(): void {
-  const audio = audioContext();
-  if (audio === null || audio.state !== 'running') return;
+  const audio = getAudioContext();
+  const output = getMasterGain();
+  if (audio === null || output === null || audio.state !== 'running') return;
   const oscillator = audio.createOscillator();
   const gain = audio.createGain();
   oscillator.type = 'square';
   oscillator.frequency.value = 2200;
   gain.gain.setValueAtTime(0.08, audio.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.03);
-  oscillator.connect(gain).connect(audio.destination);
+  oscillator.connect(gain).connect(output);
   oscillator.start();
   oscillator.stop(audio.currentTime + 0.035);
 }
 
 /** Start/stop the pulsed master-alarm tone. Idempotent per state. */
 export function setMasterAlarmTone(active: boolean): void {
-  const audio = audioContext();
-  if (!active || audio === null || audio.state !== 'running') {
+  if (!active) {
     alarmOscillator?.stop();
+    alarmOscillator?.disconnect();
+    alarmGain?.disconnect();
     alarmOscillator = null;
     alarmGain = null;
     return;
   }
+  const audio = getAudioContext();
+  const output = getMasterGain();
+  if (audio === null || output === null || audio.state !== 'running') return;
   if (alarmOscillator !== null) return;
   alarmOscillator = audio.createOscillator();
   alarmGain = audio.createGain();
@@ -49,6 +48,6 @@ export function setMasterAlarmTone(active: boolean): void {
     alarmGain.gain.setValueAtTime(0.05, start + pulse * 0.5);
     alarmGain.gain.setValueAtTime(0, start + pulse * 0.5 + 0.25);
   }
-  alarmOscillator.connect(alarmGain).connect(audio.destination);
+  alarmOscillator.connect(alarmGain).connect(output);
   alarmOscillator.start();
 }

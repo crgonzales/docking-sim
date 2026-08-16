@@ -60,6 +60,7 @@ Monte Carlo batches run `@docking/scenario` in a Web Worker pool
 3. ~~6-DOF attitude + MEKF + docking camera + manual fly~~ ✅ v0.4.0 (rigid-body truth + thruster torques, MEKF w/ gyro-bias states, 6-target allocator, AUTO/MANUAL-RATE/PULSE via deterministic command API, truth render channel, camera rig + docking PiP)
 4. ~~MPC terminal approach + passive abort safety~~ ✅ v0.5.0 (active-set QP + 1 Hz condensed CW MPC w/ soft corridor/terminal constraints + probed octahedral authority; two-level corridor monitor, keep-out-proven passive abort, truth-side DOCKED/COLLISION/ABORT outcome latch)
 5. ~~Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`)~~ ✅ v0.6.0 (`packages/scenario`: schema v1 + validator, ScenarioDirector w/ merged failure injection + BRIEFING/RUNNING/DEBRIEF, perfect-operator bot, seeded MC runner; sim-core nav-source/guidance-freeze/vel-bias command surface; MISSION switch panel + ANALYSIS worker-pool MC screen; demo video remains a manual follow-up)
+6. ~~Flight feel: manual authority, thruster plumes, procedural audio~~ ✅ v0.7.0 (`MANUAL_AUTHORITY_PRESETS` LOW/HIGH resolving through `getResolvedManualLimits()`, manual gains isolated on `stepManualDamping` so `step()`/`stepAuto()` — and the shared ABORT COASTING damping path — keep AUTO gains; `setManualAuthority` deterministic command; truth-side per-jet duty in `RenderState`, accumulated across truth ticks and latched at the FSW boundary; shader plumes + pooled-voice WebAudio over a shared master gain. Open: 60 fps benchmark and integrated flight/audio check need real hardware)
 
 ## Testing gate (oracle tests, not vibes)
 
@@ -81,3 +82,11 @@ Monte Carlo batches run `@docking/scenario` in a Web Worker pool
   schema unknown-field rejection, honesty-invariant static import check
   (implemented: `packages/scenario/src/acceptance.test.ts`; director beat
   rules + MC scoring/seed-uniqueness in `director.test.ts`, `monteCarlo.test.ts`)
+- Manual authority: HIGH step response (≥90% of commanded by 1.5 s, ≤110% peak,
+  settled ±5% by 3 s) with LOW unchanged; paired tumble regression (commanded-axis
+  rate ≥85% of the rotation-only baseline under full translation, off-axis rates
+  <1 deg/s); abort-damping torque invariant across authority levels; authority-switch
+  continuity (implemented: `manual-rate.test.ts`, `control.test.ts`, `fsw.test.ts`)
+- Render duty honesty: a sub-window pulse survives accumulation rather than being
+  aliased away, and a stuck-open jet reports duty FSW never commanded (implemented:
+  `sim.test.ts`)

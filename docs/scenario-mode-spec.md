@@ -301,11 +301,13 @@ plus `debrief_if_causal` of the latest uncleared/escalated beat, if any.
 | `RCS_ISO_J6` | guarded valve toggle (per jet: `RCS_ISO_<id>`) | `ISOLATE_THRUSTER`        |
 | `CTRL_MODE`  | 3-pos selector PID/LQR/MPC      | `SET_CONTROLLER`                         |
 | `AUTO_MANUAL`| guarded cover + toggle          | `SET_CONTROL_MODE`                       |
+| `MANUAL_AUTH`| 2-pos toggle LOW/HIGH           | `SET_MANUAL_AUTHORITY`                   |
 | `MASTER_ALARM`| lit pushbutton                 | silences audio only; never gates a beat  |
 | `ABORT`      | guarded cover + pushbutton      | manual abort via public API (always available) |
 
 Panel behaviors: guarded switches need two interactions (lift, flip); every flip
-has a click sound; C&W lights mirror `prompts.alarm`; in GUIDED mode the
+has a click sound; `MANUAL_AUTH` changes operator authority and never gates a
+beat; C&W lights mirror `prompts.alarm`; in GUIDED mode the
 `hint_control` glows with the callout beside it; NO_ASSIST shows callouts only.
 
 ---

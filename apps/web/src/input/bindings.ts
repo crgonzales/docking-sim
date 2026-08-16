@@ -13,6 +13,7 @@ export interface Binding {
 export const BINDINGS: readonly Binding[] = [
   { id: 'toggleControlMode', code: 'KeyM', label: 'M', group: 'MODE', description: 'toggle AUTO / MANUAL' },
   { id: 'toggleManualSubMode', code: 'KeyT', label: 'T', group: 'MODE', description: 'toggle RATE / PULSE' },
+  { id: 'toggleManualAuthority', code: 'KeyG', label: 'G', group: 'MODE', description: 'toggle LOW / HIGH manual authority' },
   { id: 'cycleController', code: 'KeyV', label: 'V', group: 'MODE', description: 'cycle PID / LQR / MPC' },
   { id: 'cycleView', code: 'KeyC', label: 'C', group: 'CAMERA', description: 'cycle camera view' },
   { id: 'toggleKeybinds', code: 'KeyH', label: 'H', group: 'CAMERA', description: 'toggle controls overlay' },
