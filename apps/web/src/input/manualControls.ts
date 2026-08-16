@@ -26,6 +26,11 @@ const ZERO_COMMAND: ManualCommand = {
 };
 const ORBIT_SENSITIVITY_RAD_PX = 0.005;
 const ZOOM_STEP = 1.1;
+/** Keyboard camera cadence — decoupled from the 10 Hz FSW command loop, which
+ *  is far too coarse for smooth orbiting. ~0.85 rad/s orbit; zoom ~2.4x/s. */
+const CAMERA_TICK_MS = 33;
+const CAMERA_ORBIT_STEP_RAD = 0.028;
+const CAMERA_ZOOM_STEP_PER_TICK = 1.03;
 const TICK_MS = 1000 / FSW_HZ;
 
 function held(pressed: Set<string>, id: string): boolean {
@@ -122,6 +127,13 @@ export function attachManualControls(element: HTMLElement): () => void {
       event.preventDefault();
       return;
     }
+    // Camera orbit/zoom keys are held-style like flight keys, but drive the
+    // view store from their own tick rather than the FSW-rate command loop.
+    if (binding.id.startsWith('cameraOrbit') || binding.id.startsWith('cameraZoom')) {
+      if (binding.code !== null) pressed.add(binding.code);
+      event.preventDefault();
+      return;
+    }
     if (event.repeat) return;
 
     switch (binding.id) {
@@ -146,6 +158,9 @@ export function attachManualControls(element: HTMLElement): () => void {
         break;
       case 'cycleView':
         useViewStore.getState().cycleMode();
+        break;
+      case 'toggleDebugCamera':
+        useViewStore.getState().toggleDebug();
         break;
       case 'toggleKeybinds':
       case 'toggleKeybindsQuestion':
@@ -213,9 +228,20 @@ export function attachManualControls(element: HTMLElement): () => void {
   window.addEventListener('pointercancel', stopDragging);
   document.addEventListener('visibilitychange', onVisibilityChange);
   const timer = window.setInterval(emitCommand, TICK_MS);
+  const cameraTick = (): void => {
+    const az = (held(pressed, 'cameraOrbitRight') ? 1 : 0) - (held(pressed, 'cameraOrbitLeft') ? 1 : 0);
+    const el = (held(pressed, 'cameraOrbitUp') ? 1 : 0) - (held(pressed, 'cameraOrbitDown') ? 1 : 0);
+    if (az !== 0 || el !== 0) {
+      useViewStore.getState().orbitBy(az * CAMERA_ORBIT_STEP_RAD, el * CAMERA_ORBIT_STEP_RAD);
+    }
+    const zoom = (held(pressed, 'cameraZoomOut') ? 1 : 0) - (held(pressed, 'cameraZoomIn') ? 1 : 0);
+    if (zoom !== 0) useViewStore.getState().zoomBy(Math.pow(CAMERA_ZOOM_STEP_PER_TICK, zoom));
+  };
+  const cameraTimer = window.setInterval(cameraTick, CAMERA_TICK_MS);
 
   return () => {
     window.clearInterval(timer);
+    window.clearInterval(cameraTimer);
     element.removeEventListener('mousedown', onMouseDown);
     element.removeEventListener('wheel', onWheel);
     element.removeEventListener('contextmenu', onContextMenu);

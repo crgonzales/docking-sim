@@ -41,6 +41,10 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
   FSW: 10 Hz. MPC: 1 Hz. No wall-clock coupling anywhere in sim-core.
 - **Randomness:** all noise from seeded RNG; a run is fully determined by
   (scenario, seed, inputs).
+- **Sky/equirect UV (render-side):** three.js SphereGeometry convention —
+  −x̂ → u=0, +x̂ → u=0.5. Every cloud/shadow/placement lookup shares it
+  (`cloudSphericalUv`); renderer values derive from `SKY_CONFIG`, never
+  free-standing constants.
 
 ## Stack
 
@@ -52,6 +56,11 @@ bus in `apps/web/src/telemetry/` (sandbox `simEmitter` / mission
 `scenarioEmitter`, both wall-clock-paced publishers over sim-time loops);
 Monte Carlo batches run `@docking/scenario` in a Web Worker pool
 (`monteCarloWorker.ts`, strided global-index shards, progressive results).
+Sky rendering: `apps/web/src/scene/sky/` single-source config (`skyConfig.ts`
+physical inputs → in-code derivations), baked Hillaire atmosphere LUTs
+(`scripts/bakeAtmosphere.mjs` → committed `assets/lut/*.bin`, RGBA float —
+RGB float is unfilterable in WebGL2), KTX2/UASTC textures + seeded cloud
+placement mask via `scripts/make*.mjs` (provenance: `assets/ASSETS.md`).
 
 ## Roadmap
 
@@ -60,7 +69,8 @@ Monte Carlo batches run `@docking/scenario` in a Web Worker pool
 3. ~~6-DOF attitude + MEKF + docking camera + manual fly~~ ✅ v0.4.0 (rigid-body truth + thruster torques, MEKF w/ gyro-bias states, 6-target allocator, AUTO/MANUAL-RATE/PULSE via deterministic command API, truth render channel, camera rig + docking PiP)
 4. ~~MPC terminal approach + passive abort safety~~ ✅ v0.5.0 (active-set QP + 1 Hz condensed CW MPC w/ soft corridor/terminal constraints + probed octahedral authority; two-level corridor monitor, keep-out-proven passive abort, truth-side DOCKED/COLLISION/ABORT outcome latch)
 5. ~~Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`)~~ ✅ v0.6.0 (`packages/scenario`: schema v1 + validator, ScenarioDirector w/ merged failure injection + BRIEFING/RUNNING/DEBRIEF, perfect-operator bot, seeded MC runner; sim-core nav-source/guidance-freeze/vel-bias command surface; MISSION switch panel + ANALYSIS worker-pool MC screen; demo video remains a manual follow-up)
-6. ~~Flight feel: manual authority, thruster plumes, procedural audio~~ ✅ v0.7.0 (`MANUAL_AUTHORITY_PRESETS` LOW/HIGH resolving through `getResolvedManualLimits()`, manual gains isolated on `stepManualDamping` so `step()`/`stepAuto()` — and the shared ABORT COASTING damping path — keep AUTO gains; `setManualAuthority` deterministic command; truth-side per-jet duty in `RenderState`, accumulated across truth ticks and latched at the FSW boundary; shader plumes + pooled-voice WebAudio over a shared master gain. Open: 60 fps benchmark and integrated flight/audio check need real hardware)
+6. ~~Flight feel: manual authority, thruster plumes, procedural audio~~ ✅ v0.7.0 (`MANUAL_AUTHORITY_PRESETS` LOW/HIGH resolving through `getResolvedManualLimits()`, manual gains isolated on `stepManualDamping` so `step()`/`stepAuto()` — and the shared ABORT COASTING damping path — keep AUTO gains; `setManualAuthority` deterministic command; truth-side per-jet duty in `RenderState`, accumulated across truth ticks and latched at the FSW boundary; shader plumes + pooled-voice WebAudio over a shared master gain. Open items closed in v0.8.0: FPS counter + GPU-verified 60 fps checkpoints)
+7. ~~Sky overhaul: physically-based atmosphere, EVE-style clouds, relief, debug camera~~ ✅ v0.8.0 (`sky/skyConfig.ts` single source + derivation oracles; baked transmittance/multiple-scattering LUTs driving limb raymarch, aerial perspective, and sun extinction tint; deck + cirrus + 12k seeded volumetric puffs off one shared coverage function and mask; GEBCO relief normals, orbit-correct ocean, camera-relative sun at derived infinity; debug camera `B` + arrow-key orbit + FPS counter; owner accepts a 30 fps floor for visual quality — measured 60 at every checkpoint. Craft stay primitive — glTF hull bake too dark, flip deferred)
 
 ## Testing gate (oracle tests, not vibes)
 
@@ -90,3 +100,8 @@ Monte Carlo batches run `@docking/scenario` in a Web Worker pool
 - Render duty honesty: a sub-window pulse survives accumulation rather than being
   aliased away, and a stuck-open jet reports duty FSW never commanded (implemented:
   `sim.test.ts`)
+- Sky pipeline: config derivation oracles; LUT bake determinism + golden
+  transmittance values + energy bounds; cloud placement determinism, mask
+  registration, and CPU/GPU transfer-function pinning; glTF port normalization
+  (implemented: `skyConfig.test.ts`, `atmosphereMath.test.ts`,
+  `cloudPlacement.test.ts`, `EarthMath.test.ts`, `modelNormalization.test.ts`)

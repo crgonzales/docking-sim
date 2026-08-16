@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.8.0` | 2    | feat: physically-based sky overhaul — atmospheric scattering LUTs, volumetric clouds, terrain relief & debug camera |
 | `0.7.0` | 2    | feat: flight feel — selectable manual authority, truth-driven thruster plumes & procedural RCS audio |
 | `0.6.0` | 1    | feat: Phase 5 guided scenario mode, Monte Carlo analysis & mission switch panel |
 | `0.5.0` | 1    | feat: Phase 4 MPC terminal approach, passive abort safety & flight-deck UX |
@@ -13,6 +14,13 @@
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
+
+- **v0.8.0 (Sky Overhaul - Week 2, 16-08-2026)**:
+  - **Atmosphere**: baked Hillaire transmittance/multiple-scattering LUTs drive a 12-step limb raymarch, surface aerial perspective, and sun extinction tint; fixed the WebGL2 unfilterable-RGB-float bug that had left the shell invisible since Phase B
+  - **Clouds**: deck + cirrus + 12k volumetric puffs from one shared coverage function and a seeded mask placement; fixed 180° UV misregistration, a malformed mask asset, whole-field frustum culling, and sub-pixel shimmer via footprint fades
+  - **Surface & sun**: GEBCO relief, orbit-correct smooth ocean with steady glint, camera-relative sun at optical infinity, 192-segment silhouettes
+  - **UX**: debug camera + arrow-key camera controls + FPS counter; owner kept primitive craft models (glTF hull bake too dark, deferred)
+  - **Review**: Codex loop 2 rounds -> APPROVED (`CR_w2_v0.8.0.md`); 145 tests; 60 fps GPU checkpoints
 
 - **v0.7.0 (Flight Feel - Week 2, 15-08-2026)**:
   - **Controls**: measurement found manual flight limited by both a 1.5 deg/s cap (~6% of available torque) and a slow, underdamped attitude loop (32% overshoot, >15 s to settle); manual now resolves through LOW/HIGH authority presets with their own gains, hitting commanded rate in 1.5 s at <=10% overshoot on HIGH while LOW reproduces v0.6.0 exactly

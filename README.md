@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.7.0** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.8.0** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim
 
@@ -43,6 +43,13 @@ Inside:
   so a stuck-open jet visibly fires even when flight software thinks it is closed)
   and a **procedural RCS soundscape** (pooled WebAudio voices tracking jet duty,
   ambient hum, contact thump, outcome stingers)
+- Sky overhaul (v0.8.0): **physically-based atmosphere** (baked
+  transmittance/multiple-scattering LUTs driving the limb glow, surface aerial
+  perspective, and sun extinction tint), **EVE-style cloud stack** (flat deck +
+  cirrus + 12,000 volumetric puffs placed from a seeded NASA coverage mask, all
+  sharing one coverage function so clouds and their shadows agree), GEBCO
+  terrain relief, orbit-correct ocean glint, a camera-relative sun at optical
+  infinity, and a **debug camera** with an FPS counter
 - Project docs under `docs/` — architecture, plans, changelogs, code reviews
 - CI workflow (install + test)
 
@@ -57,6 +64,7 @@ KSP-style layout (rotation on WASD, translation on Shift/Ctrl + IJKL):
 | `G` | toggle LOW / HIGH manual authority (docking-realistic vs. punchy) |
 | `V` | cycle controller: PID → LQR → MPC |
 | `C` | cycle camera: cinematic → chase → cockpit |
+| `B` | debug camera (arrow keys orbit, `PgUp`/`PgDn` zoom, 2 m – 40,000 km) |
 | `H` / `?` | keybinds overlay |
 | `Backspace` | ABORT (passive safing sequence) |
 | `Shift` / `Ctrl` | thrust forward / back (±ŷ) |

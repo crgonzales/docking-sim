@@ -47,9 +47,11 @@ export function CameraRig() {
       orbit.elevation_rad,
       orbit.distance_m,
     ));
-    camera.position.lerp(desiredPosition, 1 - Math.exp(-(mode === 'CHASE' ? 3 : 2) * dt));
+    camera.position.lerp(desiredPosition, 1 - Math.exp(-(mode === 'CINEMATIC' ? 2 : 3) * dt));
     camera.up.set(0, 0, 1);
-    if (mode === 'CHASE') {
+    if (mode === 'CHASE' || mode === 'DEBUG') {
+      // DEBUG shares the chase framing (look at the craft) but with the
+      // unclamped orbit range from viewStore for inspecting Earth and clouds.
       camera.lookAt(chaser);
     } else {
       // Keep the cinematic framing on the approach corridor rather than on

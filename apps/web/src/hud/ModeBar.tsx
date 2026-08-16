@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTelemetryBus } from '../telemetry/bus';
+import { FpsCounter } from './FpsCounter';
 import {
   getMasterMuted,
   getMasterVolume,
@@ -74,6 +75,7 @@ export function ModeBar() {
         />
       </div>
       <div className="hud-clock">
+        <FpsCounter />
         {frame ? `sim ${frame.t_s.toFixed(1)} s` : 'sim ----'}
       </div>
     </div>

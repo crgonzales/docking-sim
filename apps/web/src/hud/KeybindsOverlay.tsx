@@ -21,6 +21,22 @@ export function KeybindsOverlay() {
           ))}
         </section>
       ))}
+      <section className="hud-keybinds-group">
+        <div className="hud-keybinds-group-title">CREDITS</div>
+        <div className="hud-keybind">
+          <span>
+            Starfield: &ldquo;The Milky Way panorama&rdquo; &mdash; ESO/S.&nbsp;Brunier,
+            CC&nbsp;BY&nbsp;4.0 (creativecommons.org/licenses/by/4.0).
+            Modified: downscaled to 4096&times;2048.
+          </span>
+        </div>
+        <div className="hud-keybind">
+          <span>Earth imagery: NASA Visible Earth (Blue Marble, Earth at Night, cloud composite) &mdash; public domain.</span>
+        </div>
+        <div className="hud-keybind">
+          <span>Spacecraft models: NASA 3D Resources &mdash; public domain.</span>
+        </div>
+      </section>
     </div>
   );
 }

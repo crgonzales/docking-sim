@@ -517,3 +517,8 @@
 .mode-switcher button:last-child { border-right: 0; }
 .mode-switcher button.active { background: rgba(70, 224, 138, .2); color: var(--hud-green, #46e08a); }
 .mode-switcher button:hover, .mode-switcher button:focus-visible { background: rgba(70, 224, 138, .12); }
+
+.hud-fps {
+  opacity: 0.65;
+  margin-right: 14px;
+}
