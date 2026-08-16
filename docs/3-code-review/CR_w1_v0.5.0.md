@@ -99,7 +99,7 @@ None.
 
 **APPROVED**
 
-All code-level critical and major findings are resolved. The Hill-frame CHASE camera is an accepted, documented design amendment, while README and release-documentation synchronization remains intentionally deferred to release. The requester reported a clean typecheck/build, 99 passing tests, and completed live visual verification.
+All code-level critical and major findings are resolved. The Hill-frame CHASE camera is an accepted, documented design amendment, while README and release-documentation synchronization remains intentionally deferred to the release step. The requester reported a clean typecheck/build, 99 passing tests, and completed live visual verification.
 
 ---
 

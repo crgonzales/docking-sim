@@ -9,7 +9,7 @@
 | `0.4.0` | 1    | feat: Phase 3 6-DOF attitude, MEKF, docking camera & manual fly |
 | `0.3.0` | 1    | feat: Phase 2 real GNC — RK4 truth dynamics, 16-jet RCS + NNLS allocator, EKF navigation, PID/LQR closed loop |
 | `0.2.0` | 1    | feat: Phase 1 cinematic visual base — Earth terminator scene, HUD skeleton, stub telemetry bus |
-| `0.1.1` | 1    | chore: initialize project docs structure for docking-sim |
+| `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
 
@@ -57,7 +57,7 @@
   - **Files**: 16 new under `apps/web/` (scene/hud/telemetry/assets), `App.tsx` rewired; sim-core untouched
 
 - **v0.1.1 (Docs initialization - Week 1, 06-08-2026)**:
-  - **Setup**: Initialized project docs structure with docs structure; repo pushed to GitHub (`crgonzales/docking-sim`, `main` branch, GitHub-first flow — commits on main, always pushed)
+  - **Setup**: Initialized project docs structure; repo pushed to GitHub (`crgonzales/docking-sim`, `main` branch, GitHub-first flow — commits on main, always pushed)
   - **Documentation**: Folded in pre-seeded ARCHI.md (full-stack web sim: pure-TS sim-core library + React/react-three-fiber front end); created ARCHI-rules.md and TESTING.md
   - **Skills**: Adapted all project tooling to the project (pnpm/Vitest commands, root package.json as version file, week anchor 2026-08-03, main-only release flow, GNC-specific plan guidance and review checklist)
   - **Files Added**: docs/ARCHI-rules.md, docs/2-changelog/changelog_table.md, docs/4-unit-tests/TESTING.md

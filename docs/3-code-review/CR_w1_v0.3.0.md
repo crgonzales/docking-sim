@@ -4,8 +4,6 @@
 **Version**: 0.3.0  
 **Files Reviewed**:
 
-- `local tooling tooling/state/.gitignore`
-- `local tooling tooling/scripts/resume.sh`
 - `apps/web/package.json`
 - `apps/web/src/App.tsx`
 - `apps/web/src/hud/TelemetryStrip.tsx`

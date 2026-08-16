@@ -1,6 +1,6 @@
 # Guided Scenario Mode — Spec v1 ("Mission Mode")
 
-Input document for `planning` (Phase 5). Defines the scenario schema, the
+Input document for Phase 5 planning. Defines the scenario schema, the
 `FINAL_APPROACH_01` script, ScenarioDirector semantics, switch-panel bindings,
 and acceptance tests.
 
@@ -326,7 +326,7 @@ has a click sound; C&W lights mirror `prompts.alarm`; in GUIDED mode the
 
 ---
 
-## 8. Paste-ready `planning` prompt
+## 8. Paste-ready planning prompt
 
 > Plan the Guided Scenario feature per `docs/scenario-mode-spec.md` (schema v1).
 > Scope: `ScenarioDirector` (own package, public sim APIs only), scenario schema

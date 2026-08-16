@@ -1,7 +1,7 @@
 # ARCHI.md — Orbital Docking GNC Lab
 
-Persistent architecture reference. Pre-seeded before `initialization`; init should
-fold this in rather than regenerate from scratch. Keep compact (`compaction`).
+Persistent architecture reference. Authoritative on conventions — if code
+disagrees, the code is wrong. Keep it compact.
 
 ## What this is
 

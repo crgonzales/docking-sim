@@ -36,7 +36,7 @@ Inside:
   **Monte Carlo analysis screen** (seeded batch runs in a Web Worker pool,
   outcome/grade/prop/time-margin histograms) — spec in
   `docs/scenario-mode-spec.md`, mission modes: SANDBOX / MISSION / ANALYSIS
-- project docs structure skills in `local tooling`, project docs under `docs/`
+- Project docs under `docs/` — architecture, plans, changelogs, code reviews
 - CI workflow (install + test)
 
 ## Flying it (manual controls)
@@ -74,12 +74,10 @@ pnpm dev         # live closed-loop approach at localhost:5173
 
 ## Workflow
 
-`implementation` creates a feature/fix branch for each change; `release`
-fast-forward merges it into `main` and pushes, keeping a single clean linear
-history. development cycle: `planning` → `implementation` → `release`,
-with code reviews in the loop (see `local tooling`). review runs need an
-authenticated CLI (`local tooling`); implementation sessions use the
-`workspace-write` sandbox, which resume turns inherit.
+Each change gets a feature/fix branch, which is fast-forward merged into `main`
+at release time — keeping a single clean linear history, never a merge commit.
+The cycle is plan → implement → code review → release, with the plan, review,
+and changelog for every version kept under `docs/`.
 
 ## Roadmap
 

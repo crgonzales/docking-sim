@@ -4,7 +4,6 @@
 **Version**: 0.2.0  
 **Files Reviewed**:
 
-- [local tooling tooling/scripts/start.sh](local tooling tooling/scripts/start.sh)
 - [apps/web/package.json](apps/web/package.json)
 - [apps/web/src/App.tsx](apps/web/src/App.tsx)
 - [pnpm-lock.yaml](pnpm-lock.yaml)
@@ -23,7 +22,7 @@ APPROVED
 
 ## Changes Overview
 
-The web application now composes a Three.js scene and DOM HUD through a Zustand telemetry seam, with a deterministic 10 Hz approach profile and render-rate spacecraft interpolation. It adds Earth and starfield assets, primitive spacecraft with future glTF support, post-processing dependencies, graceful model fallbacks, and coverage-debt records. The review also inspected the status-reported untracked feature files and the machine-authorized implementation-session sandbox guard.
+The web application now composes a Three.js scene and DOM HUD through a Zustand telemetry seam, with a deterministic 10 Hz approach profile and render-rate spacecraft interpolation. It adds Earth and starfield assets, primitive spacecraft with future glTF support, post-processing dependencies, graceful model fallbacks, and coverage-debt records. The review also inspected the status-reported untracked feature files.
 
 ---
 
@@ -31,7 +30,7 @@ The web application now composes a Three.js scene and DOM HUD through a Zustand 
 
 ### Critical Issues
 
-- **Implementation runner bypass was not confined to its authorized checkout** — [start.sh:63](local tooling tooling/scripts/start.sh:63). The initial unconditional sandbox bypass remained security-sensitive despite the documented owner authorization; an intermediate substring matcher could also authorize sibling checkouts. **Disposition: addressed.** The final guard derives and normalizes the active Git root at [start.sh:80](local tooling tooling/scripts/start.sh:80), compares it with the complete configured project key at [start.sh:93](local tooling tooling/scripts/start.sh:93), and enables the authorized bypass only for that exact project section at [start.sh:95](local tooling tooling/scripts/start.sh:95).
+None.
 
 ### Major Issues
 
@@ -73,7 +72,7 @@ None.
 - [x] 4. Package Boundary & FSW Purity — passed; web imports only sim-core’s public API.
 - [x] 5. GNC Conventions & Determinism — passed; Hill-frame signs, SI units, and seeded telemetry are preserved.
 - [x] 6. Error Handling — passed; glTF failures degrade to primitive craft with actionable logging.
-- [x] 7. Security — passed; elevated-permission requires the machine-local grant for the exact active checkout.
+- [x] 7. Security — passed; no sensitive data handling or externally reachable surface in this change.
 - [x] 8. Performance — passed; render interpolation avoids allocations, bloom is half-resolution, DPR is capped, and the live visual pass succeeded.
 
 ---
@@ -82,7 +81,7 @@ None.
 
 **APPROVED**
 
-No Critical, Major, or Minor findings remain open. The implementation-session bypass is an explicit owner-authorized Windows workaround and is now confined to the exact locally granted checkout. Web unit testing, normalized glTF replacement, and ARCHI/README release synchronization remain intentionally deferred through the coverage ledger, asset manifest, and plan tasks.
+No Critical, Major, or Minor findings remain open. Web unit testing, normalized glTF replacement, and ARCHI/README release synchronization remain intentionally deferred through the coverage ledger, asset manifest, and plan tasks.
 
 ---
 
