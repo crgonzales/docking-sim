@@ -72,14 +72,14 @@ pnpm test        # oracle + consistency suites (sim-core) and web tests
 pnpm dev         # live closed-loop approach at localhost:5173
 ```
 
-## Workflow (GitHub-first)
+## Workflow
 
-Work happens directly on `main`; every release release commits, tags, and pushes
-to GitHub immediately — no local-only branches or worktrees. development cycle:
-`planning` → `implementation` → `release`, with code reviews in
-the loop (see `local tooling`). Windows note: `local tooling` needs the
-machine-local trusted-project grant in `~/.tooling/config.toml` — see the comment
-in `local tooling tooling/scripts/start.sh`.
+`implementation` creates a feature/fix branch for each change; `release`
+fast-forward merges it into `main` and pushes, keeping a single clean linear
+history. development cycle: `planning` → `implementation` → `release`,
+with code reviews in the loop (see `local tooling`). review runs need an
+authenticated CLI (`local tooling`); implementation sessions use the
+`workspace-write` sandbox, which resume turns inherit.
 
 ## Roadmap
 
