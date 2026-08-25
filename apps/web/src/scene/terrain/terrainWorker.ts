@@ -32,6 +32,29 @@ export interface PatchHeroRegionConfig {
 
 export type HeroHeightSampler = (latRad: number, lonRad: number) => number | null;
 
+/** A hero DEM tile's own lat/lon footprint (degrees) within its region's local-equirectangular pyramid. */
+export interface PatchHeroTileBounds {
+  readonly minLatDeg: number;
+  readonly maxLatDeg: number;
+  readonly minLonDeg: number;
+  readonly maxLonDeg: number;
+}
+
+/**
+ * Raw decoded hero DEM pixel data, gathered on the main thread (which owns
+ * the resident hero-tile cache) and structured-cloned to the worker — a
+ * sampler FUNCTION cannot cross that boundary, so the worker builds its own
+ * sampler from this data instead of receiving one.
+ */
+export interface PatchHeroTile {
+  readonly regionId: string;
+  /** Square tile edge length in pixels; data.length === tileSize * tileSize. */
+  readonly tileSize: number;
+  readonly bounds: PatchHeroTileBounds;
+  /** Decoded metres. NaN entries are the reserved terrain-RGB no-data value. */
+  readonly data: Float32Array;
+}
+
 export interface PatchBuildRequest {
   readonly type: 'buildPatch';
   readonly requestId?: number;
@@ -40,6 +63,8 @@ export interface PatchBuildRequest {
   readonly tiles: readonly TerrainTile[];
   readonly codec: TerrainRgbCodec;
   readonly heroRegions?: readonly PatchHeroRegionConfig[];
+  /** Resident hero DEM tiles overlapping this patch, keyed loosely by regionId. */
+  readonly heroTiles?: readonly PatchHeroTile[];
   readonly detail?: Partial<DetailNoiseOptions>;
   readonly planetRadiusM?: number;
   readonly skirtDepthM?: number;
@@ -129,14 +154,87 @@ function validateRequest(request: PatchBuildRequest, planetRadiusM: number, skir
       throw new Error(`Tile ${nodeAddressKey(tile.address)} codec does not match the patch manifest codec`);
     }
   }
+  for (const heroTile of request.heroTiles ?? []) {
+    if (!Number.isSafeInteger(heroTile.tileSize) || heroTile.tileSize < 1) {
+      throw new Error(`Hero tile for region ${heroTile.regionId} must have a positive integer tileSize`);
+    }
+    const { minLatDeg, maxLatDeg, minLonDeg, maxLonDeg } = heroTile.bounds;
+    if (![minLatDeg, maxLatDeg, minLonDeg, maxLonDeg].every(Number.isFinite)
+      || minLatDeg >= maxLatDeg || minLonDeg >= maxLonDeg) {
+      throw new Error(`Hero tile for region ${heroTile.regionId} has invalid bounds`);
+    }
+    if (heroTile.data.length !== heroTile.tileSize * heroTile.tileSize) {
+      throw new Error(`Hero tile for region ${heroTile.regionId} data length does not match tileSize`);
+    }
+  }
+}
+
+const RAD_TO_DEG = 180 / Math.PI;
+
+/**
+ * Bilinear lookup against one hero DEM tile's raw pixel data, mirroring
+ * heightField.ts's own tileSample but for a tile addressed by lat/lon
+ * bounds (the hero pyramid's local-equirectangular projection) rather than
+ * cube-face UV bounds.
+ */
+function sampleHeroTile(tile: PatchHeroTile, latDeg: number, lonDeg: number): number | null {
+  const { minLatDeg, maxLatDeg, minLonDeg, maxLonDeg } = tile.bounds;
+  if (latDeg < minLatDeg || latDeg > maxLatDeg || lonDeg < minLonDeg || lonDeg > maxLonDeg) return null;
+  const u = (lonDeg - minLonDeg) / (maxLonDeg - minLonDeg);
+  const v = (maxLatDeg - latDeg) / (maxLatDeg - minLatDeg);
+  const x = u * (tile.tileSize - 1);
+  const y = v * (tile.tileSize - 1);
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const x1 = Math.min(x0 + 1, tile.tileSize - 1);
+  const y1 = Math.min(y0 + 1, tile.tileSize - 1);
+  const tx = x - x0;
+  const ty = y - y0;
+  const at = (ix: number, iy: number): number | null => {
+    const value = tile.data[iy * tile.tileSize + ix];
+    return Number.isFinite(value) ? value : null;
+  };
+  const topLeft = at(x0, y0);
+  const topRight = at(x1, y0);
+  const bottomLeft = at(x0, y1);
+  const bottomRight = at(x1, y1);
+  if (topLeft === null || topRight === null || bottomLeft === null || bottomRight === null) return null;
+  const top = topLeft * (1 - tx) + topRight * tx;
+  const bottom = bottomLeft * (1 - tx) + bottomRight * tx;
+  return top * (1 - ty) + bottom * ty;
+}
+
+function heroTileSampler(tiles: readonly PatchHeroTile[]): HeroHeightSampler {
+  return (latRad, lonRad) => {
+    const latDeg = latRad * RAD_TO_DEG;
+    const lonDeg = lonRad * RAD_TO_DEG;
+    for (const tile of tiles) {
+      const value = sampleHeroTile(tile, latDeg, lonDeg);
+      if (value !== null) return value;
+    }
+    return null;
+  };
 }
 
 function makeHeightField(request: PatchBuildRequest, options: PatchBuildOptions): Parameters<typeof height>[2] {
   const tileMap = new Map(request.tiles.map((tile) => [nodeAddressKey(tile.address), tile]));
-  const heroRegions: readonly HeroRegionConfig[] = (request.heroRegions ?? []).map((region) => ({
-    ...region,
-    sample: options.heroSamplers?.[region.id] ?? (() => null),
-  }));
+  const heroTilesByRegion = new Map<string, PatchHeroTile[]>();
+  for (const heroTile of request.heroTiles ?? []) {
+    const existing = heroTilesByRegion.get(heroTile.regionId);
+    if (existing === undefined) heroTilesByRegion.set(heroTile.regionId, [heroTile]);
+    else existing.push(heroTile);
+  }
+  const heroRegions: readonly HeroRegionConfig[] = (request.heroRegions ?? []).map((region) => {
+    // heroSamplers stays a pure-function test seam (a real Worker can never
+    // receive one over postMessage); the real runtime path always derives
+    // the sampler from the raw heroTiles data instead.
+    const injected = options.heroSamplers?.[region.id];
+    const regionTiles = heroTilesByRegion.get(region.id);
+    return {
+      ...region,
+      sample: injected ?? (regionTiles !== undefined ? heroTileSampler(regionTiles) : () => null),
+    };
+  });
   return {
     tiles: residentTileMap(tileMap),
     level: request.address.level,
@@ -340,8 +438,13 @@ function defaultWorkerFactory(): TerrainWorkerLike {
 }
 
 export class TerrainWorkerPool {
-  private readonly workers: readonly TerrainWorkerLike[];
-  private readonly pending = new Map<number, { resolve: (result: PatchBuildResult) => void; reject: (error: Error) => void }>();
+  private readonly workers: TerrainWorkerLike[];
+  private readonly workerFactory: () => TerrainWorkerLike;
+  private readonly pending = new Map<number, {
+    readonly resolve: (result: PatchBuildResult) => void;
+    readonly reject: (error: Error) => void;
+    readonly workerIndex: number;
+  }>();
   private readonly queued: Array<{
     readonly requestId: number;
     readonly request: PatchBuildRequest;
@@ -361,13 +464,26 @@ export class TerrainWorkerPool {
       throw new Error(`Terrain worker concurrency must be a positive integer, received ${requestedConcurrency}`);
     }
     this.maxConcurrentBuilds = Math.min(workerCount, requestedConcurrency);
-    const factory = options.workerFactory ?? defaultWorkerFactory;
-    const workers = Array.from({ length: workerCount }, factory);
-    for (const worker of workers) {
-      worker.onmessage = (event) => this.handleMessage(event.data);
-      worker.onerror = (event) => this.handleWorkerError(new Error(event.message || 'Terrain worker failed'));
-    }
-    this.workers = workers;
+    this.workerFactory = options.workerFactory ?? defaultWorkerFactory;
+    this.workers = Array.from({ length: workerCount }, this.workerFactory);
+    this.workers.forEach((worker, index) => this.wireWorker(worker, index));
+  }
+
+  private wireWorker(worker: TerrainWorkerLike, index: number): void {
+    worker.onmessage = (event) => this.handleMessage(event.data);
+    worker.onerror = (event) => {
+      // Replace the failed worker in place so future round-robin dispatch
+      // doesn't keep routing requests to a worker that will never respond
+      // again — without this, those patches would be silently starved.
+      worker.terminate();
+      const replacement = this.workerFactory();
+      this.workers[index] = replacement;
+      this.wireWorker(replacement, index);
+      // Only this worker's own in-flight requests are lost — the other
+      // workers' pending builds are untouched, so a single worker error
+      // doesn't throw away every other patch currently in flight pool-wide.
+      this.handleWorkerError(new Error(event.message || 'Terrain worker failed'), index);
+    };
   }
 
   build(request: Omit<PatchBuildRequest, 'requestId'>): Promise<PatchBuildResult> {
@@ -399,19 +515,37 @@ export class TerrainWorkerPool {
     this.dispatchQueued();
   }
 
-  private handleWorkerError(error: Error): void {
-    for (const { reject } of this.pending.values()) reject(error);
-    this.pending.clear();
-    for (const { reject } of this.queued) reject(error);
-    this.queued.length = 0;
-    this.activeBuilds = 0;
+  /**
+   * With no `workerIndex` (pool disposal): reject everything, pending and
+   * queued. With a `workerIndex` (one worker errored): only that worker's
+   * own pending requests are lost — other workers' in-flight builds and
+   * the still-undispatched queue are untouched — then resume dispatch so
+   * the queue can keep draining onto the now-replaced worker.
+   */
+  private handleWorkerError(error: Error, workerIndex?: number): void {
+    if (workerIndex === undefined) {
+      for (const { reject } of this.pending.values()) reject(error);
+      this.pending.clear();
+      for (const { reject } of this.queued) reject(error);
+      this.queued.length = 0;
+      this.activeBuilds = 0;
+      return;
+    }
+    for (const [requestId, entry] of this.pending) {
+      if (entry.workerIndex !== workerIndex) continue;
+      entry.reject(error);
+      this.pending.delete(requestId);
+      this.activeBuilds -= 1;
+    }
+    this.dispatchQueued();
   }
 
   private dispatchQueued(): void {
     while (this.activeBuilds < this.maxConcurrentBuilds && this.queued.length > 0) {
       const queued = this.queued.shift()!;
-      const worker = this.workers[this.nextWorker++ % this.workers.length];
-      this.pending.set(queued.requestId, queued);
+      const workerIndex = this.nextWorker++ % this.workers.length;
+      const worker = this.workers[workerIndex]!;
+      this.pending.set(queued.requestId, { ...queued, workerIndex });
       this.activeBuilds += 1;
       try {
         // Deliberately omit a transfer list: request-scoped tile data remains

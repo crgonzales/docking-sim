@@ -89,7 +89,6 @@ import { WorldFrame, type WorldPositionF64 } from './worldFrame';
 const VOLUMETRIC_VERTEX = /* glsl */ `
   attribute vec3 instancePosition;
   attribute float instanceSeed;
-  attribute float instanceCoverage;
 
   uniform sampler2D cloudMap;
   uniform float cloudRotationOffset;
@@ -137,12 +136,16 @@ ${CLOUD_COVERAGE_GLSL}
     // IDENTICAL coverage function to the flat deck and the surface shadows
     // (cloudCoverage.ts). This was a third divergent transfer function until
     // the review pass — puffs would not have matched the shadows below them.
-    float density = max(instanceCoverage, cloudCoverageAt(
+    // instanceCoverage is placement-time only (it biases where puffs spawn,
+    // including the hero-region floor); flooring density with it here pinned
+    // rendered puffs to their spawn-time coverage forever, so they kept
+    // showing full-size over ocean the drifting deck had long since cleared.
+    float density = cloudCoverageAt(
       cloudMap, cloudUv,
       ${CLOUD_DECK_DETAIL_SCALE.toFixed(3)},
       ${CLOUD_DECK_DETAIL_STRENGTH.toFixed(3)},
       ${CLOUD_DECK_CONTRAST.toFixed(3)}
-    ));
+    );
 
     float cameraDistance = distance(cameraPosition, earthCenter);
     float fadeIn = 1.0 - smoothstep(${VOLUMETRIC_FADE_IN_START.toFixed(1)}, ${VOLUMETRIC_FADE_IN_END.toFixed(1)}, cameraDistance);
@@ -354,10 +357,8 @@ export function VolumetricClouds({
     );
     const positionAttribute = new InstancedBufferAttribute(positions, 3);
     const seedAttribute = new InstancedBufferAttribute(seeds, 1);
-    const coverageAttribute = new InstancedBufferAttribute(placements.coverages, 1);
     geometry.setAttribute('instancePosition', positionAttribute);
     geometry.setAttribute('instanceSeed', seedAttribute);
-    geometry.setAttribute('instanceCoverage', coverageAttribute);
 
     for (let index = 0; index < VOLUMETRIC_INSTANCE_COUNT; index += 1) {
       const x = placements.positions[index * 3];
@@ -378,7 +379,6 @@ export function VolumetricClouds({
     }
     positionAttribute.needsUpdate = true;
     seedAttribute.needsUpdate = true;
-    coverageAttribute.needsUpdate = true;
     mesh.instanceMatrix.needsUpdate = true;
     mesh.renderOrder = 2.5;
     // The geometry is a unit plane whose bounding sphere is a ~0.7-unit dot

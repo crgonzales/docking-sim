@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import {
   Group,
   DoubleSide,
+  FrontSide,
   NormalBlending,
   ShaderMaterial,
   Texture,
@@ -35,19 +36,50 @@ import { SUN_DIR } from './sun';
 import { WorldFrame, type WorldPositionF64 } from './worldFrame';
 
 const CLOUD_VERTEX = /* glsl */ `
+  uniform sampler2D cloudMap;
+  uniform vec2 uvOffset;
+  uniform float detailScale;
+  uniform float detailStrength;
+  uniform float contrast;
+  uniform vec3 earthCenter;
+  uniform float layerRadius;
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec2 vUv;
+  varying float vThroughLayerFog;
   // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
   // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
   // (fragment-depth writes across large transparent overdraw stressed the
   // Metal driver into intermittent device hangs during v0.9.0).
   uniform float logDepthBufFC;
+
+${CLOUD_COVERAGE_GLSL}
+
+  const float PI = 3.14159265359;
+  vec2 sphericalUv(vec3 point) {
+    return vec2(atan(point.z, -point.x) / (2.0 * PI),
+      0.5 + asin(clamp(point.y, -1.0, 1.0)) / PI);
+  }
+
   void main() {
     vUv = uv;
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
+    // throughLayerFog depends only on camera/material uniforms, never on
+    // per-vertex position, so it is identical for every vertex this frame —
+    // computing it here (a few hundred invocations) instead of per-fragment
+    // (millions, across two full-sphere transparent shells) is the same
+    // math, just far less of it.
+    vec3 cameraRadial = normalize(cameraPosition - earthCenter);
+    vec2 cameraUv = sphericalUv(cameraRadial) + uvOffset;
+    cameraUv.x = fract(cameraUv.x);
+    float cameraCoverage = cloudCoverageAt(cloudMap, cameraUv, detailScale, detailStrength, contrast);
+    float cameraLayerDistance = abs(length(cameraPosition - earthCenter) - layerRadius);
+    vThroughLayerFog = cameraCoverage * (1.0 - smoothstep(
+      ${CLOUD_THROUGH_LAYER_FOG_START.toFixed(1)},
+      ${CLOUD_THROUGH_LAYER_FOG_END.toFixed(1)},
+      cameraLayerDistance));
     gl_Position = projectionMatrix * viewMatrix * wp;
     gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
   }
@@ -62,21 +94,14 @@ const CLOUD_FRAGMENT = /* glsl */ `
   uniform vec2 uvOffset;
   uniform float contrast;
   uniform float cirrusBand;
-  uniform vec3 earthCenter;
   uniform float surfaceRadius;
-  uniform float layerRadius;
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec2 vUv;
+  varying float vThroughLayerFog;
 
 ${CLOUD_COVERAGE_GLSL}
 ${SKY_LIGHTING_GLSL}
-
-  const float PI = 3.14159265359;
-  vec2 sphericalUv(vec3 point) {
-    return vec2(atan(point.z, -point.x) / (2.0 * PI),
-      0.5 + asin(clamp(point.y, -1.0, 1.0)) / PI);
-  }
 
   void main() {
     // The lookup is deliberately camera-independent. A view-driven parallax
@@ -101,15 +126,7 @@ ${SKY_LIGHTING_GLSL}
     vec3 dayColor = vec3(0.92, 0.94, 0.98) * skySunTint(ndotl)
       * (0.45 + 0.55 * max(ndotl, 0.0));
     vec3 color = dayColor + vec3(0.03) * grazing;
-    vec3 cameraRadial = normalize(cameraPosition - earthCenter);
-    vec2 cameraUv = sphericalUv(cameraRadial) + uvOffset;
-    cameraUv.x = fract(cameraUv.x);
-    float cameraCoverage = cloudCoverageAt(cloudMap, cameraUv, detailScale, detailStrength, contrast);
-    float cameraLayerDistance = abs(length(cameraPosition - earthCenter) - layerRadius);
-    float throughLayerFog = cameraCoverage * (1.0 - smoothstep(
-      ${CLOUD_THROUGH_LAYER_FOG_START.toFixed(1)},
-      ${CLOUD_THROUGH_LAYER_FOG_END.toFixed(1)},
-      cameraLayerDistance));
+    float throughLayerFog = vThroughLayerFog;
     if (!gl_FrontFacing) {
       color *= vec3(0.62, 0.70, 0.84);
       dayColor *= vec3(0.72, 0.78, 0.90);
@@ -253,7 +270,7 @@ export function Clouds({
     [cirrusConfig, earthCenterF64, radius, worldFrame],
   );
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const deck = deckRef.current;
     const cirrus = cirrusRef.current;
     if (deck !== null) deck.rotation.y += delta * deckConfig.rotationRate;
@@ -266,6 +283,15 @@ export function Clouds({
     const earthCenter = worldFrame.toRender(earthCenterF64);
     deckMaterial.uniforms.earthCenter!.value.fromArray(earthCenter);
     cirrusMaterial.uniforms.earthCenter!.value.fromArray(earthCenter);
+
+    // Backfaces only matter when the camera can be under the cirrus shell
+    // (e.g. near the ground); from ordinary orbital views it is always
+    // outside, so FrontSide halves cirrus's transparent overdraw there.
+    const cirrusLayerRadius = cirrusMaterial.uniforms.layerRadius!.value as number;
+    const cameraDistance = state.camera.position.distanceTo(
+      cirrusMaterial.uniforms.earthCenter!.value,
+    );
+    cirrusMaterial.side = cameraDistance > cirrusLayerRadius ? FrontSide : DoubleSide;
   });
 
   return (

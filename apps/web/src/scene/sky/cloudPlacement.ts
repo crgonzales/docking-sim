@@ -1,3 +1,5 @@
+import { directionFromLatLon } from '../terrain/heightField';
+
 export interface CoverageMask {
   width: number;
   height: number;
@@ -90,6 +92,44 @@ export function sampleCoverageMask(mask: CoverageMask, u: number, v: number): nu
 }
 
 /**
+ * Puffs reserved for every cap before the solid-angle split below, so a tiny
+ * hero-region disc's proportional share doesn't round all the way down to
+ * zero against the near-hemisphere orbital cap (it otherwise would: at
+ * count=12000 a ~25km-radius cap's raw share is a few tenths of a puff).
+ * Small enough not to reintroduce the oversaturation the even split had.
+ */
+const MIN_PUFFS_PER_CAP = 150;
+
+/**
+ * Splits `count` puffs across caps proportional to each cap's solid angle
+ * (2*pi*(1 - capCosine)), so a small hero-region disc doesn't draw the same
+ * instance budget as the near-hemisphere orbital cap. Uses largest-remainder
+ * rounding so the per-cap counts still sum to exactly `count`.
+ */
+export function areaWeightedCapCounts(caps: readonly CloudPlacementCap[], count: number): number[] {
+  if (caps.length === 0) return [];
+  const minPerCap = Math.min(MIN_PUFFS_PER_CAP, Math.floor(count / caps.length));
+  const reserved = minPerCap * caps.length;
+  const weights = caps.map((cap) => Math.max(1 - cap.capCosine, 0));
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  if (totalWeight <= 0) {
+    return caps.map((_, index) => Math.floor(count / caps.length) + (index < count % caps.length ? 1 : 0));
+  }
+  const remainingBudget = count - reserved;
+  const raw = weights.map((weight) => minPerCap + (weight / totalWeight) * remainingBudget);
+  const counts = raw.map((value) => Math.floor(value));
+  let remaining = count - counts.reduce((sum, value) => sum + value, 0);
+  const byRemainder = raw
+    .map((value, index) => ({ index, remainder: value - counts[index]! }))
+    .sort((a, b) => b.remainder - a.remainder);
+  for (let i = 0; i < byRemainder.length && remaining > 0; i += 1) {
+    counts[byRemainder[i]!.index]! += 1;
+    remaining -= 1;
+  }
+  return counts;
+}
+
+/**
  * Deterministic rejection sampling over the world-anchored flight cap. The
  * mask is already the final coverage transfer function, so accepting with
  * probability coverage gives the instances the same spatial density as the
@@ -116,7 +156,7 @@ export function sampleCloudPlacements(
     { center: [1, 0, 0], capCosine },
     ...additionalCaps,
   ];
-  const capCounts = caps.map((_, index) => Math.floor(count / caps.length) + (index < count % caps.length ? 1 : 0));
+  const capCounts = areaWeightedCapCounts(caps, count);
 
   for (let capIndex = 0; capIndex < caps.length; capIndex += 1) {
     const cap = caps[capIndex]!;
@@ -173,7 +213,7 @@ export function cloudCapFromHeroRegion(
   const lon = centerLonDeg * Math.PI / 180;
   const angularRadius = (radiusKm + featherKm) / earthRadiusKm;
   return {
-    center: [-Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)],
+    center: directionFromLatLon(lat, lon),
     capCosine: Math.cos(angularRadius),
     coverageFloor,
   };

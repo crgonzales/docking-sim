@@ -5,16 +5,13 @@ import {
   Vector3,
 } from 'three';
 import {
-  ATMOSPHERE_INTENSITY,
   AERIAL_SKY_RADIANCE,
   CLOUD_DECK_CONTRAST,
   CLOUD_DECK_DETAIL_SCALE,
   CLOUD_DECK_DETAIL_STRENGTH,
   CLOUD_SHADOW_STRENGTH,
-  kmToSceneUnits,
   OCEAN_WAVE_FADE_END,
   OCEAN_WAVE_FADE_START,
-  SKY_CONFIG,
 } from '../sky/skyConfig';
 import { CLOUD_COVERAGE_GLSL } from '../sky/cloudCoverage';
 import { SKY_LIGHTING_GLSL } from '../sky/lighting';
@@ -52,11 +49,6 @@ export const TERRAIN_VERTEX_SHADER = /* glsl */ `
 
 export const TERRAIN_FRAGMENT_SHADER = /* glsl */ `
   #define AERIAL_SKY_RADIANCE vec3(${AERIAL_SKY_RADIANCE.map((value) => value.toFixed(2)).join(', ')})
-  const float EXPOSURE_GROUND_ALTITUDE = ${kmToSceneUnits(SKY_CONFIG.exposure.groundAltitudeKm).toFixed(1)};
-  const float EXPOSURE_SPACE_ALTITUDE = ${kmToSceneUnits(SKY_CONFIG.exposure.spaceAltitudeKm).toFixed(1)};
-  const float EXPOSURE_GROUND = ${SKY_CONFIG.exposure.groundIntensity.toFixed(2)};
-  const float EXPOSURE_SPACE = ${SKY_CONFIG.exposure.spaceIntensity.toFixed(2)};
-  const float EXPOSURE_CURVE_POWER = ${SKY_CONFIG.exposure.curvePower.toFixed(3)};
   uniform sampler2D dayMap;
   uniform sampler2D cloudMap;
   uniform sampler2D transmittanceLut;
@@ -143,17 +135,15 @@ ${SKY_LIGHTING_GLSL}
       surfaceRadius,
       atmosphereRadius
     );
-    float cameraAltitude = max(length(cameraPosition - planetCenter) - surfaceRadius, 0.0);
-    float exposure = skyExposureCurve(
-      cameraAltitude,
-      EXPOSURE_GROUND_ALTITUDE,
-      EXPOSURE_SPACE_ALTITUDE,
-      EXPOSURE_GROUND,
-      EXPOSURE_SPACE,
-      EXPOSURE_CURVE_POWER
-    );
-    vec3 aerial = AERIAL_SKY_RADIANCE * (vec3(1.0) - transmittance)
-      * exposure / ${ATMOSPHERE_INTENSITY.toFixed(2)};
+    // AERIAL_SKY_RADIANCE is the zenith-sky radiance this haze saturates
+    // toward as the path thickens (see its doc comment in skyConfig.ts) —
+    // deliberately NOT scaled by the ground/space exposure curve, which
+    // exists for the atmosphere shell's own raymarch integral (a genuinely
+    // tiny physically-normalized quantity needing a large display boost),
+    // a different formula this one was mistakenly multiplied by, pushing an
+    // already-bounded max-0.33 term to ~4x its ceiling near the ground and
+    // clipping the whole surface to white.
+    vec3 aerial = AERIAL_SKY_RADIANCE * (vec3(1.0) - transmittance);
     vec3 color = lit * transmittance + aerial;
     gl_FragColor = vec4(color, terrainOpacity);
   }

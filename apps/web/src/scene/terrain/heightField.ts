@@ -268,7 +268,7 @@ export function detailNoise(
   if (!Number.isFinite(resolved.gain) || resolved.gain < 0 || resolved.gain > 1) throw new Error('Detail gain must be in [0, 1]');
   const baseFrequency = Math.max(1, Math.round((TAU * SKY_CONFIG.earthRadiusKm) / resolved.baseWavelengthKm));
   let frequency = baseFrequency;
-  let amplitude = resolved.baseAmplitudeM;
+  let amplitude = 1;
   let total = 0;
   let amplitudeTotal = 0;
   for (let octave = 0; octave < resolved.octaves; octave += 1) {
@@ -277,7 +277,8 @@ export function detailNoise(
     frequency *= resolved.lacunarity;
     amplitude *= resolved.gain;
   }
-  return amplitudeTotal === 0 ? 0 : total / amplitudeTotal;
+  const normalized = amplitudeTotal === 0 ? 0 : total / amplitudeTotal;
+  return normalized * resolved.baseAmplitudeM;
 }
 
 function baseSlopeMask(

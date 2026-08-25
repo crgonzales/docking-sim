@@ -27,6 +27,13 @@ interface ViewState {
   flyPositionM: FlyPositionM;
   flyYawRad: number;
   flyPitchRad: number;
+  /**
+   * Bumped every `setFlyPose` call. Lets CameraRig tell an externally
+   * seeded pose (e.g. a `?flyto=` deep link) apart from an ordinary
+   * ORBIT->FLY toggle, so it knows when NOT to overwrite the pose with one
+   * derived from the render camera's current position.
+   */
+  flyPoseEpoch: number;
   flyMoveInput: readonly [number, number, number];
   /** Mode to restore when the debug camera is toggled off. Never 'DEBUG'. */
   lastFlightMode: ViewMode;
@@ -78,6 +85,7 @@ export const useViewStore = create<ViewState>((set) => ({
   flyPositionM: [0, -320, 60],
   flyYawRad: Math.PI / 2,
   flyPitchRad: 0,
+  flyPoseEpoch: 0,
   flyMoveInput: [0, 0, 0],
   lastFlightMode: 'CINEMATIC',
   orbits: INITIAL_ORBITS,
@@ -104,11 +112,12 @@ export const useViewStore = create<ViewState>((set) => ({
   toggleDebugSubmode: () => set((state) => state.mode !== 'DEBUG'
     ? state
     : { debugSubmode: state.debugSubmode === 'ORBIT' ? 'FLY' : 'ORBIT', flyMoveInput: [0, 0, 0] }),
-  setFlyPose: (positionM, yawRad, pitchRad) => set({
+  setFlyPose: (positionM, yawRad, pitchRad) => set((state) => ({
     flyPositionM: [positionM[0], positionM[1], positionM[2]],
     flyYawRad: yawRad,
     flyPitchRad: Math.max(-1.5, Math.min(1.5, pitchRad)),
-  }),
+    flyPoseEpoch: state.flyPoseEpoch + 1,
+  })),
   setFlyPosition: (positionM) => set({ flyPositionM: [positionM[0], positionM[1], positionM[2]] }),
   rotateFlyBy: (yawDeltaRad, pitchDeltaRad) => set((state) => ({
     flyYawRad: state.flyYawRad + yawDeltaRad,

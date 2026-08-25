@@ -378,6 +378,7 @@ const atmoFragment = /* glsl */ `
   const float EXPOSURE_GROUND = ${SKY_CONFIG.exposure.groundIntensity.toFixed(2)};
   const float EXPOSURE_SPACE = ${SKY_CONFIG.exposure.spaceIntensity.toFixed(2)};
   const float EXPOSURE_CURVE_POWER = ${SKY_CONFIG.exposure.curvePower.toFixed(3)};
+  const float EXPOSURE_INSIDE = ${SKY_CONFIG.exposure.insideIntensity.toFixed(2)};
   const float METERS_PER_RENDER_UNIT = ${SKY_CONFIG.renderScaleMPerUnit.toFixed(1)};
   uniform vec3 sunDir;
   uniform vec3 planetCenter;
@@ -468,7 +469,7 @@ ${SKY_LIGHTING_GLSL}
     float lightTravelCos = dot(-sunDir, viewDirection);
 
     for (int index = 0; index < ATMOSPHERE_INSIDE_STEPS; index += 1) {
-      if (index >= stepCount) continue;
+      if (index >= stepCount) break;
       float lowerFraction = float(index) / float(stepCount);
       float upperFraction = float(index + 1) / float(stepCount);
       float midpointFraction = (float(index) + 0.5) / float(stepCount);
@@ -511,9 +512,19 @@ ${SKY_LIGHTING_GLSL}
     }
 
     // Physically-normalized radiance needs a display exposure: without it the
-    // limb integrates to ~0.005-0.05 and the atmosphere is invisible.
+    // limb integrates to ~0.005-0.05 and the atmosphere is invisible. That
+    // calibration assumes the OUTSIDE/limb regime: a thin, short slice of
+    // atmosphere grazed from orbit, genuinely needing up to ~100x boost near
+    // "ground" altitude to read as visible at all. Looking from INSIDE the
+    // shell near the ground, a near-horizontal ray's path length through the
+    // dense low atmosphere can be very long — the raw integral is already
+    // large there, not tiny — so applying the same ground-boosted curve
+    // over-exposes by the same ~100x and clips the whole view to white. Use
+    // the curve (ground-boosted) only outside the shell, where it was
+    // actually calibrated; use the flat, conservative space-level exposure
+    // inside it.
     float cameraAltitude = max(cameraRadius - surfaceRadius, 0.0);
-    float exposure = skyExposureCurve(
+    float exposureOutside = skyExposureCurve(
       cameraAltitude,
       EXPOSURE_GROUND_ALTITUDE,
       EXPOSURE_SPACE_ALTITUDE,
@@ -521,6 +532,16 @@ ${SKY_LIGHTING_GLSL}
       EXPOSURE_SPACE,
       EXPOSURE_CURVE_POWER
     );
+    // Blended, never branched: switching exposure on the inside/outside test
+    // steps it ~10x (about 29.6 -> 3) as the camera crosses the shell, which
+    // reads as a screen flash on descent. Ramp across the top tenth of the
+    // shell instead so the change is continuous.
+    float shellFraction = clamp(
+      (atmosphereRadius - cameraRadius) / max(atmosphereRadius - surfaceRadius, 1.0) * 10.0,
+      0.0,
+      1.0
+    );
+    float exposure = mix(exposureOutside, EXPOSURE_INSIDE, shellFraction);
     scattered *= exposure;
 
     // Exponential rolloff instead of a hard clamp: min() plateaued every
@@ -696,6 +717,14 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
     atmoMaterial.uniforms.planetCenter!.value.fromArray(renderCenter);
     earthMaterial.uniforms.oceanTime!.value += delta;
     earthMaterial.uniforms.farGlobeOpacity!.value = 1 - terrainFade;
+    // Depth-write only needs to come off during the terrain crossfade, where
+    // real DEM elevation can sit below the globe's mean radius (oceans,
+    // valleys) and would otherwise fail the depth test against it. Outside
+    // that band this globe IS the ground with nothing to fight — leaving
+    // depth-write off unconditionally removed the depth reference other
+    // transparent layers (clouds, atmosphere shell) were drawn against in
+    // the normal far view.
+    earthMaterial.depthWrite = terrainFade <= 0;
   });
 
   return (

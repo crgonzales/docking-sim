@@ -68,7 +68,7 @@ export const SKY_LIGHTING_GLSL = /* glsl */ `
     float surfaceRadius,
     float atmosphereRadius
   ) {
-    vec3 direction = normalize(surfacePoint - cameraPoint);
+    vec3 direction = normalize(cameraPoint - surfacePoint);
     vec3 cameraToTop = texture2D(
       transmittanceLut,
       skyAtmosphereLutUv(cameraPoint, direction, planetCenter, surfaceRadius, atmosphereRadius)

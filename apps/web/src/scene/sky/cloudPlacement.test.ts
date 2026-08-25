@@ -9,7 +9,9 @@ import {
   cloudCoverageAtCpu,
 } from './skyConfig';
 import { CLOUD_COVERAGE_GLSL } from './cloudCoverage';
+import { directionFromLatLon } from '../terrain/heightField';
 import {
+  areaWeightedCapCounts,
   cloudSphericalUv,
   cloudCapFromHeroRegion,
   sampleCloudPlacements,
@@ -82,6 +84,33 @@ describe('cloud mask placement', () => {
     expect(cloudSphericalUv(0, 1, 0)[1]).toBeCloseTo(1, 12);
     const mask = { width: 4, height: 2, data: new Uint8Array([255, 0, 0, 255, 255, 0, 0, 255]) };
     expect(sampleCoverageMask(mask, 0, 0.5)).toBeCloseTo(1, 3);
+  });
+
+  it('centers a hero cap on its geodetic site, not the antipode', () => {
+    const cap = cloudCapFromHeroRegion(28.6, -80.6, 20, 5, 6371);
+    const expected = directionFromLatLon(28.6 * Math.PI / 180, -80.6 * Math.PI / 180);
+    expect(cap.center[0]).toBeCloseTo(expected[0], 12);
+    expect(cap.center[1]).toBeCloseTo(expected[1], 12);
+    expect(cap.center[2]).toBeCloseTo(expected[2], 12);
+    const antipode = directionFromLatLon(-28.6 * Math.PI / 180, (-80.6 + 180) * Math.PI / 180);
+    expect(Math.hypot(cap.center[0] - antipode[0], cap.center[1] - antipode[1], cap.center[2] - antipode[2]))
+      .toBeGreaterThan(1);
+  });
+
+  it('weights cap puff budgets by solid angle instead of splitting evenly', () => {
+    const orbitalCapCosine = 0.48;
+    const caps = [
+      { center: [1, 0, 0] as const, capCosine: orbitalCapCosine },
+      cloudCapFromHeroRegion(28.6, -80.6, 20, 5, 6371),
+      cloudCapFromHeroRegion(26.0, -97.2, 20, 5, 6371),
+    ];
+    const count = 12_000;
+    const weighted = areaWeightedCapCounts(caps, count);
+    const even = Math.floor(count / caps.length);
+    expect(weighted.reduce((sum, value) => sum + value, 0)).toBe(count);
+    expect(weighted[0]!).toBeGreaterThan(even * 2);
+    expect(weighted[1]!).toBeLessThan(even / 10);
+    expect(weighted[2]!).toBeLessThan(even / 10);
   });
 
   it('pins the CPU transfer function to the GLSL constants', () => {

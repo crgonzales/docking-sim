@@ -14,6 +14,7 @@ import {
   TERRAIN_PATCH_GRID_SIZE,
   type PatchBuildRequest,
   type PatchBuildResult,
+  type PatchHeroTile,
   type TerrainWorkerMessage,
   type TerrainWorkerLike,
 } from './terrainWorker';
@@ -130,6 +131,47 @@ describe('terrain worker patch builder', () => {
     }
     expect(maximum).toBeLessThan(20);
     expect(result.patchCenterF64.some((value) => Math.abs(value) > 1_000_000)).toBe(true);
+  });
+
+  it('blends hero DEM height from raw heroTiles data, matching a fully-covering region', () => {
+    // A deep-level, near-ground-size patch (as in the RTC-precision test
+    // above) keeps local vertex offsets small so float32 geometry storage
+    // doesn't swamp the metre-scale height differences this test asserts.
+    const address: TerrainNodeAddress = { face: 0, level: 20, x: 2 ** 19, y: 2 ** 19 };
+    const heroTile: PatchHeroTile = {
+      regionId: 'test-hero',
+      tileSize: 2,
+      bounds: { minLatDeg: -90, maxLatDeg: 90, minLonDeg: -180, maxLonDeg: 180 },
+      data: Float32Array.of(500, 500, 500, 500),
+    };
+    const result = buildPatchGeometry(request(address, worldTiles(100, [tile(address, 100)]), {
+      heroRegions: [{ id: 'test-hero', centerLatDeg: 0, centerLonDeg: 0, radiusKm: 1_000_000, featherKm: 0 }],
+      heroTiles: [heroTile],
+    }));
+    const positions = new Float32Array(result.positions);
+    for (let index = 0; index < TERRAIN_PATCH_GRID_SIZE * TERRAIN_PATCH_GRID_SIZE; index += 1) {
+      const offset = index * 3;
+      const radius = Math.hypot(
+        result.patchCenterF64[0] + positions[offset],
+        result.patchCenterF64[1] + positions[offset + 1],
+        result.patchCenterF64[2] + positions[offset + 2],
+      );
+      expect(radius - SKY_DERIVED.earthRadiusM).toBeCloseTo(500, 3);
+    }
+  });
+
+  it('falls back to base raster height when no heroTiles are supplied for a configured region', () => {
+    const address: TerrainNodeAddress = { face: 0, level: 20, x: 2 ** 19, y: 2 ** 19 };
+    const result = buildPatchGeometry(request(address, worldTiles(100, [tile(address, 100)]), {
+      heroRegions: [{ id: 'test-hero', centerLatDeg: 0, centerLonDeg: 0, radiusKm: 1_000_000, featherKm: 0 }],
+    }));
+    const positions = new Float32Array(result.positions);
+    const radius = Math.hypot(
+      result.patchCenterF64[0] + positions[0],
+      result.patchCenterF64[1] + positions[1],
+      result.patchCenterF64[2] + positions[2],
+    );
+    expect(radius - SKY_DERIVED.earthRadiusM).toBeCloseTo(100, 3);
   });
 
   it('round-trips the worker protocol with an injected pure builder', () => {

@@ -4,6 +4,7 @@ import {
   nodeAddressKey,
   nodeAngularRadiusRadians,
   nodeCenterDirection,
+  parentAddress,
   type TerrainNodeAddress,
   type TerrainLodOptions,
   type Vec3,
@@ -40,6 +41,13 @@ function distanceSquared(a: Vec3, b: Vec3): number {
   return x * x + y * y + z * z;
 }
 
+// Numeric comparator over the raw address fields: avoids allocating and
+// validating a nodeAddressKey string (and localeCompare's locale-aware
+// collation) on every pairwise comparison of these hot sort calls.
+function compareNodeAddress(a: TerrainNodeAddress, b: TerrainNodeAddress): number {
+  return a.face - b.face || a.level - b.level || a.x - b.x || a.y - b.y;
+}
+
 function nodeCenterPosition(address: TerrainNodeAddress, planetRadiusM: number): Vec3 {
   const direction = nodeCenterDirection(address);
   return [direction[0] * planetRadiusM, direction[1] * planetRadiusM, direction[2] * planetRadiusM];
@@ -56,13 +64,48 @@ export function capTerrainNodes(
     throw new Error(`Terrain maxLivePatches must be a non-negative integer, received ${maxLivePatches}`);
   }
   if (maxLivePatches >= nodes.length) return [...nodes];
-  return nodes.map((node, index) => ({
-    node,
-    index,
-    distance: distanceSquared(cameraPosition, nodeCenterPosition(node, planetRadiusM)),
-  })).sort((a, b) => a.distance - b.distance
-    || nodeAddressKey(a.node).localeCompare(nodeAddressKey(b.node))
-    || a.index - b.index).slice(0, maxLivePatches).map(({ node }) => node);
+  // Collapse deepest-and-farthest sibling quartets into their parent until the
+  // set fits, rather than truncating to the nearest N. Truncating DELETED the
+  // far field outright: near the ground the nearest N leaves are all at max
+  // level (a level-16 patch is ~153 m across, so 300 of them span ~2.6 km),
+  // leaving a tiny high-detail apron with bare space beyond it — terrain
+  // showed up as a thin band at the horizon and nothing else. Collapsing
+  // preserves exact coverage (four children tile their parent) and just
+  // lowers detail where it is least missed.
+  let current = [...nodes];
+  while (current.length > maxLivePatches) {
+    let deepest = 0;
+    for (const node of current) if (node.level > deepest) deepest = node.level;
+    if (deepest === 0) break;
+    const groups = new Map<string, { parent: TerrainNodeAddress; members: TerrainNodeAddress[]; distance: number }>();
+    for (const node of current) {
+      if (node.level !== deepest) continue;
+      const parent = parentAddress(node);
+      if (parent === null) continue;
+      const key = nodeAddressKey(parent);
+      const existing = groups.get(key);
+      if (existing !== undefined) existing.members.push(node);
+      else {
+        groups.set(key, {
+          parent,
+          members: [node],
+          distance: distanceSquared(cameraPosition, nodeCenterPosition(parent, planetRadiusM)),
+        });
+      }
+    }
+    if (groups.size === 0) break;
+    const farthestFirst = [...groups.values()].sort((a, b) => b.distance - a.distance);
+    const removed = new Set<string>();
+    const added: TerrainNodeAddress[] = [];
+    for (const group of farthestFirst) {
+      if (current.length - removed.size + added.length <= maxLivePatches) break;
+      for (const member of group.members) removed.add(nodeAddressKey(member));
+      added.push(group.parent);
+    }
+    if (added.length === 0) break;
+    current = current.filter((node) => !removed.has(nodeAddressKey(node))).concat(added);
+  }
+  return current.sort(compareNodeAddress);
 }
 
 /** Conservative spherical horizon test, expanded by the node's angular radius. */
@@ -114,7 +157,7 @@ export function selectTerrainNodes(
     selected.push(address);
   };
   for (const root of ROOT_NODES) visit(root);
-  const ordered = selected.sort((a, b) => nodeAddressKey(a).localeCompare(nodeAddressKey(b)));
+  const ordered = selected.sort(compareNodeAddress);
   return options.maxLivePatches === undefined
     ? ordered
     : capTerrainNodes(ordered, cameraPosition, options.maxLivePatches, planetRadiusM);
@@ -127,8 +170,16 @@ function isDescendantOrSelf(candidate: TerrainNodeAddress, ancestor: TerrainNode
 }
 
 /**
- * Replace a displayed parent only when all four direct children have both a
- * desired descendant and a completed patch. This is the no-hole swap oracle.
+ * Replace a displayed parent once all four direct children have a completed
+ * patch and at least one of them is wanted. This is the no-hole swap oracle:
+ * hole-freeness comes from the four children exactly tiling the parent, so
+ * every child must be READY — but requiring every child to also be DESIRED
+ * deadlocked refinement outright. Near the ground the desired set is a small
+ * cluster under the camera, so only one child of a given parent ever contains
+ * a desired node; demanding all four pinned the scene to the six level-0
+ * roots (~312 km per vertex) forever. One wanted child is what says "the
+ * camera wants more detail somewhere in here"; mergeCompleteSiblings handles
+ * collapsing back when the parent itself becomes the wanted level.
  */
 export function swapCompleteSiblings(
   displayed: readonly TerrainNodeAddress[],
@@ -144,12 +195,12 @@ export function swapCompleteSiblings(
       childAddress(node, 0, 1),
       childAddress(node, 1, 1),
     ];
-    const canSwap = children.every((child) => ready.has(nodeAddressKey(child))
-      && desiredNodes.some((candidate) => isDescendantOrSelf(candidate, child)));
+    const canSwap = children.every((child) => ready.has(nodeAddressKey(child)))
+      && children.some((child) => desiredNodes.some((candidate) => isDescendantOrSelf(candidate, child)));
     if (canSwap) next.push(...children);
     else next.push(node);
   }
-  return next.sort((a, b) => nodeAddressKey(a).localeCompare(nodeAddressKey(b)));
+  return next.sort(compareNodeAddress);
 }
 
 /** Merge a complete displayed sibling quartet only when the parent is wanted. */
@@ -192,7 +243,7 @@ export function mergeCompleteSiblings(
       next.push(node);
     }
   }
-  return next.sort((a, b) => nodeAddressKey(a).localeCompare(nodeAddressKey(b)));
+  return next.sort(compareNodeAddress);
 }
 
 export function rootTerrainNodes(): readonly TerrainNodeAddress[] {

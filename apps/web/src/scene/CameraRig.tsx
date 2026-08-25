@@ -50,6 +50,8 @@ export function CameraRig({ worldFrame, terrainSourceRef }: CameraRigProps) {
   const orbit = useViewStore((state) => state.orbits[state.mode]);
   const renderState = useTelemetryBus((state) => state.renderState);
   const previousDebugSubmode = useRef(debugSubmode);
+  const lastKnownGroundHeightM = useRef<number | null>(null);
+  const lastSeenFlyPoseEpoch = useRef(useViewStore.getState().flyPoseEpoch);
 
   const cameraGround = (positionWorld: WorldPositionF64): { aglM: number; groundHeightM: number } | null => {
     const source = terrainSourceRef.current;
@@ -74,17 +76,39 @@ export function CameraRig({ worldFrame, terrainSourceRef }: CameraRigProps) {
     if (mode === 'DEBUG' && debugSubmode === 'FLY') {
       let fly = useViewStore.getState();
       if (previousDebugSubmode.current !== 'FLY') {
-        const cameraWorld = worldFrame.toWorld([camera.position.x, camera.position.y, camera.position.z]);
-        const direction = camera.getWorldDirection(new Vector3());
-        const pose = flyPoseFromDirection(
-          [direction.x, direction.y, direction.z],
-          flyBasisFromPosition(cameraWorld, EARTH_CENTER_WORLD).up,
-        );
-        fly.setFlyPose(cameraWorld, pose.yawRad, pose.pitchRad);
-        fly = useViewStore.getState();
+        if (lastSeenFlyPoseEpoch.current !== fly.flyPoseEpoch) {
+          // The pose was seeded externally (e.g. a `?flyto=` deep link)
+          // since we last synced — trust it instead of overwriting it with
+          // one derived from wherever the render camera currently sits,
+          // which on a fresh spawn is still the default station transform.
+          lastSeenFlyPoseEpoch.current = fly.flyPoseEpoch;
+        } else {
+          const cameraWorld = worldFrame.toWorld([camera.position.x, camera.position.y, camera.position.z]);
+          const direction = camera.getWorldDirection(new Vector3());
+          const pose = flyPoseFromDirection(
+            [direction.x, direction.y, direction.z],
+            flyBasisFromPosition(cameraWorld, EARTH_CENTER_WORLD).up,
+          );
+          fly.setFlyPose(cameraWorld, pose.yawRad, pose.pitchRad);
+          fly = useViewStore.getState();
+          lastSeenFlyPoseEpoch.current = fly.flyPoseEpoch;
+        }
+        // Entering FLY can land anywhere (the debug orbit camera may have
+        // been panned across the globe first) — a ground height memorized
+        // from wherever FLY was last active would be wrong here, so treat
+        // this like a fresh cold start until the new position resolves.
+        lastKnownGroundHeightM.current = null;
       }
 
+      // Sampled once, before the move, and reused for both the speed curve
+      // and the post-move clamp below: a single WASD step covers at most
+      // speed*dt, and flySpeedMpsFromAgl is slow near the ground (where
+      // terrain height can vary meaningfully over a short hop) and fast
+      // only far from it (where it can't) — so re-sampling after moving
+      // would cost a second full terrain-height pipeline call per frame
+      // (Newton inversion + multi-octave noise) for a negligible gain.
       const groundBeforeMove = cameraGround(fly.flyPositionM);
+      if (groundBeforeMove !== null) lastKnownGroundHeightM.current = groundBeforeMove.groundHeightM;
       const fallbackAgl = Math.max(
         Math.hypot(
           fly.flyPositionM[0] - EARTH_CENTER_WORLD[0],
@@ -103,19 +127,48 @@ export function CameraRig({ worldFrame, terrainSourceRef }: CameraRigProps) {
         dt,
         EARTH_CENTER_WORLD,
       );
-      const groundAfterMove = cameraGround(moved);
-      const clamped = groundAfterMove === null
+      // While the resident tile at this position is unresolved, clamp
+      // against the last known local ground height so a momentary gap
+      // during normal flight doesn't move the camera. If ground has never
+      // resolved at all this session (cold start, or a `?flyto=` teleport
+      // outrunning the quadtree), skip the clamp rather than guessing: an
+      // Earth-wide conservative floor (tried previously) only ever pushes
+      // the camera UP, never back down once real (lower) ground data
+      // arrives, permanently stranding any low-altitude spawn far above
+      // where it was asked to be. Leaving the raw position unclamped for
+      // this brief window can show a frame or two of unloaded terrain —
+      // cosmetic, and no worse than the pre-existing loading state — but
+      // never strands the camera once the coordinate-frame fix above keeps
+      // the clamp itself correct for every frame after ground resolves.
+      const groundHeightM = groundBeforeMove?.groundHeightM ?? lastKnownGroundHeightM.current;
+      const target: WorldPositionF64 = groundHeightM === null
         ? moved
-        : clampFlyPositionToGround(
-          moved,
-          EARTH_RADIUS_M,
-          groundAfterMove.groundHeightM,
-          SKY_CONFIG.flyCollisionClearanceM,
-        );
-      if (clamped[0] !== fly.flyPositionM[0]
-        || clamped[1] !== fly.flyPositionM[1]
-        || clamped[2] !== fly.flyPositionM[2]) {
-        fly.setFlyPosition(clamped);
+        : (() => {
+          // clampFlyPositionToGround measures radius from the planet
+          // centre, but `moved` is a world (station-origin) position —
+          // convert in and back out, the same way cameraGround() already
+          // does for height sampling.
+          const movedRelative: WorldPositionF64 = [
+            moved[0] - EARTH_CENTER_WORLD[0],
+            moved[1] - EARTH_CENTER_WORLD[1],
+            moved[2] - EARTH_CENTER_WORLD[2],
+          ];
+          const clampedRelative = clampFlyPositionToGround(
+            movedRelative,
+            EARTH_RADIUS_M,
+            groundHeightM,
+            SKY_CONFIG.flyCollisionClearanceM,
+          );
+          return [
+            clampedRelative[0] + EARTH_CENTER_WORLD[0],
+            clampedRelative[1] + EARTH_CENTER_WORLD[1],
+            clampedRelative[2] + EARTH_CENTER_WORLD[2],
+          ];
+        })();
+      if (target[0] !== fly.flyPositionM[0]
+        || target[1] !== fly.flyPositionM[1]
+        || target[2] !== fly.flyPositionM[2]) {
+        fly.setFlyPosition(target);
       }
       fly = useViewStore.getState();
 

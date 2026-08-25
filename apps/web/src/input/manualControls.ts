@@ -86,14 +86,6 @@ export function attachManualControls(element: HTMLElement): () => void {
   let authorityCommandPending = false;
 
   const emitCommand = (): void => {
-    const view = useViewStore.getState();
-    if (view.mode === 'DEBUG' && view.debugSubmode === 'FLY') {
-      // FLY owns all movement keys. Keep the sim-side command explicitly zero
-      // while the camera is flying, including a command that was held before
-      // the submode transition.
-      zeroCommand();
-      return;
-    }
     const frame = getLatestFrame();
     if (frame?.control_mode !== undefined) {
       if (modeCommandPending && frame.control_mode === controlMode) modeCommandPending = false;
@@ -111,6 +103,16 @@ export function attachManualControls(element: HTMLElement): () => void {
       if (!authorityCommandPending && frame.manual_authority !== manualAuthority) manualAuthority = frame.manual_authority;
     }
     if (controlMode !== 'MANUAL') return;
+
+    const view = useViewStore.getState();
+    if (view.mode === 'DEBUG' && view.debugSubmode === 'FLY') {
+      // FLY owns all movement keys, which alias the spacecraft WASD pitch/yaw
+      // bindings. Keep the sim-side command explicitly zero while the camera
+      // is flying, including a command that was held before the submode
+      // transition, so free-flying can never fire real thrusters.
+      zeroCommand();
+      return;
+    }
 
     // KSP-style bindings. Body axes: +y forward, +z up, +x right.
     const anyShift = held(pressed, 'translateForwardShiftLeft') || held(pressed, 'translateForwardShiftRight');

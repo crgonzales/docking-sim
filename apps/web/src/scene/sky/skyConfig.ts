@@ -108,6 +108,17 @@ export interface SkyConfig {
     groundAltitudeKm: number;
     spaceAltitudeKm: number;
     curvePower: number;
+    /**
+     * Flat exposure used by the atmosphere shell's camera-INSIDE raymarch,
+     * instead of the ground/space curve above. That curve assumes the
+     * OUTSIDE/limb regime — a thin, short slice of atmosphere grazed from
+     * orbit, genuinely near-invisible without a large boost. From inside
+     * the shell near the ground, a near-horizontal ray's path length
+     * through the dense low atmosphere can be very long, so the raw
+     * integral is already substantial; applying the same ~100x
+     * ground-altitude boost there clips the whole view to white.
+     */
+    insideIntensity: number;
   };
   cameraNearM: number;
   cockpitCameraNearM: number;
@@ -154,7 +165,19 @@ export const SKY_CONFIG: SkyConfig = {
   terrain: {
     screenSpaceErrorPx: 2,
     skirtDepthM: 2,
-    maxLevel: 3,
+    // GEOMETRY subdivision depth, independent of the raster pyramid's own
+    // maxLevel (3, ~2 km/px). A cube face spans ~10,000 km across 32 patch
+    // segments, so vertex spacing is 10,000 km / (2^level * 32): level 3 is
+    // 39 km/vertex (a barely-faceted sphere — not ground), level 10 is ~305 m,
+    // level 16 ~5 m. Below the raster's depth, height comes from the finest
+    // resident ancestor tile plus procedural detail.
+    //
+    // Kept at 10 for frame budget, not fidelity: selectTerrainNodes walks the
+    // tree every frame until screen-space error is satisfied, so cost grows
+    // sharply with depth near the ground — 16 pegged the main thread (55 fps
+    // -> under 2, then an unresponsive renderer). Raise deliberately, and
+    // re-measure low-altitude fps when doing so.
+    maxLevel: 10,
     tileCacheBudgetMB: 64,
     maxLivePatches: 300,
     workerBuildConcurrency: 4,
@@ -222,6 +245,7 @@ export const SKY_CONFIG: SkyConfig = {
     groundAltitudeKm: 1,
     spaceAltitudeKm: 120,
     curvePower: 0.65,
+    insideIntensity: 3,
   },
   cameraNearM: 0.5,
   cockpitCameraNearM: 0.05,
