@@ -4,6 +4,8 @@ import { PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { conjugateQuaternion, rotateVector } from '@docking/sim-core';
 import { useTelemetryBus } from '../telemetry/bus';
 import { shouldShowPip, useViewStore } from '../viewStore';
+import { COCKPIT_CAMERA_NEAR, PIP_CAMERA_FAR } from './sky/skyConfig';
+import { WorldFrame } from './worldFrame';
 
 /**
  * Runs AFTER the main render: the EffectComposer owns the frame at priority 1,
@@ -13,11 +15,11 @@ import { shouldShowPip, useViewStore } from '../viewStore';
 const PIP_RENDER_PRIORITY = 2;
 
 /** Render the reduced-resolution docking view into the overlay's rectangle. */
-export function DockingCameraPass() {
+export function DockingCameraPass({ worldFrame }: { worldFrame: WorldFrame }) {
   const { gl, scene } = useThree();
   const renderState = useTelemetryBus((state) => state.renderState);
   const visible = useViewStore((state) => state.pipVisible);
-  const camera = useRef(new PerspectiveCamera(55, 1, 0.05, 2_000));
+  const camera = useRef(new PerspectiveCamera(55, 1, COCKPIT_CAMERA_NEAR, PIP_CAMERA_FAR));
 
   useFrame(() => {
     // The rectangle comes from the measured DOM overlay (single source of
@@ -25,14 +27,17 @@ export function DockingCameraPass() {
     const rect = useViewStore.getState().pipRect;
     if (!visible || !renderState || !rect) return;
     const q_HB = conjugateQuaternion(renderState.q_BH);
-    const origin = new Vector3(...renderState.r_hill_m)
+    const originWorld = new Vector3(...renderState.r_hill_m)
       .add(new Vector3(...rotateVector(q_HB, [0, 1.6, 0])));
     const forward = new Vector3(...rotateVector(q_HB, [0, 1, 0]));
     const up = new Vector3(...rotateVector(q_HB, [0, 0, 1]));
+    const origin = worldFrame.toRender([originWorld.x, originWorld.y, originWorld.z]);
+    const lookAtWorld = originWorld.clone().add(forward.clone().multiplyScalar(30));
+    const lookAt = worldFrame.toRender([lookAtWorld.x, lookAtWorld.y, lookAtWorld.z]);
     camera.current.aspect = rect.width / rect.height;
-    camera.current.position.copy(origin);
+    camera.current.position.set(origin[0], origin[1], origin[2]);
     camera.current.up.copy(up);
-    camera.current.lookAt(origin.clone().add(forward.multiplyScalar(30)));
+    camera.current.lookAt(new Vector3(lookAt[0], lookAt[1], lookAt[2]));
     camera.current.updateProjectionMatrix();
 
     const pixelRatio = gl.getPixelRatio();

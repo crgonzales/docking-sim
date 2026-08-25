@@ -19,9 +19,15 @@ const BODY_UP = new Vector3(0, 1, 0);
 const PLUME_VERTEX_SHADER = /* glsl */ `
   varying vec3 vPlumePosition;
 
+  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
+  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
+  // (fragment-depth writes across large transparent overdraw stressed the
+  // Metal driver into intermittent device hangs during v0.9.0).
+  uniform float logDepthBufFC;
   void main() {
     vPlumePosition = position;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
   }
 `;
 const PLUME_FRAGMENT_SHADER = /* glsl */ `

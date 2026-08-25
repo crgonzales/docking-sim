@@ -27,6 +27,7 @@ import {
   PUFF_NOISE_OCTAVES,
   PUFF_NOISE_SCALE,
   PUFF_SILVER_LINING_G,
+  SKY_CONFIG,
   VOLUMETRIC_CAP_COSINE,
   VOLUMETRIC_FADE_IN_END,
   VOLUMETRIC_FADE_IN_START,
@@ -35,10 +36,12 @@ import {
   VOLUMETRIC_INSTANCE_COUNT,
 } from './sky/skyConfig';
 import {
+  cloudCapFromHeroRegion,
   sampleCloudPlacements,
   type CoverageMask,
 } from './sky/cloudPlacement';
 import { SUN_DIR } from './sun';
+import { WorldFrame, type WorldPositionF64 } from './worldFrame';
 
 /**
  * Cloud-field density. At 3000 the ~44° cap gives ~155 km between puffs — with
@@ -86,6 +89,7 @@ import { SUN_DIR } from './sun';
 const VOLUMETRIC_VERTEX = /* glsl */ `
   attribute vec3 instancePosition;
   attribute float instanceSeed;
+  attribute float instanceCoverage;
 
   uniform sampler2D cloudMap;
   uniform float cloudRotationOffset;
@@ -118,6 +122,11 @@ ${CLOUD_COVERAGE_GLSL}
       0.5 + asin(clamp(point.y, -1.0, 1.0)) / PI);
   }
 
+  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
+  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
+  // (fragment-depth writes across large transparent overdraw stressed the
+  // Metal driver into intermittent device hangs during v0.9.0).
+  uniform float logDepthBufFC;
   void main() {
     vec3 spherePoint = normalize(instancePosition);
     // Match the flat deck and the surface shadow lookup exactly: the map is
@@ -128,12 +137,12 @@ ${CLOUD_COVERAGE_GLSL}
     // IDENTICAL coverage function to the flat deck and the surface shadows
     // (cloudCoverage.ts). This was a third divergent transfer function until
     // the review pass — puffs would not have matched the shadows below them.
-    float density = cloudCoverageAt(
+    float density = max(instanceCoverage, cloudCoverageAt(
       cloudMap, cloudUv,
       ${CLOUD_DECK_DETAIL_SCALE.toFixed(3)},
       ${CLOUD_DECK_DETAIL_STRENGTH.toFixed(3)},
       ${CLOUD_DECK_CONTRAST.toFixed(3)}
-    );
+    ));
 
     float cameraDistance = distance(cameraPosition, earthCenter);
     float fadeIn = 1.0 - smoothstep(${VOLUMETRIC_FADE_IN_START.toFixed(1)}, ${VOLUMETRIC_FADE_IN_END.toFixed(1)}, cameraDistance);
@@ -146,6 +155,10 @@ ${CLOUD_COVERAGE_GLSL}
     // rendered. ~40% of instances now take the detail size.
     float useDetail = step(0.6, fract(instanceSeed * 7.13));
     float sizeVariation = mix(largeSize, detailSize, useDetail);
+    vec3 worldCenter = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    float puffDistance = distance(cameraPosition, worldCenter);
+    float nearPuffFade = smoothstep(sizeVariation * 0.15, sizeVariation * 1.15, puffDistance);
+    distanceFade *= nearPuffFade;
     float billboardSize = sizeVariation * density * distanceFade;
 
     // InstancedMesh carries the sphere-point translation in instanceMatrix.
@@ -157,6 +170,7 @@ ${CLOUD_COVERAGE_GLSL}
     vec2 rotatedQuad = vec2(c * position.x - s * position.y, s * position.x + c * position.y);
     centerView.xy += rotatedQuad * billboardSize;
     gl_Position = projectionMatrix * centerView;
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
 
     // On-screen quad size in pixels, computed once per quad: the fragment
     // shader previously derived this from fwidth(vQuadUv), which is noisy for
@@ -167,13 +181,14 @@ ${CLOUD_COVERAGE_GLSL}
     vDensity = density;
     vDistanceFade = distanceFade;
     vSeed = instanceSeed;
-    vWorldCenter = (modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vWorldCenter = worldCenter;
     vec3 worldNormal = normalize(mat3(modelMatrix) * spherePoint);
     vSunAmount = dot(worldNormal, sunDir);
   }
 `;
 
 const VOLUMETRIC_FRAGMENT = /* glsl */ `
+  uniform vec3 sunDir;
   varying vec2 vQuadUv;
   varying float vDensity;
   varying float vDistanceFade;
@@ -262,8 +277,9 @@ export interface VolumetricCloudsProps {
   cloudMap: Texture;
   cloudCoverageMask: Texture;
   mainDeckRotation: { current: number };
-  earthCenter: Vector3;
+  earthCenterF64: WorldPositionF64;
   radius: number;
+  worldFrame: WorldFrame;
 }
 
 function readCoverageMask(texture: Texture): CoverageMask {
@@ -288,16 +304,32 @@ export function VolumetricClouds({
   cloudMap,
   cloudCoverageMask,
   mainDeckRotation,
-  earthCenter,
+  earthCenterF64,
   radius,
+  worldFrame,
 }: VolumetricCloudsProps) {
 
   const instancedMesh = useMemo(() => {
     const geometry = new PlaneGeometry(1, 1, 1, 1);
     const mask = readCoverageMask(cloudCoverageMask);
-    const placements = sampleCloudPlacements(VOLUMETRIC_INSTANCE_COUNT, VOLUMETRIC_CAP_COSINE, mask);
+    const heroCaps = SKY_CONFIG.terrain.heroRegions.map((region) => cloudCapFromHeroRegion(
+      region.centerLatDeg,
+      region.centerLonDeg,
+      region.radiusKm,
+      region.featherKm,
+      SKY_CONFIG.earthRadiusKm,
+      SKY_CONFIG.heroCloudCoverageFloor,
+    ));
+    const placements = sampleCloudPlacements(
+      VOLUMETRIC_INSTANCE_COUNT,
+      VOLUMETRIC_CAP_COSINE,
+      mask,
+      0x4d41524c,
+      heroCaps,
+    );
     const positions = placements.positions;
     const seeds = placements.seeds;
+    const earthCenter = new Vector3(...worldFrame.toRender(earthCenterF64));
     const dummy = new Object3D();
     const bandInnerRadius = radius * CLOUD_BAND_INNER_MULTIPLIER;
     const bandOuterRadius = radius * CLOUD_BAND_OUTER_MULTIPLIER;
@@ -322,8 +354,10 @@ export function VolumetricClouds({
     );
     const positionAttribute = new InstancedBufferAttribute(positions, 3);
     const seedAttribute = new InstancedBufferAttribute(seeds, 1);
+    const coverageAttribute = new InstancedBufferAttribute(placements.coverages, 1);
     geometry.setAttribute('instancePosition', positionAttribute);
     geometry.setAttribute('instanceSeed', seedAttribute);
+    geometry.setAttribute('instanceCoverage', coverageAttribute);
 
     for (let index = 0; index < VOLUMETRIC_INSTANCE_COUNT; index += 1) {
       const x = placements.positions[index * 3];
@@ -344,6 +378,7 @@ export function VolumetricClouds({
     }
     positionAttribute.needsUpdate = true;
     seedAttribute.needsUpdate = true;
+    coverageAttribute.needsUpdate = true;
     mesh.instanceMatrix.needsUpdate = true;
     mesh.renderOrder = 2.5;
     // The geometry is a unit plane whose bounding sphere is a ~0.7-unit dot
@@ -352,7 +387,7 @@ export function VolumetricClouds({
     // the whole cloud layer blinked with camera motion.
     mesh.frustumCulled = false;
     return mesh;
-  }, [cloudCoverageMask, cloudMap, earthCenter, mainDeckRotation, radius]);
+  }, [cloudCoverageMask, cloudMap, earthCenterF64, mainDeckRotation, radius, worldFrame]);
 
   // R3F does not dispose resources owned by a <primitive>; without this the
   // geometry, material, and instance buffers leak on every Canvas remount
@@ -368,6 +403,7 @@ export function VolumetricClouds({
     const material = instancedMesh.material as ShaderMaterial;
     material.uniforms.cloudRotationOffset!.value = mainDeckRotation.current;
     material.uniforms.viewportHeight!.value = size.height;
+    material.uniforms.earthCenter!.value.fromArray(worldFrame.toRender(earthCenterF64));
   });
 
   return <primitive object={instancedMesh} />;

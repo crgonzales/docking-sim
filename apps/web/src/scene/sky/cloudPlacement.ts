@@ -12,6 +12,13 @@ export interface CloudPlacementResult {
   attempts: number;
 }
 
+export interface CloudPlacementCap {
+  readonly center: readonly [number, number, number];
+  readonly capCosine: number;
+  /** Optional authored minimum density for a static hero weather cap. */
+  readonly coverageFloor?: number;
+}
+
 const TAU = Math.PI * 2;
 const MIN_ACCEPTED_COVERAGE = 1 / 255;
 
@@ -26,6 +33,36 @@ function wrap(value: number): number {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function normalize(vector: readonly [number, number, number]): readonly [number, number, number] {
+  const size = Math.hypot(vector[0], vector[1], vector[2]);
+  if (!Number.isFinite(size) || size === 0) throw new Error('Cloud cap center must be a non-zero vector');
+  return [vector[0] / size, vector[1] / size, vector[2] / size];
+}
+
+function cross(
+  a: readonly [number, number, number],
+  b: readonly [number, number, number],
+): readonly [number, number, number] {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+}
+
+function capBasis(center: readonly [number, number, number]): {
+  readonly center: readonly [number, number, number];
+  readonly tangent: readonly [number, number, number];
+  readonly bitangent: readonly [number, number, number];
+} {
+  const normalized = normalize(center);
+  const reference: readonly [number, number, number] = Math.abs(normalized[2]) < 0.9
+    ? [0, 0, 1]
+    : [0, 1, 0];
+  const tangent = normalize(cross(reference, normalized));
+  return { center: normalized, tangent, bitangent: cross(normalized, tangent) };
 }
 
 /** Equirectangular mapping shared with Earth and the cloud shaders
@@ -63,7 +100,10 @@ export function sampleCloudPlacements(
   capCosine: number,
   mask: CoverageMask,
   seed = 0x4d41524c,
+  additionalCaps: readonly CloudPlacementCap[] = [],
 ): CloudPlacementResult {
+  if (!Number.isSafeInteger(count) || count < 0) throw new Error('Cloud placement count must be non-negative');
+  if (!Number.isFinite(capCosine) || capCosine < -1 || capCosine > 1) throw new Error('Orbital cap cosine must be in [-1, 1]');
   const positions = new Float32Array(count * 3);
   const seeds = new Float32Array(count);
   const bandFractions = new Float32Array(count);
@@ -72,33 +112,71 @@ export function sampleCloudPlacements(
   let accepted = 0;
   let attempts = 0;
   const maxAttempts = Math.max(count * 2000, 100_000);
+  const caps: readonly CloudPlacementCap[] = [
+    { center: [1, 0, 0], capCosine },
+    ...additionalCaps,
+  ];
+  const capCounts = caps.map((_, index) => Math.floor(count / caps.length) + (index < count % caps.length ? 1 : 0));
 
-  while (accepted < count && attempts < maxAttempts) {
-    attempts += 1;
-    const cosine = capCosine + (1 - capCosine) * nextCloudRandom(randomState);
-    const sine = Math.sqrt(Math.max(1 - cosine * cosine, 0));
-    const azimuth = TAU * nextCloudRandom(randomState);
-    const x = cosine;
-    const y = sine * Math.cos(azimuth);
-    const z = sine * Math.sin(azimuth);
-    const [u, v] = cloudSphericalUv(x, y, z);
-    const coverage = sampleCoverageMask(mask, u, v);
-    if (coverage <= MIN_ACCEPTED_COVERAGE || nextCloudRandom(randomState) > coverage) continue;
+  for (let capIndex = 0; capIndex < caps.length; capIndex += 1) {
+    const cap = caps[capIndex]!;
+    const basis = capBasis(cap.center);
+    const target = capCounts[capIndex]!;
+    let capAccepted = 0;
+    while (capAccepted < target && attempts < maxAttempts) {
+      attempts += 1;
+      const cosine = cap.capCosine + (1 - cap.capCosine) * nextCloudRandom(randomState);
+      const sine = Math.sqrt(Math.max(1 - cosine * cosine, 0));
+      const azimuth = TAU * nextCloudRandom(randomState);
+      const aroundTangent = sine * Math.cos(azimuth);
+      const aroundBitangent = sine * Math.sin(azimuth);
+      const x = basis.center[0] * cosine + basis.tangent[0] * aroundTangent + basis.bitangent[0] * aroundBitangent;
+      const y = basis.center[1] * cosine + basis.tangent[1] * aroundTangent + basis.bitangent[1] * aroundBitangent;
+      const z = basis.center[2] * cosine + basis.tangent[2] * aroundTangent + basis.bitangent[2] * aroundBitangent;
+      const [u, v] = cloudSphericalUv(x, y, z);
+      const coverage = Math.max(sampleCoverageMask(mask, u, v), cap.coverageFloor ?? 0);
+      if (coverage <= MIN_ACCEPTED_COVERAGE || nextCloudRandom(randomState) > coverage) continue;
 
-    const index = accepted * 3;
-    positions[index] = x;
-    positions[index + 1] = y;
-    positions[index + 2] = z;
-    seeds[accepted] = nextCloudRandom(randomState);
-    bandFractions[accepted] = nextCloudRandom(randomState) ** 1.6;
-    coverages[accepted] = coverage;
-    accepted += 1;
+      const index = accepted * 3;
+      positions[index] = x;
+      positions[index + 1] = y;
+      positions[index + 2] = z;
+      seeds[accepted] = nextCloudRandom(randomState);
+      bandFractions[accepted] = nextCloudRandom(randomState) ** 1.6;
+      coverages[accepted] = coverage;
+      accepted += 1;
+      capAccepted += 1;
+    }
   }
 
   if (accepted !== count) {
     throw new Error(`Cloud mask accepted ${accepted}/${count} placements after ${attempts} attempts`);
   }
   return { positions, seeds, bandFractions, coverages, attempts };
+}
+
+/** Convert a geographic hero-region centre and feathered radius to a static cloud cap. */
+export function cloudCapFromHeroRegion(
+  centerLatDeg: number,
+  centerLonDeg: number,
+  radiusKm: number,
+  featherKm: number,
+  earthRadiusKm: number,
+  coverageFloor = 0.55,
+): CloudPlacementCap {
+  if (![centerLatDeg, centerLonDeg, radiusKm, featherKm, earthRadiusKm].every(Number.isFinite)
+    || radiusKm < 0 || featherKm < 0 || earthRadiusKm <= 0
+    || !Number.isFinite(coverageFloor) || coverageFloor < 0 || coverageFloor > 1) {
+    throw new Error('Invalid hero cloud cap configuration');
+  }
+  const lat = centerLatDeg * Math.PI / 180;
+  const lon = centerLonDeg * Math.PI / 180;
+  const angularRadius = (radiusKm + featherKm) / earthRadiusKm;
+  return {
+    center: [-Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)],
+    capCosine: Math.cos(angularRadius),
+    coverageFloor,
+  };
 }
 
 export const CLOUD_PLACEMENT_MIN_COVERAGE = MIN_ACCEPTED_COVERAGE;

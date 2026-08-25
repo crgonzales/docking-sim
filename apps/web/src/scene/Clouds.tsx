@@ -2,10 +2,12 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   Group,
+  DoubleSide,
   NormalBlending,
   ShaderMaterial,
   Texture,
   Vector2,
+  Vector3,
 } from 'three';
 import {
   CLOUD_COVERAGE_GLSL,
@@ -24,21 +26,30 @@ import {
   CLOUD_DECK_UV_OFFSET,
   CLOUD_DECK_OPACITY,
   CLOUD_DRIFT_RAD_PER_SEC,
+  CLOUD_THROUGH_LAYER_FOG_END,
+  CLOUD_THROUGH_LAYER_FOG_START,
   DECK_RADIUS_MULTIPLIER,
 } from './sky/skyConfig';
 import { SKY_LIGHTING_GLSL } from './sky/lighting';
 import { SUN_DIR } from './sun';
+import { WorldFrame, type WorldPositionF64 } from './worldFrame';
 
 const CLOUD_VERTEX = /* glsl */ `
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec2 vUv;
+  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
+  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
+  // (fragment-depth writes across large transparent overdraw stressed the
+  // Metal driver into intermittent device hangs during v0.9.0).
+  uniform float logDepthBufFC;
   void main() {
     vUv = uv;
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     gl_Position = projectionMatrix * viewMatrix * wp;
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
   }
 `;
 
@@ -51,12 +62,21 @@ const CLOUD_FRAGMENT = /* glsl */ `
   uniform vec2 uvOffset;
   uniform float contrast;
   uniform float cirrusBand;
+  uniform vec3 earthCenter;
+  uniform float surfaceRadius;
+  uniform float layerRadius;
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec2 vUv;
 
 ${CLOUD_COVERAGE_GLSL}
 ${SKY_LIGHTING_GLSL}
+
+  const float PI = 3.14159265359;
+  vec2 sphericalUv(vec3 point) {
+    return vec2(atan(point.z, -point.x) / (2.0 * PI),
+      0.5 + asin(clamp(point.y, -1.0, 1.0)) / PI);
+  }
 
   void main() {
     // The lookup is deliberately camera-independent. A view-driven parallax
@@ -81,6 +101,19 @@ ${SKY_LIGHTING_GLSL}
     vec3 dayColor = vec3(0.92, 0.94, 0.98) * skySunTint(ndotl)
       * (0.45 + 0.55 * max(ndotl, 0.0));
     vec3 color = dayColor + vec3(0.03) * grazing;
+    vec3 cameraRadial = normalize(cameraPosition - earthCenter);
+    vec2 cameraUv = sphericalUv(cameraRadial) + uvOffset;
+    cameraUv.x = fract(cameraUv.x);
+    float cameraCoverage = cloudCoverageAt(cloudMap, cameraUv, detailScale, detailStrength, contrast);
+    float cameraLayerDistance = abs(length(cameraPosition - earthCenter) - layerRadius);
+    float throughLayerFog = cameraCoverage * (1.0 - smoothstep(
+      ${CLOUD_THROUGH_LAYER_FOG_START.toFixed(1)},
+      ${CLOUD_THROUGH_LAYER_FOG_END.toFixed(1)},
+      cameraLayerDistance));
+    if (!gl_FrontFacing) {
+      color *= vec3(0.62, 0.70, 0.84);
+      dayColor *= vec3(0.72, 0.78, 0.90);
+    }
     // The deck is an infinitely thin shell: seen edge-on at the limb its rim
     // paints dark semi-transparent arcs over the bright atmosphere band
     // (dashed ticks along the silhouette at far zoom). Real limb thickness
@@ -89,6 +122,8 @@ ${SKY_LIGHTING_GLSL}
     float rimFade = smoothstep(0.06, 0.18, rimCosine);
     float litAlpha = coverage * opacity * rimFade
       * (skyLightingAmount(ndotl) + 0.06 * grazing);
+    litAlpha = max(litAlpha, throughLayerFog * opacity * 0.32);
+    color += vec3(0.55, 0.68, 0.92) * throughLayerFog * 0.16;
     gl_FragColor = vec4(color, litAlpha);
   }
 `;
@@ -118,6 +153,8 @@ export interface CloudsProps {
   mainDeckRotation: { current: number };
   surfaceMaterial: ShaderMaterial;
   radius: number;
+  worldFrame: WorldFrame;
+  earthCenterF64: WorldPositionF64;
 }
 
 /**
@@ -125,7 +162,14 @@ export interface CloudsProps {
  * ref owned by the Earth render tree: it is not sim time and never enters a
  * zustand store or telemetry channel.
  */
-export function Clouds({ cloudMap, mainDeckRotation, surfaceMaterial, radius }: CloudsProps) {
+export function Clouds({
+  cloudMap,
+  mainDeckRotation,
+  surfaceMaterial,
+  radius,
+  worldFrame,
+  earthCenterF64,
+}: CloudsProps) {
   const deckRef = useRef<Group>(null);
   const cirrusRef = useRef<Group>(null);
   const [deckConfig, cirrusConfig] = useMemo<readonly [CloudLayerConfig, CloudLayerConfig]>(
@@ -171,13 +215,17 @@ export function Clouds({ cloudMap, mainDeckRotation, surfaceMaterial, radius }: 
         uvOffset: { value: new Vector2(...deckConfig.uvOffset) },
         contrast: { value: deckConfig.contrast },
         cirrusBand: { value: deckConfig.cirrusBand ? 1 : 0 },
+        earthCenter: { value: new Vector3(...worldFrame.toRender(earthCenterF64)) },
+        surfaceRadius: { value: radius },
+        layerRadius: { value: radius * deckConfig.radiusMultiplier },
       },
       transparent: true,
       blending: NormalBlending,
       depthTest: true,
       depthWrite: false,
+      side: DoubleSide,
     }),
-    [deckConfig],
+    [deckConfig, earthCenterF64, radius, worldFrame],
   );
   const cirrusMaterial = useMemo(
     () => new ShaderMaterial({
@@ -192,13 +240,17 @@ export function Clouds({ cloudMap, mainDeckRotation, surfaceMaterial, radius }: 
         uvOffset: { value: new Vector2(...cirrusConfig.uvOffset) },
         contrast: { value: cirrusConfig.contrast },
         cirrusBand: { value: cirrusConfig.cirrusBand ? 1 : 0 },
+        earthCenter: { value: new Vector3(...worldFrame.toRender(earthCenterF64)) },
+        surfaceRadius: { value: radius },
+        layerRadius: { value: radius * cirrusConfig.radiusMultiplier },
       },
       transparent: true,
       blending: NormalBlending,
       depthTest: true,
       depthWrite: false,
+      side: DoubleSide,
     }),
-    [cirrusConfig],
+    [cirrusConfig, earthCenterF64, radius, worldFrame],
   );
 
   useFrame((_, delta) => {
@@ -211,6 +263,9 @@ export function Clouds({ cloudMap, mainDeckRotation, surfaceMaterial, radius }: 
       mainDeckRotation.current = deck.rotation.y;
       surfaceMaterial.uniforms.cloudRotationOffset!.value = mainDeckRotation.current;
     }
+    const earthCenter = worldFrame.toRender(earthCenterF64);
+    deckMaterial.uniforms.earthCenter!.value.fromArray(earthCenter);
+    cirrusMaterial.uniforms.earthCenter!.value.fromArray(earthCenter);
   });
 
   return (

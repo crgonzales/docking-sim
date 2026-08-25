@@ -7,6 +7,10 @@ import { EquirectangularReflectionMapping, SRGBColorSpace, TextureLoader } from 
  * Background only — no image-based lighting (space stays black, the sun is
  * the only light). Intensity is clamped below the bloom threshold (1.0) so
  * stars never bloom; bloom is reserved for night lights and sun glints.
+ *
+ * This is intentionally camera-relative: Three.js scene backgrounds have no
+ * world position, so applying RTC coordinates would introduce parallax to an
+ * optical-infinity backdrop. Finite scene content uses WorldFrame.toRender.
  */
 const STARMAP_URL = '/assets/hdri/starmap.jpg';
 const BACKGROUND_INTENSITY = 0.6;

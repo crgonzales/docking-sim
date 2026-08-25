@@ -16,6 +16,7 @@ import {
 import { conjugateQuaternion } from '@docking/sim-core';
 import { useTelemetryBus } from '../telemetry/bus';
 import { ThrusterPlumes } from './ThrusterPlumes';
+import { WorldFrame } from './worldFrame';
 import {
   computeModelNormalizationTransform,
   maxAbsComponent,
@@ -224,18 +225,27 @@ if (USE_GLTF_MODELS) {
   useGLTF.preload(CHASER_MODEL_URL);
 }
 
-function Chaser() {
+function Chaser({ worldFrame }: { worldFrame: WorldFrame }) {
   const ref = useRef<Group>(null);
   const targetQuaternion = useRef(new Quaternion());
+  const previousAnchor = useRef(worldFrame.anchor);
   const renderState = useTelemetryBus((state) => state.renderState);
 
   useFrame((_, dt) => {
     const group = ref.current;
     if (!group || !renderState) return;
     const [x, y, z] = renderState.r_hill_m;
-    group.position.x = MathUtils.damp(group.position.x, x, POSITION_DAMP_LAMBDA, dt);
-    group.position.y = MathUtils.damp(group.position.y, y, POSITION_DAMP_LAMBDA, dt);
-    group.position.z = MathUtils.damp(group.position.z, z, POSITION_DAMP_LAMBDA, dt);
+    const desired = worldFrame.toRender([x, y, z]);
+    const anchor = worldFrame.anchor;
+    const anchorChanged = anchor.some((value, index) => value !== previousAnchor.current[index]);
+    if (anchorChanged) {
+      group.position.set(desired[0], desired[1], desired[2]);
+      previousAnchor.current = anchor;
+    } else {
+      group.position.x = MathUtils.damp(group.position.x, desired[0], POSITION_DAMP_LAMBDA, dt);
+      group.position.y = MathUtils.damp(group.position.y, desired[1], POSITION_DAMP_LAMBDA, dt);
+      group.position.z = MathUtils.damp(group.position.z, desired[2], POSITION_DAMP_LAMBDA, dt);
+    }
     const q_HB = conjugateQuaternion(renderState.q_BH);
     targetQuaternion.current.set(q_HB[1], q_HB[2], q_HB[3], q_HB[0]);
     group.quaternion.slerp(targetQuaternion.current, 1 - Math.exp(-4 * dt));
@@ -258,10 +268,19 @@ function Chaser() {
   );
 }
 
-export function Spacecraft() {
+export function Spacecraft({ worldFrame }: { worldFrame: WorldFrame }) {
+  const stationRef = useRef<Group>(null);
+
+  useFrame(() => {
+    const station = stationRef.current;
+    if (station === null) return;
+    const renderOrigin = worldFrame.toRender([0, 0, 0]);
+    station.position.set(renderOrigin[0], renderOrigin[1], renderOrigin[2]);
+  });
+
   return (
     <>
-      <group>
+      <group ref={stationRef}>
         {USE_GLTF_MODELS ? (
           <CraftErrorBoundary fallback={<PrimitiveStation />}>
             <Suspense fallback={null}>
@@ -272,7 +291,7 @@ export function Spacecraft() {
           <PrimitiveStation />
         )}
       </group>
-      <Chaser />
+      <Chaser worldFrame={worldFrame} />
     </>
   );
 }

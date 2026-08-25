@@ -1,0 +1,69 @@
+{
+  "tileSize": 256,
+  "maxLevel": 4,
+  "urlTemplate": "/assets/terrain/hero/ksc/{level}/{x}/{y}.png",
+  "format": "terrain-rgb",
+  "noDataRgb": [
+    255,
+    255,
+    255
+  ],
+  "projection": "local-equirectangular",
+  "region": {
+    "id": "ksc",
+    "centerLatDeg": 28.6,
+    "centerLonDeg": -80.6,
+    "radiusKm": 20,
+    "featherKm": 5,
+    "bounds": {
+      "minLat": 28.37516959852032,
+      "maxLat": 28.824830401479684,
+      "minLon": -80.85607603765902,
+      "maxLon": -80.34392396234097
+    }
+  },
+  "codec": {
+    "offsetM": -10000,
+    "scaleM": 0.1
+  },
+  "sources": [
+    {
+      "file": "USGS_13_n29w081.tif",
+      "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n29w081/USGS_13_n29w081.tif",
+      "sha256": "532ab3a4ade336d9a7d266e6745a12f043db928ba8bf28a4576886de421a74cd",
+      "sampleFormat": "float32-m"
+    }
+  ],
+  "levels": [
+    {
+      "level": 0,
+      "resolution": 256,
+      "tileFiles": 1,
+      "bytes": 23001
+    },
+    {
+      "level": 1,
+      "resolution": 512,
+      "tileFiles": 4,
+      "bytes": 80709
+    },
+    {
+      "level": 2,
+      "resolution": 1024,
+      "tileFiles": 16,
+      "bytes": 281434
+    },
+    {
+      "level": 3,
+      "resolution": 2048,
+      "tileFiles": 64,
+      "bytes": 942901
+    },
+    {
+      "level": 4,
+      "resolution": 4096,
+      "tileFiles": 256,
+      "bytes": 2890737
+    }
+  ]
+}

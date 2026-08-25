@@ -1,0 +1,64 @@
+{
+  "tileSize": 256,
+  "maxLevel": 3,
+  "urlTemplate": "/assets/terrain/base/{face}/{level}/{x}/{y}.png",
+  "format": "terrain-rgb",
+  "noDataRgb": [
+    255,
+    255,
+    255
+  ],
+  "codec": {
+    "offsetM": -11000,
+    "scaleM": 1
+  },
+  "bounds": {
+    "minLat": -90,
+    "maxLat": 90,
+    "minLon": -180,
+    "maxLon": 180
+  },
+  "sourceRaster": {
+    "width": 10800,
+    "height": 5400,
+    "projection": "equirectangular"
+  },
+  "faceResolution": 2048,
+  "levels": [
+    {
+      "level": 0,
+      "faceResolution": 256,
+      "tileCount": 1,
+      "tileFiles": 6,
+      "bytes": 654796
+    },
+    {
+      "level": 1,
+      "faceResolution": 512,
+      "tileCount": 2,
+      "tileFiles": 24,
+      "bytes": 2507035
+    },
+    {
+      "level": 2,
+      "faceResolution": 1024,
+      "tileCount": 4,
+      "tileFiles": 96,
+      "bytes": 9493407
+    },
+    {
+      "level": 3,
+      "faceResolution": 2048,
+      "tileCount": 8,
+      "tileFiles": 384,
+      "bytes": 35250076
+    }
+  ],
+  "source": {
+    "url": "https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/60s_surface_elev_gtif/ETOPO_2022_v1_60s_N90W180_surface.tif",
+    "sha256": "9d27d4b8ea8e76977e2988bca667d7c8fa68b927355feffcddd6b4875a7fd08e",
+    "nativeWidth": 21600,
+    "nativeHeight": 10800,
+    "sampleFormat": "float32-m"
+  }
+}

@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import type { TelemetryFrame } from '@docking/sim-core';
-import { DEBUG_MAX_ORBIT, FLIGHT_MAX_ORBIT } from './scene/sky/skyConfig';
+import { DEBUG_MAX_ORBIT_M, FLIGHT_MAX_ORBIT_M } from './scene/sky/skyConfig';
 
 export type ViewMode = 'CINEMATIC' | 'CHASE' | 'COCKPIT' | 'DEBUG';
+export type DebugSubmode = 'ORBIT' | 'FLY';
+export type FlyPositionM = readonly [number, number, number];
 
 export interface OrbitState {
   azimuth_rad: number;
@@ -21,6 +23,11 @@ export interface PipRect {
 
 interface ViewState {
   mode: ViewMode;
+  debugSubmode: DebugSubmode;
+  flyPositionM: FlyPositionM;
+  flyYawRad: number;
+  flyPitchRad: number;
+  flyMoveInput: readonly [number, number, number];
   /** Mode to restore when the debug camera is toggled off. Never 'DEBUG'. */
   lastFlightMode: ViewMode;
   orbits: Record<ViewMode, OrbitState>;
@@ -30,6 +37,11 @@ interface ViewState {
   setMode: (mode: ViewMode) => void;
   cycleMode: () => void;
   toggleDebug: () => void;
+  toggleDebugSubmode: () => void;
+  setFlyPose: (positionM: FlyPositionM, yawRad: number, pitchRad: number) => void;
+  setFlyPosition: (positionM: FlyPositionM) => void;
+  rotateFlyBy: (yawDeltaRad: number, pitchDeltaRad: number) => void;
+  setFlyMoveInput: (input: readonly [number, number, number]) => void;
   orbitBy: (dAzimuth_rad: number, dElevation_rad: number) => void;
   zoomBy: (factor: number) => void;
   toggleKeybinds: () => void;
@@ -40,13 +52,13 @@ interface ViewState {
 /** 'C' cycles the flight views only; DEBUG is entered/left via its toggle. */
 const VIEW_MODES: readonly ViewMode[] = ['CINEMATIC', 'CHASE', 'COCKPIT'];
 const ORBIT_LIMITS: Record<ViewMode, { minDistance_m: number; maxDistance_m: number }> = {
-  CINEMATIC: { minDistance_m: 40, maxDistance_m: FLIGHT_MAX_ORBIT },
+  CINEMATIC: { minDistance_m: 40, maxDistance_m: FLIGHT_MAX_ORBIT_M },
   CHASE: { minDistance_m: 8, maxDistance_m: 400 },
   COCKPIT: { minDistance_m: 0, maxDistance_m: 0 },
   // Diagnostic camera: zoom range spans from hull inspection out past the full
-  // Earth disc (planet centre sits ~6771 units away), for verifying cloud
+  // Earth disc (planet centre sits ~6.771e6 m away), for verifying cloud
   // altitude, shadow registration, and limb behavior from arbitrary angles.
-  DEBUG: { minDistance_m: 2, maxDistance_m: DEBUG_MAX_ORBIT },
+  DEBUG: { minDistance_m: 2, maxDistance_m: DEBUG_MAX_ORBIT_M },
 };
 const INITIAL_ORBITS: Record<ViewMode, OrbitState> = {
   CINEMATIC: { azimuth_rad: 0.52, elevation_rad: 0.42, distance_m: 120 },
@@ -62,22 +74,47 @@ function clamp(value: number, min: number, max: number): number {
 
 export const useViewStore = create<ViewState>((set) => ({
   mode: 'CINEMATIC',
+  debugSubmode: 'ORBIT',
+  flyPositionM: [0, -320, 60],
+  flyYawRad: Math.PI / 2,
+  flyPitchRad: 0,
+  flyMoveInput: [0, 0, 0],
   lastFlightMode: 'CINEMATIC',
   orbits: INITIAL_ORBITS,
   pipVisible: false,
   pipRect: null,
   keybindsOpen: false,
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) => set((state) => ({
+    mode,
+    ...(mode === 'DEBUG' ? {} : { debugSubmode: 'ORBIT' as const, flyMoveInput: [0, 0, 0] as const }),
+    lastFlightMode: mode === 'DEBUG' ? state.lastFlightMode : mode,
+  })),
   cycleMode: () => set((state) => ({
     // indexOf('DEBUG') is -1, so cycling from the debug camera lands on
     // CINEMATIC — pressing C is also an exit from DEBUG.
     mode: VIEW_MODES[(VIEW_MODES.indexOf(state.mode) + 1) % VIEW_MODES.length]!,
+    debugSubmode: 'ORBIT',
+    flyMoveInput: [0, 0, 0],
   })),
   toggleDebug: () => set((state) => (
     state.mode === 'DEBUG'
-      ? { mode: state.lastFlightMode }
-      : { mode: 'DEBUG', lastFlightMode: state.mode }
+      ? { mode: state.lastFlightMode, debugSubmode: 'ORBIT', flyMoveInput: [0, 0, 0] }
+      : { mode: 'DEBUG', lastFlightMode: state.mode, debugSubmode: 'ORBIT', flyMoveInput: [0, 0, 0] }
   )),
+  toggleDebugSubmode: () => set((state) => state.mode !== 'DEBUG'
+    ? state
+    : { debugSubmode: state.debugSubmode === 'ORBIT' ? 'FLY' : 'ORBIT', flyMoveInput: [0, 0, 0] }),
+  setFlyPose: (positionM, yawRad, pitchRad) => set({
+    flyPositionM: [positionM[0], positionM[1], positionM[2]],
+    flyYawRad: yawRad,
+    flyPitchRad: Math.max(-1.5, Math.min(1.5, pitchRad)),
+  }),
+  setFlyPosition: (positionM) => set({ flyPositionM: [positionM[0], positionM[1], positionM[2]] }),
+  rotateFlyBy: (yawDeltaRad, pitchDeltaRad) => set((state) => ({
+    flyYawRad: state.flyYawRad + yawDeltaRad,
+    flyPitchRad: Math.max(-1.5, Math.min(1.5, state.flyPitchRad + pitchDeltaRad)),
+  })),
+  setFlyMoveInput: (input) => set({ flyMoveInput: [input[0], input[1], input[2]] }),
   orbitBy: (dAzimuth_rad, dElevation_rad) => set((state) => {
     if (state.mode === 'COCKPIT') return state;
     const current = state.orbits[state.mode];

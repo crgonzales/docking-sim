@@ -1,8 +1,6 @@
 // Vitest supplies these Node modules at runtime; the web tsconfig intentionally
 // does not include a Node type library for application code.
-// @ts-expect-error Vitest runtime module
 import { createHash } from 'node:crypto';
-// @ts-expect-error Vitest runtime module
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { SKY_CONFIG } from './skyConfig';
@@ -12,6 +10,8 @@ import {
   TRANSMITTANCE_FLOOR,
   bakeMultipleScatteringLut,
   bakeTransmittanceLut,
+  densityWarpedDistanceKm,
+  densityWarpedTransmittanceAlongRay,
   hillaireMultipleScattering,
   transmittanceAlongRay,
   transmittanceForPathLength,
@@ -95,5 +95,22 @@ describe('atmosphere bake math', () => {
       expect(value).toBeGreaterThan(0);
       expect(value).toBeLessThanOrEqual(1);
     }
+  });
+
+  it('matches the 1024-step reference for warped inside-atmosphere rays', () => {
+    for (const mu of [1, 0, 0.12]) {
+      const reference = transmittanceAlongRay(0, mu, coefficients, 1024);
+      const warped = densityWarpedTransmittanceAlongRay(0, mu, coefficients, 32);
+      for (let channel = 0; channel < 3; channel += 1) {
+        expect(Math.abs(warped[channel] - reference[channel])).toBeLessThan(0.025);
+      }
+    }
+  });
+
+  it('concentrates warped samples near the camera while preserving endpoints', () => {
+    expect(densityWarpedDistanceKm(0, 100, coefficients.rayleighScaleHeightKm)).toBe(0);
+    expect(densityWarpedDistanceKm(1, 100, coefficients.rayleighScaleHeightKm)).toBeCloseTo(100, 12);
+    expect(densityWarpedDistanceKm(0.1, 100, coefficients.rayleighScaleHeightKm))
+      .toBeLessThan(10);
   });
 });

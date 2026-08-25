@@ -17,6 +17,7 @@ export const BINDINGS: readonly Binding[] = [
   { id: 'cycleController', code: 'KeyV', label: 'V', group: 'MODE', description: 'cycle PID / LQR / MPC' },
   { id: 'cycleView', code: 'KeyC', label: 'C', group: 'CAMERA', description: 'cycle camera view' },
   { id: 'toggleDebugCamera', code: 'KeyB', label: 'B', group: 'CAMERA', description: 'toggle debug camera (free orbit, zoom to full Earth)' },
+  { id: 'toggleDebugFly', code: 'KeyF', label: 'F', group: 'CAMERA', description: 'toggle DEBUG ORBIT / FLY submode' },
   { id: 'cameraOrbitLeft', code: 'ArrowLeft', label: 'LEFT', group: 'CAMERA', description: 'orbit camera left' },
   { id: 'cameraOrbitRight', code: 'ArrowRight', label: 'RIGHT', group: 'CAMERA', description: 'orbit camera right' },
   { id: 'cameraOrbitUp', code: 'ArrowUp', label: 'UP', group: 'CAMERA', description: 'orbit camera up' },

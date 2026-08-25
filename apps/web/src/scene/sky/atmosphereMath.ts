@@ -15,6 +15,7 @@ export interface AtmosphereCoefficients {
   ozoneHalfWidthKm: number;
   rayleighScaleHeightKm: number;
   mieScaleHeightKm: number;
+  insideRaymarchSteps: number;
 }
 
 export interface LutSize {
@@ -29,6 +30,23 @@ const MULTIPLE_SCATTERING_ORDERS = 4;
 const MULTIPLE_SCATTERING_ANGLE_SAMPLES = 8;
 export const TRANSMITTANCE_FLOOR = 1e-6;
 const PI = Math.PI;
+
+/** Exponential distance warp used by the inside-atmosphere raymarch. */
+export function densityWarpedDistanceKm(
+  fraction: number,
+  pathLengthKm: number,
+  rayleighScaleHeightKm: number,
+): number {
+  if (!Number.isFinite(fraction) || !Number.isFinite(pathLengthKm) || !Number.isFinite(rayleighScaleHeightKm)) {
+    throw new Error('Density warp inputs must be finite');
+  }
+  if (pathLengthKm < 0 || rayleighScaleHeightKm <= 0) throw new Error('Density warp lengths must be positive');
+  const t = clamp(fraction, 0, 1);
+  const warp = Math.min(pathLengthKm / rayleighScaleHeightKm, 8);
+  if (warp < 1e-5) return pathLengthKm * t;
+  const denominator = Math.expm1(warp);
+  return pathLengthKm * Math.expm1(warp * t) / denominator;
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -140,6 +158,43 @@ export function transmittanceAlongRay(
     addScaled(opticalDepth, extinctionAtAltitudeM(sampleAltitudeKm, coefficients), segmentKm * 1000);
   }
 
+  return [Math.exp(-opticalDepth[0]), Math.exp(-opticalDepth[1]), Math.exp(-opticalDepth[2])];
+}
+
+/**
+ * CPU mirror of the camera-inside branch: samples are concentrated near the
+ * camera by the Rayleigh scale height while each warped interval retains its
+ * correct integration weight.
+ */
+export function densityWarpedTransmittanceAlongRay(
+  altitudeKm: number,
+  mu: number,
+  coefficients: AtmosphereCoefficients,
+  steps = coefficients.insideRaymarchSteps,
+): Spectrum {
+  const cosine = clamp(mu, -1, 1);
+  if (rayIntersectsGround(altitudeKm, cosine, coefficients)) {
+    return [TRANSMITTANCE_FLOOR, TRANSMITTANCE_FLOOR, TRANSMITTANCE_FLOOR];
+  }
+  const pathLengthKm = distanceToTopOfAtmosphereKm(altitudeKm, cosine, coefficients);
+  if (pathLengthKm <= 0) return [1, 1, 1];
+  const sampleCount = Math.max(1, Math.floor(steps));
+  const opticalDepth = [0, 0, 0];
+  const radiusKm = coefficients.bottomRadiusKm + altitudeKm;
+  for (let index = 0; index < sampleCount; index += 1) {
+    const lower = densityWarpedDistanceKm(index / sampleCount, pathLengthKm, coefficients.rayleighScaleHeightKm);
+    const upper = densityWarpedDistanceKm((index + 1) / sampleCount, pathLengthKm, coefficients.rayleighScaleHeightKm);
+    const distanceKm = densityWarpedDistanceKm((index + 0.5) / sampleCount, pathLengthKm, coefficients.rayleighScaleHeightKm);
+    const sampleRadiusKm = Math.sqrt(Math.max(
+      radiusKm * radiusKm + distanceKm * distanceKm + 2 * radiusKm * cosine * distanceKm,
+      coefficients.bottomRadiusKm ** 2,
+    ));
+    addScaled(
+      opticalDepth,
+      extinctionAtAltitudeM(sampleRadiusKm - coefficients.bottomRadiusKm, coefficients),
+      (upper - lower) * 1000,
+    );
+  }
   return [Math.exp(-opticalDepth[0]), Math.exp(-opticalDepth[1]), Math.exp(-opticalDepth[2])];
 }
 

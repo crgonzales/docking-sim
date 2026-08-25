@@ -86,6 +86,14 @@ export function attachManualControls(element: HTMLElement): () => void {
   let authorityCommandPending = false;
 
   const emitCommand = (): void => {
+    const view = useViewStore.getState();
+    if (view.mode === 'DEBUG' && view.debugSubmode === 'FLY') {
+      // FLY owns all movement keys. Keep the sim-side command explicitly zero
+      // while the camera is flying, including a command that was held before
+      // the submode transition.
+      zeroCommand();
+      return;
+    }
     const frame = getLatestFrame();
     if (frame?.control_mode !== undefined) {
       if (modeCommandPending && frame.control_mode === controlMode) modeCommandPending = false;
@@ -162,6 +170,9 @@ export function attachManualControls(element: HTMLElement): () => void {
       case 'toggleDebugCamera':
         useViewStore.getState().toggleDebug();
         break;
+      case 'toggleDebugFly':
+        useViewStore.getState().toggleDebugSubmode();
+        break;
       case 'toggleKeybinds':
       case 'toggleKeybindsQuestion':
         useViewStore.getState().toggleKeybinds();
@@ -189,10 +200,14 @@ export function attachManualControls(element: HTMLElement): () => void {
 
   const onMouseMove = (event: MouseEvent): void => {
     if (!dragging) return;
-    useViewStore.getState().orbitBy(
-      (event.clientX - lastX) * ORBIT_SENSITIVITY_RAD_PX,
-      -(event.clientY - lastY) * ORBIT_SENSITIVITY_RAD_PX,
-    );
+    const view = useViewStore.getState();
+    const deltaX = event.clientX - lastX;
+    const deltaY = event.clientY - lastY;
+    if (view.mode === 'DEBUG' && view.debugSubmode === 'FLY') {
+      view.rotateFlyBy(deltaX * ORBIT_SENSITIVITY_RAD_PX, -deltaY * ORBIT_SENSITIVITY_RAD_PX);
+    } else {
+      view.orbitBy(deltaX * ORBIT_SENSITIVITY_RAD_PX, -deltaY * ORBIT_SENSITIVITY_RAD_PX);
+    }
     lastX = event.clientX;
     lastY = event.clientY;
   };
@@ -202,10 +217,22 @@ export function attachManualControls(element: HTMLElement): () => void {
   };
 
   const onWheel = (event: WheelEvent): void => {
-    if (useViewStore.getState().mode === 'COCKPIT') return;
+    const view = useViewStore.getState();
+    if (view.mode === 'COCKPIT') return;
     event.preventDefault();
+    if (view.mode === 'DEBUG' && view.debugSubmode === 'FLY') return;
     useViewStore.getState().zoomBy(Math.pow(ZOOM_STEP, event.deltaY > 0 ? 1 : -1));
   };
+
+  const unsubscribeView = useViewStore.subscribe((state, previous) => {
+    if (state.debugSubmode === previous.debugSubmode) return;
+    // A held W/A/S/D from spacecraft MANUAL must never leak into FLY, and a
+    // held key from FLY must never become a spacecraft command on return.
+    pressed.clear();
+    stopDragging();
+    state.setFlyMoveInput([0, 0, 0]);
+    zeroCommand();
+  });
 
   const onBlur = (): void => {
     pressed.clear();
@@ -229,6 +256,24 @@ export function attachManualControls(element: HTMLElement): () => void {
   document.addEventListener('visibilitychange', onVisibilityChange);
   const timer = window.setInterval(emitCommand, TICK_MS);
   const cameraTick = (): void => {
+    const view = useViewStore.getState();
+    if (view.mode === 'DEBUG' && view.debugSubmode === 'FLY') {
+      const flyInput: [number, number, number] = [
+        (pressed.has('KeyD') ? 1 : 0) - (pressed.has('KeyA') ? 1 : 0),
+        (pressed.has('KeyW') ? 1 : 0) - (pressed.has('KeyS') ? 1 : 0),
+        0,
+      ];
+      view.setFlyMoveInput(flyInput);
+      // Keyboard look: arrows steer the FLY camera (yaw left/right, pitch
+      // up/down) — trackpad dragging is awkward, so arrows mirror mouse-look.
+      const yaw = (held(pressed, 'cameraOrbitRight') ? 1 : 0) - (held(pressed, 'cameraOrbitLeft') ? 1 : 0);
+      const pitch = (held(pressed, 'cameraOrbitUp') ? 1 : 0) - (held(pressed, 'cameraOrbitDown') ? 1 : 0);
+      if (yaw !== 0 || pitch !== 0) {
+        view.rotateFlyBy(yaw * CAMERA_ORBIT_STEP_RAD, pitch * CAMERA_ORBIT_STEP_RAD);
+      }
+      return;
+    }
+    if (view.flyMoveInput.some((value) => value !== 0)) view.setFlyMoveInput([0, 0, 0]);
     const az = (held(pressed, 'cameraOrbitRight') ? 1 : 0) - (held(pressed, 'cameraOrbitLeft') ? 1 : 0);
     const el = (held(pressed, 'cameraOrbitUp') ? 1 : 0) - (held(pressed, 'cameraOrbitDown') ? 1 : 0);
     if (az !== 0 || el !== 0) {
@@ -252,6 +297,7 @@ export function attachManualControls(element: HTMLElement): () => void {
     window.removeEventListener('blur', onBlur);
     window.removeEventListener('pointercancel', stopDragging);
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    unsubscribeView();
     pressed.clear();
     zeroCommand();
   };

@@ -1,0 +1,149 @@
+{
+  "format": "terrain-rgb",
+  "regions": [
+    {
+      "tileSize": 256,
+      "maxLevel": 4,
+      "urlTemplate": "/assets/terrain/hero/ksc/{level}/{x}/{y}.png",
+      "format": "terrain-rgb",
+      "noDataRgb": [
+        255,
+        255,
+        255
+      ],
+      "projection": "local-equirectangular",
+      "region": {
+        "id": "ksc",
+        "centerLatDeg": 28.6,
+        "centerLonDeg": -80.6,
+        "radiusKm": 20,
+        "featherKm": 5,
+        "bounds": {
+          "minLat": 28.37516959852032,
+          "maxLat": 28.824830401479684,
+          "minLon": -80.85607603765902,
+          "maxLon": -80.34392396234097
+        }
+      },
+      "codec": {
+        "offsetM": -10000,
+        "scaleM": 0.1
+      },
+      "sources": [
+        {
+          "file": "USGS_13_n29w081.tif",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n29w081/USGS_13_n29w081.tif",
+          "sha256": "532ab3a4ade336d9a7d266e6745a12f043db928ba8bf28a4576886de421a74cd",
+          "sampleFormat": "float32-m"
+        }
+      ],
+      "levels": [
+        {
+          "level": 0,
+          "resolution": 256,
+          "tileFiles": 1,
+          "bytes": 23001
+        },
+        {
+          "level": 1,
+          "resolution": 512,
+          "tileFiles": 4,
+          "bytes": 80709
+        },
+        {
+          "level": 2,
+          "resolution": 1024,
+          "tileFiles": 16,
+          "bytes": 281434
+        },
+        {
+          "level": 3,
+          "resolution": 2048,
+          "tileFiles": 64,
+          "bytes": 942901
+        },
+        {
+          "level": 4,
+          "resolution": 4096,
+          "tileFiles": 256,
+          "bytes": 2890737
+        }
+      ]
+    },
+    {
+      "tileSize": 256,
+      "maxLevel": 4,
+      "urlTemplate": "/assets/terrain/hero/boca-chica/{level}/{x}/{y}.png",
+      "format": "terrain-rgb",
+      "noDataRgb": [
+        255,
+        255,
+        255
+      ],
+      "projection": "local-equirectangular",
+      "region": {
+        "id": "boca-chica",
+        "centerLatDeg": 26,
+        "centerLonDeg": -97.2,
+        "radiusKm": 20,
+        "featherKm": 5,
+        "bounds": {
+          "minLat": 25.775169598520318,
+          "maxLat": 26.224830401479682,
+          "minLon": -97.45014674096412,
+          "maxLon": -96.94985325903589
+        }
+      },
+      "codec": {
+        "offsetM": -10000,
+        "scaleM": 0.1
+      },
+      "sources": [
+        {
+          "file": "USGS_13_n27w098.tif",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n27w098/USGS_13_n27w098.tif",
+          "sha256": "921b5055de2ccc1054a04b712469f858a71db543a7c8ae6780468549ed9ed5bb",
+          "sampleFormat": "float32-m"
+        },
+        {
+          "file": "USGS_13_n26w098.tif",
+          "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n26w098/USGS_13_n26w098.tif",
+          "sha256": "3459fa64c2604935fc648ba0621380a8de5451ff6d643b0e14449861052e30ff",
+          "sampleFormat": "float32-m"
+        }
+      ],
+      "levels": [
+        {
+          "level": 0,
+          "resolution": 256,
+          "tileFiles": 1,
+          "bytes": 23870
+        },
+        {
+          "level": 1,
+          "resolution": 512,
+          "tileFiles": 4,
+          "bytes": 78629
+        },
+        {
+          "level": 2,
+          "resolution": 1024,
+          "tileFiles": 16,
+          "bytes": 250474
+        },
+        {
+          "level": 3,
+          "resolution": 2048,
+          "tileFiles": 64,
+          "bytes": 777077
+        },
+        {
+          "level": 4,
+          "resolution": 4096,
+          "tileFiles": 256,
+          "bytes": 2274904
+        }
+      ]
+    }
+  ]
+}

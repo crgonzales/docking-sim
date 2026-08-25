@@ -1,6 +1,6 @@
-import { Suspense, useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { Color } from 'three';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Color, DirectionalLight } from 'three';
 import { Earth } from './Earth';
 import { Effects } from './Effects';
 import { CameraRig } from './CameraRig';
@@ -11,12 +11,81 @@ import { SunSprite } from './SunSprite';
 import { SUN_DIR, SUN_LIGHT_DISTANCE_M } from './sun';
 import {
   ATMOSPHERE_TRANSMITTANCE_LUT_PATH,
+  CAMERA_FAR,
+  CAMERA_NEAR,
   SKY_CONFIG,
 } from './sky/skyConfig';
 import {
   sampleTransmittanceLut,
   TRANSMITTANCE_LUT_SIZE,
 } from './sky/atmosphereMath';
+import { WorldFrame, type WorldPositionF64 } from './worldFrame';
+import { parseFlytoParam } from './flytoParam';
+import { useViewStore } from '../viewStore';
+import type { TerrainTileSource } from './terrain/tileSource';
+
+interface WorldFrameControllerProps {
+  worldFrame: WorldFrame;
+}
+
+function WorldFrameController({ worldFrame }: WorldFrameControllerProps) {
+  const { camera } = useThree();
+  const heartbeatRef = useRef({ frames: 0, lastLog: 0 });
+
+  useFrame(() => {
+    heartbeatRef.current.frames += 1;
+    const nowMs = performance.now();
+    if (new URLSearchParams(window.location.search).get('terraindiag') === '1'
+      && nowMs - heartbeatRef.current.lastLog >= 2000) {
+      heartbeatRef.current.lastLog = nowMs;
+      const memory = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
+      // eslint-disable-next-line no-console
+      console.log('[frame-diag]', JSON.stringify({
+        t: Math.round(nowMs), frames: heartbeatRef.current.frames,
+        heapMB: memory ? Math.round(memory.usedJSHeapSize / 1048576) : -1,
+        tiles: (globalThis as { __tileDiag?: object }).__tileDiag ?? null,
+      }));
+    }
+    const cameraWorld = worldFrame.toWorld([camera.position.x, camera.position.y, camera.position.z]);
+    if (!worldFrame.rebase(cameraWorld)) return;
+    // Keep the camera at the same physical position while every world object
+    // is re-derived from the new render anchor on this frame.
+    const cameraRender = worldFrame.toRender(cameraWorld);
+    camera.position.set(cameraRender[0], cameraRender[1], cameraRender[2]);
+  }, -1);
+
+  return null;
+}
+
+interface SunLightProps {
+  sunTint: Color;
+  worldFrame: WorldFrame;
+}
+
+function SunLight({ sunTint, worldFrame }: SunLightProps) {
+  const lightRef = useRef<DirectionalLight>(null);
+  const sunWorld: WorldPositionF64 = [
+    SUN_DIR.x * SUN_LIGHT_DISTANCE_M,
+    SUN_DIR.y * SUN_LIGHT_DISTANCE_M,
+    SUN_DIR.z * SUN_LIGHT_DISTANCE_M,
+  ];
+
+  useFrame(() => {
+    if (lightRef.current === null) return;
+    const position = worldFrame.toRender(sunWorld);
+    lightRef.current.position.set(position[0], position[1], position[2]);
+  });
+
+  const initialPosition = worldFrame.toRender(sunWorld);
+  return (
+    <directionalLight
+      ref={lightRef}
+      position={initialPosition}
+      intensity={2.4}
+      color={sunTint}
+    />
+  );
+}
 
 function useSunExtinctionTint(): Color {
   const [sunTint, setSunTint] = useState(() => new Color(1, 1, 1));
@@ -67,33 +136,40 @@ function useSunExtinctionTint(): Color {
  */
 export function SceneRoot() {
   const sunTint = useSunExtinctionTint();
+  const worldFrame = useMemo(() => new WorldFrame(), []);
+  const terrainSourceRef = useRef<TerrainTileSource | null>(null);
+
+  // Debug deep link: ?flyto=lat,lon,altM spawns the DEBUG FLY camera at a
+  // geodetic position facing the local horizon — reproducible framings for
+  // captures and bug reports.
+  useEffect(() => {
+    const spawn = parseFlytoParam(window.location.search);
+    if (spawn === null) return;
+    const view = useViewStore.getState();
+    view.setMode('DEBUG');
+    if (useViewStore.getState().debugSubmode !== 'FLY') view.toggleDebugSubmode();
+    view.setFlyPose(spawn.positionM, spawn.yawRad, spawn.pitchRad);
+  }, []);
 
   return (
     <Canvas
       dpr={[1, 1.75]}
       gl={{ logarithmicDepthBuffer: true, powerPreference: 'high-performance', antialias: true }}
-      camera={{ position: [40, -320, 60], fov: 45, near: 0.5, far: 5.0e7 }}
+      camera={{ position: [40, -320, 60], fov: 45, near: CAMERA_NEAR, far: CAMERA_FAR }}
       onCreated={({ camera }) => camera.lookAt(0, -80, 0)}
     >
+      <WorldFrameController worldFrame={worldFrame} />
       <Suspense fallback={null}>
         <Starfield />
-        <SunSprite sunTint={sunTint} />
-        <Earth />
+        <SunSprite sunTint={sunTint} worldFrame={worldFrame} />
+        <Earth worldFrame={worldFrame} terrainSourceRef={terrainSourceRef} />
       </Suspense>
-      <directionalLight
-        position={[
-          SUN_DIR.x * SUN_LIGHT_DISTANCE_M,
-          SUN_DIR.y * SUN_LIGHT_DISTANCE_M,
-          SUN_DIR.z * SUN_LIGHT_DISTANCE_M,
-        ]}
-        intensity={2.4}
-        color={sunTint}
-      />
+      <SunLight sunTint={sunTint} worldFrame={worldFrame} />
       {/* faint earthshine so the night side of the craft isn't pure black */}
       <ambientLight intensity={0.06} color="#7d9bff" />
-      <Spacecraft />
-      <CameraRig />
-      <DockingCameraPass />
+      <Spacecraft worldFrame={worldFrame} />
+      <CameraRig worldFrame={worldFrame} terrainSourceRef={terrainSourceRef} />
+      <DockingCameraPass worldFrame={worldFrame} />
       <Effects />
     </Canvas>
   );

@@ -3,10 +3,11 @@ import { useFrame } from '@react-three/fiber';
 import { AdditiveBlending, Color, Mesh, ShaderMaterial } from 'three';
 import { SUN_DIR } from './sun';
 import {
-  SUN_ANCHOR_DISTANCE,
+  SUN_ANCHOR_DISTANCE_M,
   SUN_DISC_RADIUS,
   SUN_QUAD_HALF_WIDTH,
 } from './sky/skyConfig';
+import { WorldFrame, type WorldPositionF64 } from './worldFrame';
 
 /**
  * The visible sun. The scene has always been LIT from `SUN_DIR`, but no sun
@@ -24,9 +25,15 @@ import {
  */
 const SUN_VERTEX = /* glsl */ `
   varying vec2 vQuadUv;
+  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
+  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
+  // (fragment-depth writes across large transparent overdraw stressed the
+  // Metal driver into intermittent device hangs during v0.9.0).
+  uniform float logDepthBufFC;
   void main() {
     vQuadUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
   }
 `;
 
@@ -52,9 +59,10 @@ const SUN_FRAGMENT = /* glsl */ `
 
 export interface SunSpriteProps {
   sunTint: Color;
+  worldFrame: WorldFrame;
 }
 
-export function SunSprite({ sunTint }: SunSpriteProps) {
+export function SunSprite({ sunTint, worldFrame }: SunSpriteProps) {
   const meshRef = useRef<Mesh>(null);
   const material = useMemo(() => new ShaderMaterial({
     vertexShader: SUN_VERTEX,
@@ -70,9 +78,16 @@ export function SunSprite({ sunTint }: SunSpriteProps) {
   useFrame(({ camera }) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    // The sun is at optical infinity: follow the camera while preserving its
-    // direction, so camera motion introduces exactly zero parallax.
-    mesh.position.copy(camera.position).addScaledVector(SUN_DIR, SUN_ANCHOR_DISTANCE);
+    // The sun is at optical infinity: derive its absolute position from the
+    // camera in f64, then RTC-convert it with the shared render anchor.
+    const cameraWorld = worldFrame.toWorld([camera.position.x, camera.position.y, camera.position.z]);
+    const sunWorld: WorldPositionF64 = [
+      cameraWorld[0] + SUN_DIR.x * SUN_ANCHOR_DISTANCE_M,
+      cameraWorld[1] + SUN_DIR.y * SUN_ANCHOR_DISTANCE_M,
+      cameraWorld[2] + SUN_DIR.z * SUN_ANCHOR_DISTANCE_M,
+    ];
+    const sunRender = worldFrame.toRender(sunWorld);
+    mesh.position.set(sunRender[0], sunRender[1], sunRender[2]);
     mesh.quaternion.copy(camera.quaternion);
   });
 

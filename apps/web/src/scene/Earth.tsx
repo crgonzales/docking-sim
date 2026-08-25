@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import {
   AdditiveBlending,
@@ -8,6 +8,7 @@ import {
   DataUtils,
   FileLoader,
   FloatType,
+  Group,
   HalfFloatType,
   LinearFilter,
   NoColorSpace,
@@ -29,14 +30,13 @@ import {
   CLOUD_DECK_DETAIL_STRENGTH,
 } from './sky/cloudCoverage';
 import {
+  kmToSceneUnits,
   ATMOSPHERE_RADIUS_MULTIPLIER,
   ATMOSPHERE_MULTIPLE_SCATTERING_LUT_PATH,
   ATMOSPHERE_TRANSMITTANCE_LUT_PATH,
   CLOUD_COVERAGE_MASK_PATH,
   CLOUD_SHADOW_STRENGTH,
-  EARTH_CENTER_DISTANCE,
   EARTH_RADIUS_M,
-  EARTH_VIEW_SCALE,
   NIGHT_EMISSIVE_GAIN,
   OCEAN_TINT_STRENGTH,
   OCEAN_WAVE_FADE_END,
@@ -47,9 +47,14 @@ import {
   SPEC_GAIN,
   AERIAL_SKY_RADIANCE,
   ATMOSPHERE_INTENSITY,
+  EARTH_CENTER_DISTANCE_M,
+  metersToSceneUnits,
+  terrainFadeFromAltitudeM,
 } from './sky/skyConfig';
 import { SKY_LIGHTING_GLSL } from './sky/lighting';
 import { VolumetricClouds } from './VolumetricClouds';
+import { TerrainPatches } from './terrain/TerrainPatches';
+import type { TerrainTileSource } from './terrain/tileSource';
 export {
   computeCloudShadowUv,
   deriveRayleighCoefficients,
@@ -57,19 +62,19 @@ export {
   rayleighPhase,
 } from './EarthMath';
 import { SUN_DIR } from './sun';
+import { WorldFrame, type WorldPositionF64 } from './worldFrame';
 
 /**
  * Earth with day/night, main-deck cloud shadows, and analytic atmosphere.
  *
  * Scale handling: the render scene is the Hill frame in meters, but Earth at
- * its true distance (~6.771e6 m) destroys float/depth precision. The whole
- * Earth group is therefore divided by EARTH_VIEW_SCALE — distance and radius
- * equally — which preserves angular size exactly. Combined with the canvas's
- * logarithmic depth buffer this keeps both the meter-scale craft and the
- * planet stable in one scene.
+ * its true distance (~6.771e6 m) is kept stable by the shared floating origin.
+ * The group and its shader planetCenter are re-derived from the absolute Earth
+ * centre on every frame, so rebasing never touches vertex data.
  */
 /** LEO orbit radius for the target (≈400 km altitude). */
-export const ORBIT_RADIUS_M = EARTH_CENTER_DISTANCE * EARTH_VIEW_SCALE;
+export const ORBIT_RADIUS_M = EARTH_CENTER_DISTANCE_M;
+const EARTH_CENTER_WORLD: WorldPositionF64 = [-ORBIT_RADIUS_M, 0, 0];
 
 /**
  * R3F memoizes loaders by constructor for the lifetime of the page. Keeping
@@ -136,12 +141,18 @@ const earthVertex = /* glsl */ `
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec2 vUv;
+  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
+  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
+  // (fragment-depth writes across large transparent overdraw stressed the
+  // Metal driver into intermittent device hangs during v0.9.0).
+  uniform float logDepthBufFC;
   void main() {
     vUv = uv;
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     gl_Position = projectionMatrix * viewMatrix * wp;
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
   }
 `;
 
@@ -163,6 +174,7 @@ const earthFragment = /* glsl */ `
   uniform float surfaceRadius;
   uniform float atmosphereRadius;
   uniform float oceanTime;
+  uniform float farGlobeOpacity;
   // How far the ocean is pushed toward scattered blue (0 = raw albedo).
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
@@ -338,21 +350,35 @@ ${SKY_LIGHTING_GLSL}
     vec3 color = day * dayness * sunVisibility
       + aerialInScatter * sunVisibility
       + night + oceanRim + vec3((glint + oceanGlint) * sunVisibility);
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, farGlobeOpacity);
   }
 `;
 
 const atmoVertex = /* glsl */ `
   varying vec3 vWorldPos;
+  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
+  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
+  // (fragment-depth writes across large transparent overdraw stressed the
+  // Metal driver into intermittent device hangs during v0.9.0).
+  uniform float logDepthBufFC;
   void main() {
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     gl_Position = projectionMatrix * viewMatrix * wp;
+    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
   }
 `;
 
 const atmoFragment = /* glsl */ `
   #define ATMOSPHERE_INTENSITY ${ATMOSPHERE_INTENSITY.toFixed(1)}
+  const int ATMOSPHERE_OUTSIDE_STEPS = 12;
+  const int ATMOSPHERE_INSIDE_STEPS = ${SKY_CONFIG.atmosphere.insideRaymarchSteps};
+  const float EXPOSURE_GROUND_ALTITUDE = ${kmToSceneUnits(SKY_CONFIG.exposure.groundAltitudeKm).toFixed(1)};
+  const float EXPOSURE_SPACE_ALTITUDE = ${kmToSceneUnits(SKY_CONFIG.exposure.spaceAltitudeKm).toFixed(1)};
+  const float EXPOSURE_GROUND = ${SKY_CONFIG.exposure.groundIntensity.toFixed(2)};
+  const float EXPOSURE_SPACE = ${SKY_CONFIG.exposure.spaceIntensity.toFixed(2)};
+  const float EXPOSURE_CURVE_POWER = ${SKY_CONFIG.exposure.curvePower.toFixed(3)};
+  const float METERS_PER_RENDER_UNIT = ${SKY_CONFIG.renderScaleMPerUnit.toFixed(1)};
   uniform vec3 sunDir;
   uniform vec3 planetCenter;
   uniform sampler2D transmittanceLut;
@@ -368,6 +394,8 @@ const atmoFragment = /* glsl */ `
   uniform float surfaceRadius;
   uniform float atmosphereRadius;
   varying vec3 vWorldPos;
+
+${SKY_LIGHTING_GLSL}
 
   const float PI = 3.14159265359;
 
@@ -422,18 +450,38 @@ const atmoFragment = /* glsl */ `
     // near-zero in-scatter and cut dark ticks into the limb band, so clamp
     // planet-hitting rays to the tangent path: edge samples then match the
     // band immediately beside them.
+    float cameraRadius = length(cameraPosition - planetCenter);
+    bool cameraInside = cameraRadius < atmosphereRadius;
     float chordImpact = max(impact, surfaceRadius);
     float outerHalfChord = sqrt(max(atmosphereRadius * atmosphereRadius - chordImpact * chordImpact, 0.0));
-    float startDistance = closestDistance - outerHalfChord;
-    float endDistance = closestDistance + outerHalfChord;
+    float shellEntry = max(closestDistance - outerHalfChord, 0.0);
+    float shellExit = max(closestDistance + outerHalfChord, shellEntry);
+    float insideDiscriminant = dot(cameraToCenter, ray) * dot(cameraToCenter, ray)
+      + atmosphereRadius * atmosphereRadius - cameraRadius * cameraRadius;
+    float insideExit = dot(cameraToCenter, ray) + sqrt(max(insideDiscriminant, 0.0));
+    float startDistance = cameraInside ? 0.0 : shellEntry;
+    float endDistance = cameraInside ? max(insideExit, startDistance) : shellExit;
     float segmentLength = max(endDistance - startDistance, 0.0);
-    float stepLength = segmentLength / 12.0;
+    int stepCount = cameraInside ? ATMOSPHERE_INSIDE_STEPS : ATMOSPHERE_OUTSIDE_STEPS;
     vec3 scattered = vec3(0.0);
     vec3 viewDirection = normalize(cameraPosition - vWorldPos);
     float lightTravelCos = dot(-sunDir, viewDirection);
 
-    for (int index = 0; index < 12; index += 1) {
-      float sampleDistance = startDistance + (float(index) + 0.5) * stepLength;
+    for (int index = 0; index < ATMOSPHERE_INSIDE_STEPS; index += 1) {
+      if (index >= stepCount) continue;
+      float lowerFraction = float(index) / float(stepCount);
+      float upperFraction = float(index + 1) / float(stepCount);
+      float midpointFraction = (float(index) + 0.5) / float(stepCount);
+      float lowerDistance = cameraInside
+        ? densityWarpedDistance(lowerFraction, segmentLength, rayleighScaleHeight)
+        : lowerFraction * segmentLength;
+      float upperDistance = cameraInside
+        ? densityWarpedDistance(upperFraction, segmentLength, rayleighScaleHeight)
+        : upperFraction * segmentLength;
+      float sampleDistance = startDistance + (cameraInside
+        ? densityWarpedDistance(midpointFraction, segmentLength, rayleighScaleHeight)
+        : midpointFraction * segmentLength);
+      float stepLength = upperDistance - lowerDistance;
       vec3 samplePoint = cameraPosition + ray * sampleDistance;
       vec3 sampleRadial = samplePoint - planetCenter;
       float altitude = max(length(sampleRadial) - surfaceRadius, 0.0);
@@ -448,7 +496,7 @@ const atmoFragment = /* glsl */ `
       // The LUT carries the integrated ozone column; this local tent keeps the
       // shell's emission profile tied to the same 25 +/- 15 km absorber.
       vec3 ozoneLocalTransmittance = exp(-ozoneAbsorption
-        * ozoneDensity(altitude) * stepLength * 1000.0);
+        * ozoneDensity(altitude) * stepLength * METERS_PER_RENDER_UNIT);
       source *= ozoneLocalTransmittance;
       // Psi_ms is baked seeded with the sun transmittance at the sample, so it
       // must NOT be re-multiplied by sunTransmittance here (that squares the
@@ -458,13 +506,22 @@ const atmoFragment = /* glsl */ `
       vec3 ambientCoefficient = (rayleighScattering * rayleighTerm
         + vec3(mieScattering * mieTerm)) / (4.0 * PI);
       source += ambientCoefficient * multipleScatter * viewTransmittance;
-      // Coefficients are metres^-1 while the render shell is in kilometres.
-      scattered += source * stepLength * 1000.0;
+      // Coefficients are metres^-1 while the raymarch distance is in render units.
+      scattered += source * stepLength * METERS_PER_RENDER_UNIT;
     }
 
     // Physically-normalized radiance needs a display exposure: without it the
     // limb integrates to ~0.005-0.05 and the atmosphere is invisible.
-    scattered *= ATMOSPHERE_INTENSITY;
+    float cameraAltitude = max(cameraRadius - surfaceRadius, 0.0);
+    float exposure = skyExposureCurve(
+      cameraAltitude,
+      EXPOSURE_GROUND_ALTITUDE,
+      EXPOSURE_SPACE_ALTITUDE,
+      EXPOSURE_GROUND,
+      EXPOSURE_SPACE,
+      EXPOSURE_CURVE_POWER
+    );
+    scattered *= exposure;
 
     // Exponential rolloff instead of a hard clamp: min() plateaued every
     // bright channel at the same value, flattening the dense near-surface
@@ -503,8 +560,13 @@ function supportsFloatLinear(renderer: WebGLRenderer): boolean {
   return renderer.extensions.has('OES_texture_float_linear');
 }
 
-export function Earth() {
-  const { gl: renderer } = useThree();
+export interface EarthProps {
+  worldFrame: WorldFrame;
+  terrainSourceRef: { current: TerrainTileSource | null };
+}
+
+export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
+  const { gl: renderer, camera } = useThree();
   const dayMapUrl = useMemo(() => getEarthDayMapUrl(renderer), [renderer]);
   const configureKtx2Loader = useCallback((loader: KTX2Loader) => {
     // useLoader memoizes KTX2Loader by constructor, making this one
@@ -546,10 +608,11 @@ export function Earth() {
   cloudMap.anisotropy = anisotropy;
   normalMap.anisotropy = anisotropy;
 
-  const radius = EARTH_RADIUS_M / EARTH_VIEW_SCALE;
-  const position = useMemo(
-    () => new Vector3(-ORBIT_RADIUS_M / EARTH_VIEW_SCALE, 0, 0),
-    [],
+  const radius = metersToSceneUnits(EARTH_RADIUS_M);
+  const earthGroupRef = useRef<Group>(null);
+  const initialPosition = useMemo(
+    () => new Vector3(...worldFrame.toRender(EARTH_CENTER_WORLD)),
+    [worldFrame],
   );
   const mainDeckRotation = useMemo(() => ({ current: 0 }), []);
 
@@ -567,7 +630,7 @@ export function Earth() {
           atmosphereTransmittanceLut: { value: transmittanceLut },
           atmosphereMultipleScatteringLut: { value: multipleScatteringLut },
           sunDir: { value: SUN_DIR },
-          planetCenter: { value: position },
+          planetCenter: { value: initialPosition },
           nightGain: { value: NIGHT_EMISSIVE_GAIN },
           specGain: { value: SPEC_GAIN },
           cloudRotationOffset: { value: mainDeckRotation.current },
@@ -575,14 +638,12 @@ export function Earth() {
           surfaceRadius: { value: radius },
           atmosphereRadius: { value: radius * ATMOSPHERE_RADIUS_MULTIPLIER },
           oceanTime: { value: 0 },
+          farGlobeOpacity: { value: 1 },
         },
+        transparent: true,
       }),
-    [cloudMap, dayMap, mainDeckRotation, multipleScatteringLut, nightMap, normalMap, position, radius, specMap, transmittanceLut],
+    [cloudMap, dayMap, initialPosition, mainDeckRotation, multipleScatteringLut, nightMap, normalMap, radius, specMap, transmittanceLut],
   );
-
-  useFrame((_, delta) => {
-    earthMaterial.uniforms.oceanTime!.value += delta;
-  });
 
   const atmoMaterial = useMemo(
     () =>
@@ -591,17 +652,21 @@ export function Earth() {
         fragmentShader: atmoFragment,
         uniforms: {
           sunDir: { value: SUN_DIR },
-          planetCenter: { value: position },
+          planetCenter: { value: initialPosition },
           transmittanceLut: { value: transmittanceLut },
           multipleScatteringLut: { value: multipleScatteringLut },
           rayleighScattering: { value: new Vector3(...SKY_CONFIG.atmosphere.rayleighScatteringM) },
           mieScattering: { value: SKY_CONFIG.atmosphere.mieScatteringM },
           mieAnisotropy: { value: SKY_CONFIG.atmosphere.mieAnisotropy },
-          rayleighScaleHeight: { value: SKY_CONFIG.atmosphere.rayleighScaleHeightKm },
-          mieScaleHeight: { value: SKY_CONFIG.atmosphere.mieScaleHeightKm },
+          // Scale heights and the ozone tent are physical km quantities; the
+          // shader compares them against altitudes measured in render units,
+          // so they must go through the active scale (a raw km value is only
+          // correct while 1 unit = 1 km).
+          rayleighScaleHeight: { value: kmToSceneUnits(SKY_CONFIG.atmosphere.rayleighScaleHeightKm) },
+          mieScaleHeight: { value: kmToSceneUnits(SKY_CONFIG.atmosphere.mieScaleHeightKm) },
           ozoneAbsorption: { value: new Vector3(...SKY_CONFIG.atmosphere.ozoneAbsorptionM) },
-          ozoneCenter: { value: SKY_CONFIG.atmosphere.ozoneCenterKm },
-          ozoneHalfWidth: { value: SKY_CONFIG.atmosphere.ozoneHalfWidthKm },
+          ozoneCenter: { value: kmToSceneUnits(SKY_CONFIG.atmosphere.ozoneCenterKm) },
+          ozoneHalfWidth: { value: kmToSceneUnits(SKY_CONFIG.atmosphere.ozoneHalfWidthKm) },
           surfaceRadius: { value: radius },
           atmosphereRadius: { value: radius * ATMOSPHERE_RADIUS_MULTIPLIER },
         },
@@ -611,34 +676,68 @@ export function Earth() {
         depthWrite: false,
         toneMapped: false,
       }),
-    [multipleScatteringLut, position, radius, transmittanceLut],
+    [initialPosition, multipleScatteringLut, radius, transmittanceLut],
   );
 
+  useFrame((_, delta) => {
+    const renderCenter = worldFrame.toRender(EARTH_CENTER_WORLD);
+    const cameraWorld = worldFrame.toWorld([camera.position.x, camera.position.y, camera.position.z]);
+    const cameraDelta = [
+      cameraWorld[0] - EARTH_CENTER_WORLD[0],
+      cameraWorld[1] - EARTH_CENTER_WORLD[1],
+      cameraWorld[2] - EARTH_CENTER_WORLD[2],
+    ];
+    const cameraAltitudeM = Math.hypot(cameraDelta[0], cameraDelta[1], cameraDelta[2]) - EARTH_RADIUS_M;
+    const terrainFade = terrainFadeFromAltitudeM(cameraAltitudeM);
+    earthGroupRef.current?.position.set(renderCenter[0], renderCenter[1], renderCenter[2]);
+    // toRender returns a plain array; Vector3.copy reads .x/.y/.z and would
+    // silently fill the uniform with NaN — fromArray is the array-safe path.
+    earthMaterial.uniforms.planetCenter!.value.fromArray(renderCenter);
+    atmoMaterial.uniforms.planetCenter!.value.fromArray(renderCenter);
+    earthMaterial.uniforms.oceanTime!.value += delta;
+    earthMaterial.uniforms.farGlobeOpacity!.value = 1 - terrainFade;
+  });
+
   return (
-    <group position={position}>
-      <mesh material={earthMaterial} renderOrder={0}>
-        <sphereGeometry args={[radius, 192, 192]} />
-      </mesh>
-      <Clouds
+    <>
+      <group ref={earthGroupRef} position={initialPosition}>
+        <mesh material={earthMaterial} renderOrder={0}>
+          <sphereGeometry args={[radius, 192, 192]} />
+        </mesh>
+        <Clouds
+          cloudMap={cloudMap}
+          mainDeckRotation={mainDeckRotation}
+          surfaceMaterial={earthMaterial}
+          radius={radius}
+          worldFrame={worldFrame}
+          earthCenterF64={EARTH_CENTER_WORLD}
+        />
+        <VolumetricClouds
+          cloudMap={cloudMap}
+          cloudCoverageMask={cloudCoverageMask}
+          mainDeckRotation={mainDeckRotation}
+          earthCenterF64={EARTH_CENTER_WORLD}
+          radius={radius}
+          worldFrame={worldFrame}
+        />
+        <mesh
+          material={atmoMaterial}
+          scale={ATMOSPHERE_RADIUS_MULTIPLIER}
+          renderOrder={3}
+        >
+          <sphereGeometry args={[radius, 192, 192]} />
+        </mesh>
+      </group>
+      <TerrainPatches
+        worldFrame={worldFrame}
+        terrainSourceRef={terrainSourceRef}
+        earthCenterF64={EARTH_CENTER_WORLD}
+        dayMap={dayMap}
         cloudMap={cloudMap}
+        transmittanceLut={transmittanceLut}
         mainDeckRotation={mainDeckRotation}
-        surfaceMaterial={earthMaterial}
         radius={radius}
       />
-      <VolumetricClouds
-        cloudMap={cloudMap}
-        cloudCoverageMask={cloudCoverageMask}
-        mainDeckRotation={mainDeckRotation}
-        earthCenter={position}
-        radius={radius}
-      />
-      <mesh
-        material={atmoMaterial}
-        scale={ATMOSPHERE_RADIUS_MULTIPLIER}
-        renderOrder={3}
-      >
-        <sphereGeometry args={[radius, 192, 192]} />
-      </mesh>
-    </group>
+    </>
   );
 }

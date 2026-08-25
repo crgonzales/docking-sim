@@ -11,6 +11,7 @@ import {
 import { CLOUD_COVERAGE_GLSL } from './cloudCoverage';
 import {
   cloudSphericalUv,
+  cloudCapFromHeroRegion,
   sampleCloudPlacements,
   sampleCoverageMask,
   type CoverageMask,
@@ -31,6 +32,19 @@ describe('cloud mask placement', () => {
     const second = sampleCloudPlacements(256, 0.48, mask, 0x12345678);
     expect(Array.from(first.positions)).toEqual(Array.from(second.positions));
     expect(Array.from(first.seeds)).toEqual(Array.from(second.seeds));
+    expect(first.attempts).toBe(second.attempts);
+  });
+
+  it('is deterministic with the orbital cap and one cap per hero region', () => {
+    const caps = [
+      cloudCapFromHeroRegion(28.6, -80.6, 20, 5, 6371),
+      cloudCapFromHeroRegion(26.0, -97.2, 20, 5, 6371),
+    ];
+    const first = sampleCloudPlacements(300, 0.48, maskWithBands(), 0x12345678, caps);
+    const second = sampleCloudPlacements(300, 0.48, maskWithBands(), 0x12345678, caps);
+    expect(Array.from(first.positions)).toEqual(Array.from(second.positions));
+    expect(Array.from(first.seeds)).toEqual(Array.from(second.seeds));
+    expect(Array.from(first.bandFractions)).toEqual(Array.from(second.bandFractions));
     expect(first.attempts).toBe(second.attempts);
   });
 
