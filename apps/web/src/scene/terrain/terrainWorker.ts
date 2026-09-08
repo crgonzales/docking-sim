@@ -1,5 +1,8 @@
 import {
   faceUvToDirection,
+  neighborAddress,
+  parentAddress,
+  TERRAIN_EDGES,
   nodeAddressKey,
   nodeCenterFaceUv,
   nodeUvBounds,
@@ -20,6 +23,50 @@ import { TERRAIN_SKIRT_DEPTH_M, SKY_DERIVED } from '../sky/skyConfig';
 
 const GRID_SEGMENTS = 32;
 const GRID_SIZE = GRID_SEGMENTS + 1;
+
+/**
+ * Required base inputs at min(geometry LOD, raster LOD), including the tiles
+ * owning boundary vertices. Deep geometry must never wait for nonexistent
+ * raster levels. The owner also waits for ancestors used as no-data fallbacks.
+ */
+export function requiredPatchTileAddresses(address: TerrainNodeAddress, rasterMaxLevel: number): readonly TerrainNodeAddress[] {
+  if (!Number.isSafeInteger(rasterMaxLevel) || rasterMaxLevel < 0) throw new Error('Invalid raster max level');
+  let tile = address;
+  while (tile.level > rasterMaxLevel) tile = parentAddress(tile)!;
+  const required = new Map([[nodeAddressKey(tile), tile]]);
+  const bounds = nodeUvBounds(address);
+  const rasterBounds = nodeUvBounds(tile);
+  const touches = {
+    west: bounds.uMin === rasterBounds.uMin,
+    east: bounds.uMax === rasterBounds.uMax,
+    south: bounds.vMin === rasterBounds.vMin,
+    north: bounds.vMax === rasterBounds.vMax,
+  };
+  for (const edge of TERRAIN_EDGES) if (touches[edge]) {
+    const adjacent = neighborAddress(tile, edge);
+    required.set(nodeAddressKey(adjacent), adjacent);
+    if (adjacent.face !== tile.face) {
+      // At either endpoint of a cube seam, inverse-coordinate rounding can
+      // assign the corner to the next tile along the adjacent face. Include
+      // that face's immediate neighbors as well (still a bounded footprint).
+      for (const adjacentEdge of TERRAIN_EDGES) {
+        const cornerOwner = neighborAddress(adjacent, adjacentEdge);
+        required.set(nodeAddressKey(cornerOwner), cornerOwner);
+      }
+    }
+  }
+  // Same-face corners may be owned by a diagonal tile. Cube corners' other
+  // two faces are already covered by the two edge neighbors above.
+  for (const dx of [-1, 1]) for (const dy of [-1, 1]) {
+    if (!touches[dx < 0 ? 'west' : 'east'] || !touches[dy < 0 ? 'south' : 'north']) continue;
+    const x = tile.x + dx;
+    const y = tile.y + dy;
+    if (x < 0 || y < 0 || x >= 2 ** tile.level || y >= 2 ** tile.level) continue;
+    const diagonal = { ...tile, x, y };
+    required.set(nodeAddressKey(diagonal), diagonal);
+  }
+  return [...required.values()];
+}
 
 export interface PatchHeroRegionConfig {
   readonly id: string;
@@ -81,6 +128,10 @@ export interface PatchBuildResult {
   readonly normals: ArrayBuffer;
   readonly uvs: ArrayBuffer;
   readonly indices: ArrayBuffer;
+  /** Uint8 per vertex: 1 = source height <= 0, before RTC Float32 rounding. Skirts inherit their base vertex. */
+  readonly waterMask: ArrayBuffer;
+  /** RTC geoid positions built from original f64 directions; zero-height base vertices exactly match positions. */
+  readonly waterPositions: ArrayBuffer;
   readonly vertexCount: number;
   readonly indexCount: number;
   readonly baseVertexCount: number;
@@ -102,12 +153,16 @@ export interface PatchBuildOptions {
 }
 
 interface VertexSample {
+  readonly water: boolean;
+  readonly waterAbsolute: Vec3;
   readonly direction: Vec3;
   readonly absolute: Vec3;
   readonly uv: readonly [number, number];
 }
 
 interface OutputVertex {
+  readonly water: boolean;
+  readonly waterAbsolute: Vec3;
   readonly absolute: Vec3;
   readonly normal: Vec3;
   readonly uv: readonly [number, number];
@@ -268,9 +323,14 @@ export function buildPatchGeometry(request: PatchBuildRequest, options: PatchBui
       const direction = faceUvToDirection(request.address.face, u, v);
       const [lat, lon] = latLonFromDirection(direction);
       const sampleHeight = height(lat, lon, field) ?? 0;
+      const absolute = absolutePosition(direction, sampleHeight, planetRadiusM);
       samples.push({
+        water: sampleHeight <= 0,
+        // Reuse exactly the same f64 position at sea level. Reprojecting RTC
+        // Float32 terrain later can put water below the soil it must cover.
+        waterAbsolute: sampleHeight < 0 ? absolutePosition(direction, 0, planetRadiusM) : absolute,
         direction,
-        absolute: absolutePosition(direction, sampleHeight, planetRadiusM),
+        absolute,
         uv: [u, v],
       });
     }
@@ -293,6 +353,8 @@ export function buildPatchGeometry(request: PatchBuildRequest, options: PatchBui
   }
 
   const outputVertices: OutputVertex[] = samples.map((sample, index) => ({
+    water: sample.water,
+    waterAbsolute: sample.waterAbsolute,
     absolute: sample.absolute,
     normal: baseNormals[index],
     uv: sample.uv,
@@ -317,7 +379,11 @@ export function buildPatchGeometry(request: PatchBuildRequest, options: PatchBui
         radial[2] * (distance - skirtDepthM),
       ];
       skirt.push(outputVertices.length);
-      outputVertices.push({ absolute: skirtAbsolute, normal: baseNormals[baseIndex], uv: sample.uv });
+      outputVertices.push({
+        water: sample.water,
+        waterAbsolute: sample.water ? sample.waterAbsolute : skirtAbsolute,
+        absolute: skirtAbsolute, normal: baseNormals[baseIndex], uv: sample.uv,
+      });
     }
     skirtEdgeIndices.push({ base, skirt });
   }
@@ -344,16 +410,23 @@ export function buildPatchGeometry(request: PatchBuildRequest, options: PatchBui
   }
 
   const positions = new Float32Array(outputVertices.length * 3);
+  const waterPositions = new Float32Array(outputVertices.length * 3);
   const normals = new Float32Array(outputVertices.length * 3);
   const uvs = new Float32Array(outputVertices.length * 2);
+  const waterMask = new Uint8Array(outputVertices.length);
   let boundingSphereRadiusM = 0;
   for (let index = 0; index < outputVertices.length; index += 1) {
     const vertex = outputVertices[index];
+    waterMask[index] = vertex.water ? 1 : 0;
     const positionOffset = index * 3;
     const local = subtract(vertex.absolute, patchCenterF64);
     positions[positionOffset] = local[0];
     positions[positionOffset + 1] = local[1];
     positions[positionOffset + 2] = local[2];
+    const waterLocal = subtract(vertex.waterAbsolute, patchCenterF64);
+    waterPositions[positionOffset] = waterLocal[0];
+    waterPositions[positionOffset + 1] = waterLocal[1];
+    waterPositions[positionOffset + 2] = waterLocal[2];
     boundingSphereRadiusM = Math.max(
       boundingSphereRadiusM,
       Math.hypot(positions[positionOffset], positions[positionOffset + 1], positions[positionOffset + 2]),
@@ -376,6 +449,8 @@ export function buildPatchGeometry(request: PatchBuildRequest, options: PatchBui
     normals: normals.buffer as ArrayBuffer,
     uvs: uvs.buffer as ArrayBuffer,
     indices: indices.buffer as ArrayBuffer,
+    waterMask: waterMask.buffer as ArrayBuffer,
+    waterPositions: waterPositions.buffer as ArrayBuffer,
     vertexCount: outputVertices.length,
     indexCount: indices.length,
     baseVertexCount: GRID_SIZE * GRID_SIZE,
@@ -384,8 +459,30 @@ export function buildPatchGeometry(request: PatchBuildRequest, options: PatchBui
   };
 }
 
+/** Reject malformed/old worker results rather than reconstructing a noisy sign. */
+export function patchWaterMask(result: PatchBuildResult): Uint8Array {
+  if (!(result.waterMask instanceof ArrayBuffer) || result.waterMask.byteLength !== result.vertexCount) {
+    throw new Error('Terrain water mask must contain one byte per vertex');
+  }
+  const mask = new Uint8Array(result.waterMask);
+  if (mask.some((value) => value !== 0 && value !== 1)) throw new Error('Terrain water mask must be binary');
+  return mask;
+}
+
+export function patchWaterPositions(result: PatchBuildResult): Float32Array {
+  if (!(result.waterPositions instanceof ArrayBuffer)
+    || result.waterPositions.byteLength !== result.vertexCount * 3 * Float32Array.BYTES_PER_ELEMENT) {
+    throw new Error('Terrain water positions must contain three floats per vertex');
+  }
+  const positions = new Float32Array(result.waterPositions);
+  if (positions.some((value) => !Number.isFinite(value))) throw new Error('Terrain water positions must be finite');
+  return positions;
+}
+
 export function patchBuildTransferables(result: PatchBuildResult): Transferable[] {
-  return [result.positions, result.normals, result.uvs, result.indices];
+  patchWaterMask(result);
+  patchWaterPositions(result);
+  return [result.positions, result.normals, result.uvs, result.indices, result.waterMask, result.waterPositions];
 }
 
 export interface TerrainWorkerScope {
@@ -453,6 +550,7 @@ export class TerrainWorkerPool {
   }> = [];
   private readonly maxConcurrentBuilds: number;
   private activeBuilds = 0;
+  private disposed = false;
   private nextRequestId = 0;
   private nextWorker = 0;
 
@@ -472,6 +570,7 @@ export class TerrainWorkerPool {
   private wireWorker(worker: TerrainWorkerLike, index: number): void {
     worker.onmessage = (event) => this.handleMessage(event.data);
     worker.onerror = (event) => {
+      if (this.disposed) return;
       // Replace the failed worker in place so future round-robin dispatch
       // doesn't keep routing requests to a worker that will never respond
       // again — without this, those patches would be silently starved.
@@ -487,6 +586,7 @@ export class TerrainWorkerPool {
   }
 
   build(request: Omit<PatchBuildRequest, 'requestId'>): Promise<PatchBuildResult> {
+    if (this.disposed) return Promise.reject(new Error('Terrain worker pool disposed'));
     const requestId = this.nextRequestId++;
     return new Promise((resolve, reject) => {
       this.queued.push({ requestId, request: { ...request, requestId }, resolve, reject });
@@ -498,7 +598,17 @@ export class TerrainWorkerPool {
     return Promise.all(requests.map((request) => this.build(request)));
   }
 
+  /** Drop obsolete undispatched work without interrupting unrelated builds. */
+  cancelQueued(predicate: (request: PatchBuildRequest) => boolean): void {
+    for (let index = this.queued.length - 1; index >= 0; index -= 1) {
+      if (!predicate(this.queued[index].request)) continue;
+      const [entry] = this.queued.splice(index, 1);
+      entry.reject(new Error('Terrain patch request cancelled'));
+    }
+  }
+
   dispose(): void {
+    this.disposed = true;
     const error = new Error('Terrain worker pool disposed');
     this.handleWorkerError(error);
     for (const worker of this.workers) worker.terminate();
@@ -511,7 +621,15 @@ export class TerrainWorkerPool {
     this.pending.delete(message.requestId);
     this.activeBuilds -= 1;
     if (message.type === 'patchBuildError') pending.reject(new Error(message.message));
-    else pending.resolve(message);
+    else {
+      try {
+        patchWaterMask(message);
+        patchWaterPositions(message);
+        pending.resolve(message);
+      } catch (error) {
+        pending.reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    }
     this.dispatchQueued();
   }
 

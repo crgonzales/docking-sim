@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { SKY_DERIVED } from '../sky/skyConfig';
 import { childAddress, nodeAddressKey, type TerrainNodeAddress } from './quadtree';
 import {
-  capTerrainNodes,
+  terrainResidencyKeys,
+  isTerrainCoverageReady,
+  mergeCompleteSiblings,
+  rootTerrainNodes,
   retiredTerrainNodeKeys,
   selectTerrainNodes,
   swapCompleteSiblings,
@@ -28,21 +31,67 @@ describe('terrain live node policy', () => {
     expect(second).toEqual(first);
   });
 
-  it('enforces the live-patch cap with nearest-first deterministic priority', () => {
+  it('charges all four children and the retained parent before splitting', () => {
     const camera = [SKY_DERIVED.earthRadiusM + 5000, 0, 0] as const;
-    const options = {
-      projectionScalePx: 1_000_000,
-      splitThresholdPx: 0.1,
-      maxLevel: 5,
-    } as const;
-    const uncapped = selectTerrainNodes(camera, options);
-    const selected = selectTerrainNodes(camera, {
-      ...options,
-      maxLivePatches: 10,
+    const selected = selectTerrainNodes(camera, { projectionScalePx: 900, maxLivePatches: 10 });
+    expect(selected).toHaveLength(9); // Six roots, one replaced by four children.
+    expect(terrainResidencyKeys(selected).size).toBe(10);
+    expect(() => selectTerrainNodes(camera, { maxLivePatches: 5 })).toThrow(/six roots/);
+  });
+
+  it.each([50, 3000, 20000, 70000, 100000, 120000])('bounds CPU work and preserves full coverage at %i metres', (altitude) => {
+    const lat = 28.6 * Math.PI / 180;
+    const lon = -80.6 * Math.PI / 180;
+    const radius = SKY_DERIVED.earthRadiusM + altitude;
+    const camera = [Math.cos(lat) * Math.cos(lon) * radius, Math.sin(lat) * radius, -Math.cos(lat) * Math.sin(lon) * radius] as const;
+    const statistics = { evaluatedNodes: 0, splits: 0, residentNodes: 0 };
+    // Intentionally allow depth 30: the operation bound must come from the
+    // residency budget, not from a conveniently shallow maxLevel or timings.
+    const leaves = selectTerrainNodes(camera, {
+      projectionScalePx: 360 / Math.tan(Math.PI / 8), maxLevel: 30,
+      maxLivePatches: 300, statistics,
     });
-    expect(selected).toHaveLength(10);
-    expect(new Set(selected.map(nodeAddressKey)).size).toBe(10);
-    expect(selected).toEqual(capTerrainNodes(uncapped, camera, 10));
+    expect(statistics.evaluatedNodes).toBeLessThanOrEqual(300);
+    expect(statistics.residentNodes).toBe(terrainResidencyKeys(leaves).size);
+    expect(statistics.residentNodes).toBeLessThanOrEqual(300);
+    const keys = new Set(leaves.map(nodeAddressKey));
+    expect(keys.size).toBe(leaves.length);
+    for (const root of rootTerrainNodes()) {
+      // Each cube-face cell contributes 4^-level of the face's area.
+      const faceLeaves = leaves.filter((leaf) => leaf.face === root.face);
+      expect(faceLeaves.reduce((area, leaf) => area + 4 ** -leaf.level, 0)).toBeCloseTo(1, 12);
+      for (const leaf of faceLeaves) {
+        for (const other of faceLeaves) {
+          if (other.level >= leaf.level) continue;
+          const shift = leaf.level - other.level;
+          expect((leaf.x >> shift) === other.x && (leaf.y >> shift) === other.y).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('announces coverage only for ready, non-overlapping leaves spanning all six faces', () => {
+    const roots = rootTerrainNodes();
+    const ready = terrainResidencyKeys(roots);
+    expect(isTerrainCoverageReady(roots, ready)).toBe(true);
+    expect(isTerrainCoverageReady(roots.slice(0, 5), ready)).toBe(false);
+    expect(isTerrainCoverageReady(roots, new Set([...ready].slice(0, 5)))).toBe(false);
+    const child = childAddress(roots[0], 0, 0);
+    ready.add(nodeAddressKey(child));
+    expect(isTerrainCoverageReady([...roots, child], ready)).toBe(false);
+    const quarter = [child, childAddress(roots[0], 1, 0), childAddress(roots[0], 0, 1), childAddress(roots[0], 1, 1)];
+    const split = [...roots.slice(1), ...quarter];
+    expect(isTerrainCoverageReady(split, terrainResidencyKeys(split))).toBe(true);
+  });
+
+  it('coarsens across multiple levels after a camera jump without needing new parents', () => {
+    const leaves: TerrainNodeAddress[] = [];
+    for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) leaves.push({ face: 0, level: 2, x, y });
+    const root = rootTerrainNodes()[0];
+    const ready = terrainResidencyKeys(leaves);
+    const intermediate = mergeCompleteSiblings(leaves, [root], ready);
+    expect(intermediate).toHaveLength(4);
+    expect(mergeCompleteSiblings(intermediate, [root], ready)).toEqual([root]);
   });
 
   it('holds the parent until every requested sibling is ready', () => {

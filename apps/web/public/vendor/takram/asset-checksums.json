@@ -1,0 +1,44 @@
+[
+  {
+    "file": "atmosphere/transmittance.bin",
+    "sha256": "a2a0dd1464048d92e7bfdf385a9108e8d9c3e2748684f1f64523587d5894180a"
+  },
+  {
+    "file": "atmosphere/scattering.bin",
+    "sha256": "82c505fe6e3b7f1995c650cc8a1478f42bd510029bf63845e9485c078aef6617"
+  },
+  {
+    "file": "atmosphere/irradiance.bin",
+    "sha256": "126bd4ff0419e04c877639caf9e3cd64a139ae511cf315a23a0c989fc47b51a5"
+  },
+  {
+    "file": "atmosphere/higher_order_scattering.bin",
+    "sha256": "857847f34fc9c856866506015a3d3fc4bd60c18eaf961bde8d6e567df503d6bc"
+  },
+  {
+    "file": "clouds/local_weather.png",
+    "sha256": "b84daef855dc5eebcc9b174fe832ba75a98e44b846dde201bce354417cc08031"
+  },
+  {
+    "file": "clouds/turbulence.png",
+    "sha256": "ec2b1b0af4a6a6104102b21e58beb300b0a3d334c0281d84fde8c91d322910f9"
+  },
+  {
+    "file": "clouds/shape.bin",
+    "sha256": "ef65cf6156894720c00bf572c49e3e254f8899c4b5158246e5a35a1922e2519c"
+  },
+  {
+    "file": "clouds/shape_detail.bin",
+    "sha256": "c09112199c6e0281b74ff5283c11c2943ae082650b9b67978cf5d59ed2956e4f"
+  },
+  {
+    "file": "stbn.bin",
+    "url": "https://media.githubusercontent.com/media/takram-design-engineering/three-geospatial/9627216cc50057994c98a2118f3c4a23765d43b9/packages/core/assets/stbn.bin",
+    "sha256": "51f52f21e5578384585050390821a0a486dcb81e11a716fa7b92fbb6515ba852"
+  },
+  {
+    "file": "LICENSE",
+    "url": "https://raw.githubusercontent.com/takram-design-engineering/three-geospatial/9627216cc50057994c98a2118f3c4a23765d43b9/LICENSE",
+    "sha256": "00846a358b3d0c38070523fc09e8bb2996d4515ca83b4cc18612e8a362398ffb"
+  }
+]

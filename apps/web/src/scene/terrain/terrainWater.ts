@@ -1,4 +1,4 @@
-import { TERRAIN_PATCH_GRID_SIZE } from './terrainWorker';
+import { patchWaterMask, patchWaterPositions } from './terrainWorker';
 import type { PatchBuildResult } from './terrainWorker';
 import type { Vec3 } from './quadtree';
 
@@ -35,52 +35,35 @@ export function buildWaterPatchGeometry(
   result: PatchBuildResult,
   planetRadiusM: number,
 ): WaterPatchGeometry {
-  const sourcePositions = new Float32Array(result.positions);
+  if (!Number.isFinite(planetRadiusM) || planetRadiusM <= 0) throw new Error('Geoid radius must be positive');
   const sourceNormals = new Float32Array(result.normals);
   const sourceUvs = new Float32Array(result.uvs);
   const sourceIndices = new Uint32Array(result.indices);
-  const positions = new Float32Array(sourcePositions.length);
+  const positions = patchWaterPositions(result);
   const normals = new Float32Array(sourceNormals.length);
   const waterMask = new Float32Array(result.vertexCount);
-  const baseCount = result.baseVertexCount;
-  const baseWater = new Array<boolean>(baseCount).fill(false);
+  const semanticMask = patchWaterMask(result);
   let hasWater = false;
-
-  const edgeBaseIndex = (skirtIndex: number): number => {
-    const offset = skirtIndex - baseCount;
-    const edge = Math.floor(offset / TERRAIN_PATCH_GRID_SIZE);
-    const along = offset % TERRAIN_PATCH_GRID_SIZE;
-    switch (edge) {
-      case 0: return (TERRAIN_PATCH_GRID_SIZE - 1) * TERRAIN_PATCH_GRID_SIZE + along;
-      case 1: return along * TERRAIN_PATCH_GRID_SIZE + TERRAIN_PATCH_GRID_SIZE - 1;
-      case 2: return along;
-      default: return along * TERRAIN_PATCH_GRID_SIZE;
-    }
-  };
 
   for (let index = 0; index < result.vertexCount; index += 1) {
     const offset = index * 3;
     const absolute: Vec3 = [
-      result.patchCenterF64[0] + sourcePositions[offset],
-      result.patchCenterF64[1] + sourcePositions[offset + 1],
-      result.patchCenterF64[2] + sourcePositions[offset + 2],
+      result.patchCenterF64[0] + positions[offset],
+      result.patchCenterF64[1] + positions[offset + 1],
+      result.patchCenterF64[2] + positions[offset + 2],
     ];
-    const heightM = Math.hypot(absolute[0], absolute[1], absolute[2]) - planetRadiusM;
-    const water = index < baseCount
-      ? isWaterHeight(heightM)
-      : baseWater[edgeBaseIndex(index)]!;
-    if (index < baseCount) baseWater[index] = water;
+    // Geometry remains RTC Float32, but land/water classification is the
+    // worker's pre-quantization decision, including inherited skirt masks.
+    const water = semanticMask[index] === 1;
     waterMask[index] = water ? 1 : 0;
     hasWater ||= water;
-    const surface = water ? geoidSurfacePosition(absolute, planetRadiusM) : absolute;
-    positions[offset] = surface[0] - result.patchCenterF64[0];
-    positions[offset + 1] = surface[1] - result.patchCenterF64[1];
-    positions[offset + 2] = surface[2] - result.patchCenterF64[2];
-    const radialLength = Math.hypot(surface[0], surface[1], surface[2]);
+    // Positions already came from the original f64 directions in the worker.
+    // Only reconstruct a direction for shading; never round the geometry again.
+    const radialLength = Math.hypot(absolute[0], absolute[1], absolute[2]);
     if (water) {
-      normals[offset] = surface[0] / radialLength;
-      normals[offset + 1] = surface[1] / radialLength;
-      normals[offset + 2] = surface[2] / radialLength;
+      normals[offset] = absolute[0] / radialLength;
+      normals[offset + 1] = absolute[1] / radialLength;
+      normals[offset + 2] = absolute[2] / radialLength;
     } else {
       normals[offset] = sourceNormals[offset];
       normals[offset + 1] = sourceNormals[offset + 1];
@@ -96,7 +79,7 @@ export function buildWaterPatchGeometry(
     );
   }
   return {
-    positions: positions.buffer,
+    positions: result.waterPositions,
     normals: normals.buffer,
     uvs: sourceUvs.buffer,
     indices: sourceIndices.buffer,

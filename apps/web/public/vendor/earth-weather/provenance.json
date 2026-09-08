@@ -1,0 +1,9 @@
+{
+  "sourceUrl": "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57747/cloud_combined_8192.tif",
+  "sourceSha256": "d137775d8966ab8d443fd5126dc6e7ad72072bc1ed50555c5818d221735daf0f",
+  "outputSha256": "dc797cb3c8a78a227cb321c914c045b5a62568d29c48d311c44172ba02e0c168",
+  "width": 2048,
+  "height": 1024,
+  "license": "NASA public domain; source already documented in assets/ASSETS.md",
+  "processing": "4x4 box average of encoded grayscale brightness; treated as linear coverage proxy; north at top; longitude -180 at left. Static illustrative weather."
+}

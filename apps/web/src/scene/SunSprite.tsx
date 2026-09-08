@@ -25,23 +25,22 @@ import { WorldFrame, type WorldPositionF64 } from './worldFrame';
  */
 const SUN_VERTEX = /* glsl */ `
   varying vec2 vQuadUv;
-  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
-  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
-  // (fragment-depth writes across large transparent overdraw stressed the
-  // Metal driver into intermittent device hangs during v0.9.0).
-  uniform float logDepthBufFC;
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
   void main() {
     vQuadUv = uv;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
   }
 `;
 
 const SUN_FRAGMENT = /* glsl */ `
+  #include <logdepthbuf_pars_fragment>
   uniform vec3 sunTint;
   varying vec2 vQuadUv;
 
   void main() {
+    #include <logdepthbuf_fragment>
     vec2 centered = vQuadUv * 2.0 - 1.0;
     float radial = length(centered);
     // Disc: hard-edged, strongly HDR so bloom produces the glare.

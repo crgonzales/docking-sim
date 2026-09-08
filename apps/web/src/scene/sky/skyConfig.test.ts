@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   EARTH_RADIUS_M,
-  ATMOSPHERE_INTENSITY,
   SHADOW_ANGULAR_OFFSET_RAD,
   SKY_CONFIG,
   SKY_DERIVED,
   TERRAIN_CROSSFADE_END_M,
   TERRAIN_CROSSFADE_START_M,
   altitudeKmFromRadiusMultiplier,
-  atmosphereExposureFromAltitudeKm,
   capCosineFromCameraEnvelope,
   driftRadPerSecFromGroundSpeed,
   kmToSceneUnits,
@@ -81,20 +79,12 @@ describe('sky configuration derivations', () => {
       .toBeCloseTo(0.5, 12);
   });
 
-  it('derives the exposure curve from the configured ground and space endpoints', () => {
-    expect(atmosphereExposureFromAltitudeKm(SKY_CONFIG.exposure.groundAltitudeKm))
-      .toBe(SKY_CONFIG.exposure.groundIntensity);
-    expect(atmosphereExposureFromAltitudeKm(SKY_CONFIG.exposure.spaceAltitudeKm))
-      .toBe(ATMOSPHERE_INTENSITY);
-    expect(atmosphereExposureFromAltitudeKm(SKY_CONFIG.terrain.engagementAltitudeKm + 1))
-      .toBe(ATMOSPHERE_INTENSITY);
-    expect(atmosphereExposureFromAltitudeKm(0))
-      .toBe(SKY_CONFIG.exposure.groundIntensity);
-    expect(atmosphereExposureFromAltitudeKm(60)).toBeLessThan(SKY_CONFIG.exposure.groundIntensity);
-    expect(atmosphereExposureFromAltitudeKm(60)).toBeGreaterThan(ATMOSPHERE_INTENSITY);
-    const samples = [0, 1, 20, 60, 120, 400].map((altitudeKm) => atmosphereExposureFromAltitudeKm(altitudeKm));
-    for (let index = 1; index < samples.length; index += 1) {
-      expect(samples[index]).toBeLessThanOrEqual(samples[index - 1]!);
+  it('keeps the frame exposure configuration finite and internally consistent', () => {
+    const config = SKY_CONFIG.frameExposure;
+    expect(config.evMin).toBeLessThan(config.evMax);
+    expect(config.sunFloor).toBeGreaterThan(0);
+    for (const coefficient of Object.values(config)) {
+      expect(Number.isFinite(coefficient)).toBe(true);
     }
   });
 });

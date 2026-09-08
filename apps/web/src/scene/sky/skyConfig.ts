@@ -26,6 +26,16 @@ export interface HeroRegionInput {
   featherKm: number;
 }
 
+export interface FrameExposureConfig {
+  evBase: number;
+  kSun: number;
+  kAlt: number;
+  sunFloor: number;
+  twilightBias: number;
+  evMin: number;
+  evMax: number;
+}
+
 export interface SkyConfig {
   earthRadiusKm: number;
   earthOrbitAltitudeKm: number;
@@ -102,24 +112,12 @@ export interface SkyConfig {
     curvePower: number;
   };
   flyCollisionClearanceM: number;
-  exposure: {
-    groundIntensity: number;
-    spaceIntensity: number;
-    groundAltitudeKm: number;
-    spaceAltitudeKm: number;
-    curvePower: number;
-    /**
-     * Flat exposure used by the atmosphere shell's camera-INSIDE raymarch,
-     * instead of the ground/space curve above. That curve assumes the
-     * OUTSIDE/limb regime — a thin, short slice of atmosphere grazed from
-     * orbit, genuinely near-invisible without a large boost. From inside
-     * the shell near the ground, a near-horizontal ray's path length
-     * through the dense low atmosphere can be very long, so the raw
-     * integral is already substantial; applying the same ~100x
-     * ground-altitude boost there clips the whole view to white.
-     */
-    insideIntensity: number;
-  };
+  /**
+   * The renderer's only exposure control. Shaders emit scene-referred radiance
+   * normalized to top-of-atmosphere solar irradiance 1.0; this frame-global
+   * scalar and the ACES tonemap are applied exactly once, in the composer.
+   */
+  frameExposure: FrameExposureConfig;
   cameraNearM: number;
   cockpitCameraNearM: number;
   pipCameraFarM: number;
@@ -239,13 +237,21 @@ export const SKY_CONFIG: SkyConfig = {
     curvePower: 1.15,
   },
   flyCollisionClearanceM: 2,
-  exposure: {
-    groundIntensity: 100,
-    spaceIntensity: 26,
-    groundAltitudeKm: 1,
-    spaceAltitudeKm: 120,
-    curvePower: 0.65,
-    insideIntensity: 3,
+  // Calibration STARTING points, not final values — Phase 1 tunes these against
+  // the four reference framings with the render on screen. kSun/evMin are set
+  // so the EV clamp only engages below the horizon (~-2 deg): at kSun 3.0 with
+  // evMin -4.0 the clamp engaged at 17 deg elevation, flattening the entire
+  // twilight range and collapsing the sunset and night reference framings onto
+  // an identical EV, which left two of the four golden oracles unable to
+  // distinguish the cases they are named for.
+  frameExposure: {
+    evBase: 0.0,
+    kSun: 1.5,
+    kAlt: 1.5,
+    sunFloor: 0.02,
+    twilightBias: 0.10,
+    evMin: -6.0,
+    evMax: 6.0,
   },
   cameraNearM: 0.5,
   cockpitCameraNearM: 0.05,
@@ -321,37 +327,6 @@ export function worldFrameRebaseThresholdMFromKm(
   return kmToMeters(thresholdKm);
 }
 
-function smoothstep01(value: number): number {
-  const clamped = Math.max(0, Math.min(1, value));
-  return clamped * clamped * (3 - 2 * clamped);
-}
-
-/** Config-derived display exposure, rising smoothly from ground to space. */
-export function atmosphereExposureFromAltitudeKm(
-  altitudeKm: number,
-  config = SKY_CONFIG.exposure,
-): number {
-  if (!Number.isFinite(altitudeKm)) throw new Error('Atmosphere altitude must be finite');
-  if (!Number.isFinite(config.groundIntensity) || config.groundIntensity <= 0) {
-    throw new Error('Ground atmosphere exposure must be positive');
-  }
-  if (!Number.isFinite(config.spaceIntensity) || config.spaceIntensity <= 0) {
-    throw new Error('Space atmosphere exposure must be positive');
-  }
-  if (!Number.isFinite(config.groundAltitudeKm) || !Number.isFinite(config.spaceAltitudeKm)
-    || config.spaceAltitudeKm <= config.groundAltitudeKm) {
-    throw new Error('Atmosphere exposure altitude range is invalid');
-  }
-  if (!Number.isFinite(config.curvePower) || config.curvePower <= 0) {
-    throw new Error('Atmosphere exposure curve power must be positive');
-  }
-  const normalized = (altitudeKm - config.groundAltitudeKm)
-    / (config.spaceAltitudeKm - config.groundAltitudeKm);
-  const eased = smoothstep01(normalized);
-  return config.groundIntensity
-    + (config.spaceIntensity - config.groundIntensity) * eased ** config.curvePower;
-}
-
 export function flySpeedMpsFromAgl(
   aglM: number,
   config = SKY_CONFIG.flySpeedPerAgl,
@@ -375,17 +350,13 @@ const sunQuadHalfAngleRadians = (SKY_CONFIG.sunQuadHalfAngleDegrees * Math.PI / 
 /**
  * Radiometric display scaling. The LUT/raymarch chain is physically normalized
  * (phase functions integrate to 1 over 4π; transmittance is unitless), so its
- * raw output is radiance per unit solar irradiance — order 0.005-0.05. Real
- * displays need an exposure factor; photographs of the limb put the blue band
- * at a sizable fraction of surface brightness. ATMOSPHERE_INTENSITY is that
- * exposure term (solar irradiance × tone scale), applied to the shell's
- * integrated in-scatter. AERIAL_SKY_RADIANCE is the zenith-sky radiance the
+ * raw output is radiance per unit solar irradiance — order 0.005-0.05. The
+ * frame-global composer exposure provides the display scale.
+ * AERIAL_SKY_RADIANCE is the zenith-sky radiance the
  * surface haze saturates toward: aerial in-scatter is
  * AERIAL_SKY_RADIANCE × (1 − T) per channel, so thick paths converge on sky
  * blue rather than washing out to white.
  */
-export const ATMOSPHERE_INTENSITY = SKY_CONFIG.exposure.spaceIntensity;
-export const ATMOSPHERE_GROUND_EXPOSURE = SKY_CONFIG.exposure.groundIntensity;
 export const AERIAL_SKY_RADIANCE: readonly [number, number, number] = [0.10, 0.18, 0.33];
 
 export const SKY_DERIVED: SkyDerived = {

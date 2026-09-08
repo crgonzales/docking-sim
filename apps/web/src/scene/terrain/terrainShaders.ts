@@ -1,3 +1,5 @@
+import { LIBRARY_RENDERER } from '../renderProbeConfig';
+import { EARTH_KTX_UV_GLSL } from '../libraryEarthTextureOrientation';
 import {
   NormalBlending,
   ShaderMaterial,
@@ -34,20 +36,21 @@ export const TERRAIN_VERTEX_SHADER = /* glsl */ `
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec3 vRadial;
-  // Vertex-side logarithmic depth (see Earth.tsx note): no fragment depth
-  // writes, early-Z preserved.
-  uniform float logDepthBufFC;
+  // Preserve geometric clipping; use the same fragment depth as built-in materials.
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
   void main() {
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     vRadial = wp.xyz - planetCenter;
     gl_Position = projectionMatrix * viewMatrix * wp;
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
   }
 `;
 
 export const TERRAIN_FRAGMENT_SHADER = /* glsl */ `
+  #include <logdepthbuf_pars_fragment>
   #define AERIAL_SKY_RADIANCE vec3(${AERIAL_SKY_RADIANCE.map((value) => value.toFixed(2)).join(', ')})
   uniform sampler2D dayMap;
   uniform sampler2D cloudMap;
@@ -66,6 +69,7 @@ export const TERRAIN_FRAGMENT_SHADER = /* glsl */ `
 
 ${CLOUD_COVERAGE_GLSL}
 ${SKY_LIGHTING_GLSL}
+${EARTH_KTX_UV_GLSL}
 
   vec3 rotateY(vec3 point, float angle) {
     float c = cos(angle);
@@ -99,6 +103,7 @@ ${SKY_LIGHTING_GLSL}
   }
 
   void main() {
+    #include <logdepthbuf_fragment>
     vec3 radial = normalize(vRadial);
     vec3 n = normalize(vWorldNormal);
     float altitudeM = length(vRadial) - surfaceRadius;
@@ -106,6 +111,9 @@ ${SKY_LIGHTING_GLSL}
     float slope = 1.0 - clamp(dot(n, radial), 0.0, 1.0);
     vec2 uv = sphericalUv(radial);
     uv.x = fract(uv.x);
+    #ifdef LIBRARY_LIGHTING
+    uv = earthMapUv(uv);
+    #endif
 
     // The 4k day map supplies regional colour and coast/detail cues; the
     // procedural palette keeps the terrain legible where the map is dark or
@@ -114,6 +122,12 @@ ${SKY_LIGHTING_GLSL}
     vec3 regional = proceduralTerrainColor(altitudeM, slope, latitude);
     vec3 surface = regional * mix(vec3(0.72), albedo * 1.18, 0.62);
 
+    #ifdef LIBRARY_LIGHTING
+    // Share the globe's linear imagery albedo across the LOD transition. The
+    // legacy elevation palette paints every low, flat region sand-colored.
+    gl_FragColor = vec4(albedo, 1.0);
+    return;
+    #endif
     float ndotl = dot(n, sunDir);
     float cloudShadowUv = cloudCoverageAt(
       cloudMap,
@@ -154,6 +168,7 @@ export function createTerrainPatchMaterial(
   options: TerrainShaderOptions,
 ): ShaderMaterial {
   return new ShaderMaterial({
+    defines: LIBRARY_RENDERER ? { LIBRARY_LIGHTING: 1 } : {},
     vertexShader: TERRAIN_VERTEX_SHADER,
     fragmentShader: TERRAIN_FRAGMENT_SHADER,
     uniforms: {
@@ -167,7 +182,7 @@ export function createTerrainPatchMaterial(
       terrainOpacity: { value: 0 },
       cloudRotationOffset: { value: 0 },
     },
-    transparent: true,
+    transparent: !LIBRARY_RENDERER,
     blending: NormalBlending,
     depthTest: true,
     depthWrite: true,
@@ -181,18 +196,20 @@ export const WATER_VERTEX_SHADER = /* glsl */ `
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying float vWaterMask;
-  uniform float logDepthBufFC;
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
   void main() {
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     vWaterMask = waterMask;
     gl_Position = projectionMatrix * viewMatrix * wp;
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
   }
 `;
 
 export const WATER_FRAGMENT_SHADER = /* glsl */ `
+  #include <logdepthbuf_pars_fragment>
   uniform vec3 planetCenter;
   uniform vec3 sunDir;
   uniform float terrainOpacity;
@@ -218,7 +235,13 @@ ${SKY_LIGHTING_GLSL}
   }
 
   void main() {
+    #include <logdepthbuf_fragment>
     if (vWaterMask < 0.5) discard;
+    #ifdef LIBRARY_LIGHTING
+    // Only semantic waterMask survivors carry opaque water material metadata.
+    gl_FragColor = vec4(0.015, 0.04, 0.07, 0.5);
+    return;
+    #endif
     vec3 radial = normalize(vWorldPos - planetCenter);
     vec3 n = normalize(vWorldNormal);
     vec2 uv = sphericalUv(radial);
@@ -239,6 +262,7 @@ ${SKY_LIGHTING_GLSL}
 
 export function createWaterMaterial(options: TerrainShaderOptions): ShaderMaterial {
   return new ShaderMaterial({
+    defines: LIBRARY_RENDERER ? { LIBRARY_LIGHTING: 1 } : {},
     vertexShader: WATER_VERTEX_SHADER,
     fragmentShader: WATER_FRAGMENT_SHADER,
     uniforms: {
@@ -247,10 +271,10 @@ export function createWaterMaterial(options: TerrainShaderOptions): ShaderMateri
       terrainOpacity: { value: 0 },
       oceanTime: { value: 0 },
     },
-    transparent: true,
+    transparent: !LIBRARY_RENDERER,
     blending: NormalBlending,
     depthTest: true,
-    depthWrite: false,
+    depthWrite: LIBRARY_RENDERER,
     toneMapped: true,
   });
 }

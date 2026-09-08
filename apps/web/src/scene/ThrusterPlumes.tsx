@@ -19,18 +19,16 @@ const BODY_UP = new Vector3(0, 1, 0);
 const PLUME_VERTEX_SHADER = /* glsl */ `
   varying vec3 vPlumePosition;
 
-  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
-  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
-  // (fragment-depth writes across large transparent overdraw stressed the
-  // Metal driver into intermittent device hangs during v0.9.0).
-  uniform float logDepthBufFC;
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
   void main() {
     vPlumePosition = position;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
   }
 `;
 const PLUME_FRAGMENT_SHADER = /* glsl */ `
+  #include <logdepthbuf_pars_fragment>
   uniform float duty;
   uniform float time;
   uniform float phase;
@@ -38,6 +36,7 @@ const PLUME_FRAGMENT_SHADER = /* glsl */ `
   varying vec3 vPlumePosition;
 
   void main() {
+    #include <logdepthbuf_fragment>
     float along = clamp(vPlumePosition.y / ${PLUME_LENGTH_M.toFixed(3)}, 0.0, 1.0);
     float radial = clamp(length(vPlumePosition.xz) / ${PLUME_RADIUS_M.toFixed(3)}, 0.0, 1.0);
     float radialFalloff = 1.0 - smoothstep(0.18, 1.0, radial);
@@ -111,7 +110,7 @@ export function ThrusterPlumes() {
     for (let index = 0; index < DRACO_THRUSTER_GEOMETRY.length; index += 1) {
       const mesh = meshRefs.current[index];
       const material = materials[index];
-      if (mesh === null || material === undefined) continue;
+      if (mesh == null || material === undefined) continue;
       const requestedDuty = current.thruster_duty[DRACO_THRUSTER_GEOMETRY[index]!.id] ?? 0;
       const duty = Math.max(0, Math.min(1, requestedDuty));
       mesh.visible = duty > 0;

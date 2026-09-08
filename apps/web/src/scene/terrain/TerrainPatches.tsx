@@ -22,13 +22,10 @@ import {
   terrainFadeFromAltitudeM,
 } from '../sky/skyConfig';
 import {
-  neighborAddress,
   nodeAngularRadiusRadians,
   nodeCenterDirection,
   parentAddress,
   nodeAddressKey,
-  TERRAIN_EDGES,
-  type TerrainEdge,
   type TerrainNodeAddress,
   type Vec3,
 } from './quadtree';
@@ -49,6 +46,7 @@ import {
 } from './terrainShaders';
 import {
   TerrainWorkerPool,
+  requiredPatchTileAddresses,
   type PatchBuildResult,
   type PatchBuildRequest,
   type PatchHeroRegionConfig,
@@ -60,6 +58,8 @@ import {
   rootTerrainNodes,
   selectTerrainNodes,
   swapCompleteSiblings,
+  terrainResidencyKeys,
+  isTerrainCoverageReady,
 } from './terrainNodeSet';
 import { buildWaterPatchGeometry, type WaterPatchGeometry } from './terrainWater';
 import type { WorldFrame, WorldPositionF64 } from '../worldFrame';
@@ -94,6 +94,10 @@ async function loadHeroManifest(url: string): Promise<HeroManifest> {
 }
 
 export interface TerrainPatchesProps {
+  /** Parent may retire its opaque globe only once this complete cover is active. */
+  readonly onCoverageReadyChange?: (ready: boolean) => void;
+  /** Pass LIBRARY_RENDERER here; omitted preserves the legacy alpha fade. */
+  readonly opaque?: boolean;
   readonly worldFrame: WorldFrame;
   readonly terrainSourceRef: { current: TerrainTileSource | null };
   readonly earthCenterF64: WorldPositionF64;
@@ -105,6 +109,7 @@ export interface TerrainPatchesProps {
 }
 
 interface PatchRecord {
+  readonly heroInputKey: string;
   readonly result: PatchBuildResult;
   readonly mesh: Mesh<BufferGeometry, ShaderMaterial>;
   readonly waterMesh: Mesh<BufferGeometry, ShaderMaterial> | null;
@@ -131,15 +136,6 @@ function childrenOf(address: TerrainNodeAddress): readonly TerrainNodeAddress[] 
     { face: address.face, level: address.level + 1, x: address.x * 2, y: address.y * 2 + 1 },
     { face: address.face, level: address.level + 1, x: address.x * 2 + 1, y: address.y * 2 + 1 },
   ];
-}
-
-/** True when the edge stays inside the current face (no cross-face neighbor lookup needed). */
-function isFaceEdgeInterior(address: TerrainNodeAddress, edge: TerrainEdge): boolean {
-  const count = 2 ** address.level;
-  return (edge === 'west' && address.x > 0)
-    || (edge === 'east' && address.x + 1 < count)
-    || (edge === 'south' && address.y > 0)
-    || (edge === 'north' && address.y + 1 < count);
 }
 
 /**
@@ -195,6 +191,8 @@ function waterMeshGeometry(data: WaterPatchGeometry): BufferGeometry {
  * work until the camera enters the configured crossfade band.
  */
 export function TerrainPatches({
+  onCoverageReadyChange,
+  opaque = false,
   worldFrame,
   terrainSourceRef,
   earthCenterF64,
@@ -205,13 +203,23 @@ export function TerrainPatches({
   radius,
 }: TerrainPatchesProps) {
   const { camera, size } = useThree();
+  const coverageReadyRef = useRef(false);
+  const coverageCallbackRef = useRef(onCoverageReadyChange);
+  coverageCallbackRef.current = onCoverageReadyChange;
+  const setCoverageReady = (ready: boolean): void => {
+    if (coverageReadyRef.current === ready) return;
+    coverageReadyRef.current = ready;
+    coverageCallbackRef.current?.(ready);
+  };
   const groupRef = useRef<Group>(null);
   const sourceRef = useRef<TerrainTileSource | null>(null);
   const poolRef = useRef<TerrainWorkerPool | null>(null);
   const initializationRef = useRef<Promise<void> | null>(null);
   const epochRef = useRef(0);
   const rootRequestRef = useRef<Promise<void> | null>(null);
-  const buildRequestsRef = useRef(new Set<string>());
+  const buildRequestsRef = useRef(new Map<string, symbol>());
+  const desiredResidencyRef = useRef(terrainResidencyKeys(rootTerrainNodes()));
+  const dirtyHeroRef = useRef(new Set<string>());
   const waterTimeRef = useRef(0);
   // Hero DEM tiles are a small, address-independent asset cache: unlike
   // sourceRef's per-address tile cache, nothing here needs clearing when
@@ -238,12 +246,14 @@ export function TerrainPatches({
       record.waterMesh.material.dispose();
     }
     recordsRef.current.delete(key);
+    dirtyHeroRef.current.delete(key);
   };
 
   const disposeAll = (): void => {
     for (const key of recordsRef.current.keys()) disposeRecord(key);
     displayedRef.current = [];
     buildRequestsRef.current.clear();
+    dirtyHeroRef.current.clear();
   };
 
   const readyKeys = (): ReadonlySet<string> => new Set(recordsRef.current.keys());
@@ -268,6 +278,8 @@ export function TerrainPatches({
       displayed: displayedRef.current.length,
       desired: desiredRef.current.length,
       buildsInFlight: buildRequestsRef.current.size,
+      residentAndReserved: new Set([...recordsRef.current.keys(), ...buildRequestsRef.current.keys()]).size,
+      coverageReady: coverageReadyRef.current,
     }));
   };
 
@@ -278,52 +290,29 @@ export function TerrainPatches({
     next = swapCompleteSiblings(next, desired, ready);
     const roots = rootTerrainNodes();
     if (next.length === 0 && roots.every((root) => ready.has(nodeAddressKey(root)))) next = roots;
-    // Undisplayed records stay RESIDENT (hidden by the per-frame visibility
-    // pass) — disposing them here rebuilt still-desired patches on the next
-    // tick, and the resulting build/dispose oscillation churned GPU uploads
-    // and shader inits until the GPU process wedged. Retirement is the cap
-    // eviction's job below, never the display reconcile's.
     displayedRef.current = next;
-    evictOverBudget();
+    retireUnused();
   };
 
-  const evictOverBudget = (): void => {
-    const over = recordsRef.current.size - TERRAIN_MAX_LIVE_PATCHES;
-    if (over <= 0) return;
-    const displayedKeys = new Set(displayedRef.current.map(nodeAddressKey));
-    // Only records that are neither displayed NOR desired may be retired.
-    // Evicting a desired record (e.g., children staged for a sibling swap)
-    // makes ensurePatch rebuild it immediately — the same build/dispose
-    // oscillation the reconcile fix removed, relocated to eviction.
-    const desiredKeys = new Set<string>();
-    for (const node of desiredRef.current) {
-      desiredKeys.add(nodeAddressKey(node));
-      let ancestor = parentAddress(node);
-      while (ancestor !== null) {
-        desiredKeys.add(nodeAddressKey(ancestor));
-        ancestor = parentAddress(ancestor);
-      }
+  const retireUnused = (): void => {
+    // Current fallback ancestors must survive until coarsening completes.
+    // Future siblings are protected by the desired tree's complete closure.
+    const protectedKeys = terrainResidencyKeys(displayedRef.current);
+    for (const key of desiredResidencyRef.current) protectedKeys.add(key);
+    for (const key of recordsRef.current.keys()) {
+      if (!protectedKeys.has(key)) disposeRecord(key);
     }
-    const candidates = [...recordsRef.current.keys()]
-      .filter((key) => !displayedKeys.has(key) && !desiredKeys.has(key))
-      .sort((a, b) => Number(b.split('/')[1]) - Number(a.split('/')[1]));
-    for (const key of candidates.slice(0, over)) disposeRecord(key);
   };
 
-  const createPatch = (result: PatchBuildResult, epoch: number, force = false): void => {
-    diagRef.current.built += 1;
+  const createPatch = (result: PatchBuildResult, epoch: number, heroInputKey: string): void => {
     if (epoch !== epochRef.current) return;
     const key = nodeAddressKey(result.address);
-    if (recordsRef.current.has(key)) return;
-    // A build may finish after the camera has moved away. Do not turn stale
-    // queued work into live GPU resources or let it defeat the patch budget.
-    // `force` (roots only — see ensurePatch) must match: a root built with
-    // the desired-set filter bypassed at the start would otherwise be
-    // discarded here anyway, then immediately re-requested by the per-frame
-    // root sweep, forever — this was silently building and discarding a
-    // root every frame instead of ever keeping it.
-    if (!force && desiredRef.current.length > 0
-      && !desiredRef.current.some((node) => isDescendantOrSelf(node, result.address))) return;
+    if (!desiredResidencyRef.current.has(key)) return;
+    // A hero tile can arrive while this worker is busy. Never install its
+    // superseded result; retain the old mesh until a replacement is ready.
+    if (heroInputKey !== gatherHeroTiles(result.address).map((tile) => tile.regionId).join('|')) return;
+    if (!recordsRef.current.has(key) && recordsRef.current.size >= TERRAIN_MAX_LIVE_PATCHES) return;
+    diagRef.current.built += 1;
     const geometry = meshGeometry(result);
     const material = createTerrainPatchMaterial(
       { dayMap, cloudMap, transmittanceLut } satisfies TerrainShaderTextures,
@@ -352,32 +341,39 @@ export function TerrainPatches({
       waterMesh.renderOrder = 0.6;
       groupRef.current?.add(waterMesh);
     }
-    recordsRef.current.set(key, { result, mesh, waterMesh });
+    if (recordsRef.current.has(key)) disposeRecord(key);
+    recordsRef.current.set(key, { result, mesh, waterMesh, heroInputKey });
     reconcileDisplayed();
   };
 
-  const gatherTiles = (address: TerrainNodeAddress): readonly PatchBuildRequest['tiles'][number][] => {
+  const gatherTiles = (address: TerrainNodeAddress): readonly PatchBuildRequest['tiles'][number][] | null => {
     const source = sourceRef.current;
-    if (source === null) return [];
-    const tiles = new Map<string, PatchBuildRequest['tiles'][number]>();
-    const addResidentChain = (start: TerrainNodeAddress): void => {
+    if (source === null) return null;
+    const required = new Map<string, TerrainNodeAddress>();
+    for (const start of requiredPatchTileAddresses(address, source.manifest.maxLevel)) {
       let current: TerrainNodeAddress | null = start;
       while (current !== null) {
-        const tile = source.get(current);
-        if (tile !== undefined) tiles.set(nodeAddressKey(tile.address), tile);
+        const key = nodeAddressKey(current);
+        if (required.has(key)) break;
+        required.set(key, current);
         current = parentAddress(current);
       }
-    };
-    // Own-face ancestor chain always matters for continuity within the
-    // patch. Cross-face neighbors only matter — and are only worth their
-    // structured-clone cost — when the patch actually sits on a face seam;
-    // neighborAddress() (quadtree.ts) resolves the true adjacent-face
-    // address rather than reusing this patch's own x/y on another face.
-    addResidentChain(address);
-    for (const edge of TERRAIN_EDGES) {
-      if (isFaceEdgeInterior(address, edge)) continue;
-      addResidentChain(neighborAddress(address, edge));
     }
+    // Include ancestor inputs in readiness too: reserved no-data pixels must
+    // not acquire a different fallback just because an evicted ancestor is
+    // fetched after this mesh has already been built.
+    let ready = true;
+    for (const tileAddress of required.values()) {
+      if (source.isResident(tileAddress)) continue;
+      ready = false;
+      if (!source.isPending(tileAddress)) {
+        diagRef.current.requested += 1;
+        void source.request(tileAddress).catch(() => undefined);
+      }
+    }
+    if (!ready) return null;
+    const tiles = new Map<string, PatchBuildRequest['tiles'][number]>();
+    for (const [key, tileAddress] of required) tiles.set(key, source.get(tileAddress)!);
     return [...tiles.values()];
   };
 
@@ -416,6 +412,9 @@ export function TerrainPatches({
           },
           data: decoded.data,
         });
+        for (const [key, record] of recordsRef.current) {
+          if (patchOverlapsHeroRegion(record.result.address, region, SKY_CONFIG.earthRadiusKm)) dirtyHeroRef.current.add(key);
+        }
       })
       // Permanent, like the manifest fallback above: a hero tile that fails
       // once would otherwise be re-fetched on every future ensurePatch call
@@ -439,82 +438,47 @@ export function TerrainPatches({
     return tiles;
   };
 
-  // `force` bypasses the desired-set filter — only for the 6 cube-face
-  // roots (see the per-frame root sweep below): they're the fixed,
-  // bounded base every deeper split needs to exist before it can run, not
-  // camera-dependent detail, so an off-camera root skipping the filter
-  // (and never getting built at all) can't be allowed to leave the whole
-  // face permanently unsplittable the moment the camera turns toward it.
-  const ensurePatch = (address: TerrainNodeAddress, epoch: number, force = false): void => {
+  const ensurePatch = (address: TerrainNodeAddress, epoch: number): void => {
+    if (epoch !== epochRef.current) return;
     const key = nodeAddressKey(address);
-    if (recordsRef.current.has(key) || buildRequestsRef.current.has(key)) return;
-    if (!force && desiredRef.current.length > 0
-      && !desiredRef.current.some((node) => isDescendantOrSelf(node, address))) return;
+    if (!desiredResidencyRef.current.has(key) || buildRequestsRef.current.has(key)) return;
+    const existing = recordsRef.current.get(key);
+    if (existing !== undefined && !dirtyHeroRef.current.has(key)) return;
     const source = sourceRef.current;
     const pool = poolRef.current;
     if (source === null || pool === null) return;
-    // Geometry LOD is deliberately decoupled from raster LOD: below the
-    // manifest's deepest tile level no exact tile exists for this address,
-    // and sampleResidentTerrain() already walks up to the finest resident
-    // ancestor (procedural detail supplies the sub-raster relief). Requiring
-    // an exact tile here pinned ALL geometry to the raster's level.
+    // Reserve capacity before gathering payloads or queueing work. Replacing
+    // an existing mesh uses its current slot; old/new camera trees share the
+    // same hard budget while parent fallbacks allow obsolete branches to merge.
+    let occupied = recordsRef.current.size;
+    for (const pendingKey of buildRequestsRef.current.keys()) if (!recordsRef.current.has(pendingKey)) occupied += 1;
+    if (existing === undefined && occupied >= TERRAIN_MAX_LIVE_PATCHES) return;
     const tiles = gatherTiles(address);
-    if (tiles.length === 0) return;
-    buildRequestsRef.current.add(key);
+    if (tiles === null) return;
+    const heroTiles = gatherHeroTiles(address);
+    const heroInputKey = heroTiles.map((tile) => tile.regionId).join('|');
+    if (existing?.heroInputKey === heroInputKey) {
+      dirtyHeroRef.current.delete(key);
+      return;
+    }
+    const token = Symbol(key);
+    buildRequestsRef.current.set(key, token);
     const request: Omit<PatchBuildRequest, 'requestId'> = {
-      type: 'buildPatch',
-      address,
-      tiles,
-      codec: source.manifest.codec,
+      type: 'buildPatch', address, tiles, codec: source.manifest.codec,
       heroRegions: SKY_CONFIG.terrain.heroRegions.map((region): PatchHeroRegionConfig => ({ ...region })),
-      heroTiles: gatherHeroTiles(address),
-      planetRadiusM: EARTH_RADIUS_M,
+      heroTiles, planetRadiusM: EARTH_RADIUS_M,
     };
     void pool.build(request)
-      .then((result) => createPatch(result, epoch, force))
+      .then((result) => createPatch(result, epoch, heroInputKey))
       .catch(() => undefined)
-      .finally(() => buildRequestsRef.current.delete(key));
+      .finally(() => {
+        // A disposed epoch's callback must not remove a new epoch's reservation.
+        if (buildRequestsRef.current.get(key) === token) buildRequestsRef.current.delete(key);
+      });
   };
 
   const requestChildren = (address: TerrainNodeAddress, epoch: number): void => {
-    const source = sourceRef.current;
-    if (source === null) return;
-    // Tile FETCH only goes as deep as the raster pyramid; geometry levels
-    // below that sample the finest resident ancestor instead, so this gate
-    // must not also gate the child-patch builds at the end of this function.
-    if (address.level >= source.manifest.maxLevel) {
-      for (const child of childrenOf(address)) ensurePatch(child, epoch, true);
-      return;
-    }
-    // Gated on LIVE residency (isSplitReady), not "have we ever asked": a
-    // lifetime marker would either wedge forever once a previously-fetched
-    // child is evicted from the LRU cache (marker says done, tile says
-    // missing), or — if cleared too eagerly — re-fetch every frame for a
-    // parent that can never fully complete (the original OOM, ~300
-    // requests/s). isSplitReady() is 4 cheap Map lookups, and request()/
-    // requestChildren() already dedupe in-flight and already-resident
-    // tiles internally (tileSource.ts's own `pending` map), so calling
-    // this every frame is safe and only does real work when genuinely
-    // needed — including correctly re-fetching an evicted child.
-    if (!source.isSplitReady(address)) {
-      diagRef.current.requested += 1;
-      void source.requestChildren(address).catch(() => undefined);
-    }
-    // Retried every frame this parent still wants a descendant. ensurePatch()
-    // is already a cheap no-op once a child is built, mid-build, or still
-    // undesired, so this is what lets a child skipped for any reason
-    // (including an evicted record, or a worker build that failed) actually
-    // get built once it's genuinely buildable.
-    //
-    // force: a sibling quartet is structurally all-or-nothing. swapCompleteSiblings
-    // only promotes a parent once ALL FOUR children are built (the no-hole
-    // rule), so letting the desired-set filter skip the siblings that don't
-    // themselves contain a desired node deadlocks refinement permanently:
-    // near the ground, horizon culling leaves only 1-2 desired nodes, so 3 of
-    // every 4 siblings were never built, the quartet never completed, and the
-    // scene stayed pinned to the six level-0 roots (~312 km per vertex).
-    // Undesired siblings are still retired normally by evictOverBudget.
-    for (const child of childrenOf(address)) ensurePatch(child, epoch, true);
+    for (const child of childrenOf(address)) ensurePatch(child, epoch);
   };
 
   // Best-effort and independent of the base-terrain init chain below: hero
@@ -538,6 +502,7 @@ export function TerrainPatches({
     // usually already cached, so that's within a frame or two), leaking a
     // fresh set of real Worker instances each time.
     if (initializationRef.current !== null || poolRef.current !== null) return;
+    setCoverageReady(false);
     const epoch = epochRef.current;
     initializationRef.current = (async () => {
       if (sourceRef.current === null) {
@@ -556,11 +521,11 @@ export function TerrainPatches({
       const source = sourceRef.current;
       rootRequestRef.current = Promise.all(rootTerrainNodes().map((root) => source.request(root)))
         .then(() => {
-          for (const root of rootTerrainNodes()) ensurePatch(root, epoch, true);
+          for (const root of rootTerrainNodes()) ensurePatch(root, epoch);
         })
         .catch(() => undefined);
       await rootRequestRef.current;
-    })().finally(() => {
+    })().catch(() => undefined).finally(() => {
       initializationRef.current = null;
     });
   };
@@ -574,7 +539,8 @@ export function TerrainPatches({
     const renderEarthCenter = worldFrame.toRender(earthCenterF64);
 
     if (fade <= 0 || altitudeM > TERRAIN_ENGAGEMENT_ALTITUDE_M) {
-      if (poolRef.current !== null || recordsRef.current.size > 0) {
+      setCoverageReady(false);
+      if (poolRef.current !== null || recordsRef.current.size > 0 || initializationRef.current !== null) {
         epochRef.current += 1;
         poolRef.current?.dispose();
         poolRef.current = null;
@@ -587,44 +553,30 @@ export function TerrainPatches({
       return;
     }
 
-    startTerrain();
-    // Retried every frame, same pattern as requestChildren() for a deeper
-    // split: this recovers a root whose worker build failed (e.g. a
-    // terrain worker error), which startTerrain()'s one-shot init would
-    // otherwise never retry once the pool already exists. Gated on live
-    // residency/in-flight state, not just called unconditionally, so a
-    // healthy already-built root costs nothing per frame beyond the
-    // recordsRef lookup inside ensurePatch. force:true bypasses the
-    // desired-set filter — see ensurePatch's comment for why.
-    if (sourceRef.current !== null && poolRef.current !== null) {
-      const source = sourceRef.current;
-      for (const root of rootTerrainNodes()) {
-        if (!source.isResident(root) && !source.isPending(root)) {
-          void source.request(root).catch(() => undefined);
-        }
-        ensurePatch(root, epochRef.current, true);
-      }
-    }
-    diagTick();
     const projectionScalePx = Math.abs(camera.projectionMatrix.elements[5]) * size.height * 0.5;
     desiredRef.current = selectTerrainNodes(cameraFromEarth, {
       planetRadiusM: radius,
       projectionScalePx,
       splitThresholdPx: SKY_CONFIG.terrain.screenSpaceErrorPx,
-      // Geometry cap only — deliberately NOT clamped to the raster's max
-      // level (see ensurePatch): the pyramid stops at ~2 km/px, while
-      // geometry must keep subdividing to reach ground scale.
       maxLevel: TERRAIN_MAX_LEVEL,
       maxLivePatches: TERRAIN_MAX_LIVE_PATCHES,
       horizonCulling: true,
     });
-
+    desiredResidencyRef.current = terrainResidencyKeys(desiredRef.current);
+    poolRef.current?.cancelQueued((request) => !desiredResidencyRef.current.has(nodeAddressKey(request.address)));
+    reconcileDisplayed();
+    startTerrain();
+    for (const root of rootTerrainNodes()) ensurePatch(root, epochRef.current);
     for (const node of displayedRef.current) {
       const wantsDescendant = desiredRef.current.some((candidate) => candidate.level > node.level
         && isDescendantOrSelf(candidate, node));
       if (wantsDescendant) requestChildren(node, epochRef.current);
     }
-    reconcileDisplayed();
+    for (const key of dirtyHeroRef.current) {
+      const record = recordsRef.current.get(key);
+      if (record) ensurePatch(record.result.address, epochRef.current);
+    }
+    diagTick();
 
     // Built once per frame so the per-record visibility pass below is an
     // O(1) lookup instead of an O(records * displayed) linear scan that
@@ -640,28 +592,34 @@ export function TerrainPatches({
       ]);
       record.mesh.position.set(renderCenter[0], renderCenter[1], renderCenter[2]);
       record.mesh.visible = displayedKeys.has(key)
-        && isTerrainNodeHorizonVisible(record.result.address, cameraFromEarth, radius);
+        && (opaque || isTerrainNodeHorizonVisible(record.result.address, cameraFromEarth, radius));
       record.mesh.material.uniforms.planetCenter!.value.fromArray(renderEarthCenter);
-      record.mesh.material.uniforms.terrainOpacity!.value = fade;
+      record.mesh.material.uniforms.terrainOpacity!.value = opaque ? 1 : fade;
       record.mesh.material.uniforms.cloudRotationOffset!.value = mainDeckRotation.current;
       if (record.waterMesh !== null) {
         record.waterMesh.position.set(renderCenter[0], renderCenter[1], renderCenter[2]);
         record.waterMesh.visible = record.mesh.visible;
         record.waterMesh.material.uniforms.planetCenter!.value.fromArray(renderEarthCenter);
-        record.waterMesh.material.uniforms.terrainOpacity!.value = fade;
+        record.waterMesh.material.uniforms.terrainOpacity!.value = opaque ? 1 : fade;
         record.waterMesh.material.uniforms.oceanTime!.value = waterTimeRef.current;
       }
     }
-
+    // Publish after placement and visibility, never from an async worker
+    // callback while freshly created meshes are still at their default pose.
+    setCoverageReady(isTerrainCoverageReady(displayedRef.current, readyKeys()));
   });
 
-  useEffect(() => () => {
-    epochRef.current += 1;
-    poolRef.current?.dispose();
-    poolRef.current = null;
-    sourceRef.current?.clear();
-    terrainSourceRef.current = null;
-    disposeAll();
+  useEffect(() => {
+    coverageCallbackRef.current?.(coverageReadyRef.current);
+    return () => {
+      setCoverageReady(false);
+      epochRef.current += 1;
+      poolRef.current?.dispose();
+      poolRef.current = null;
+      sourceRef.current?.clear();
+      terrainSourceRef.current = null;
+      disposeAll();
+    };
   }, []);
 
   return <group ref={groupRef} />;

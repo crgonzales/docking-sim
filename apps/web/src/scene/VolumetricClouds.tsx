@@ -104,7 +104,9 @@ const VOLUMETRIC_VERTEX = /* glsl */ `
   varying vec3 vWorldCenter;
   varying float vQuadPixels;
 
-  const float PI = 3.14159265359;
+  // Preserve geometric clipping; use the same fragment depth as built-in materials.
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
 
   vec3 rotateY(vec3 point, float angle) {
     float c = cos(angle);
@@ -121,11 +123,6 @@ ${CLOUD_COVERAGE_GLSL}
       0.5 + asin(clamp(point.y, -1.0, 1.0)) / PI);
   }
 
-  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
-  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
-  // (fragment-depth writes across large transparent overdraw stressed the
-  // Metal driver into intermittent device hangs during v0.9.0).
-  uniform float logDepthBufFC;
   void main() {
     vec3 spherePoint = normalize(instancePosition);
     // Match the flat deck and the surface shadow lookup exactly: the map is
@@ -173,7 +170,7 @@ ${CLOUD_COVERAGE_GLSL}
     vec2 rotatedQuad = vec2(c * position.x - s * position.y, s * position.x + c * position.y);
     centerView.xy += rotatedQuad * billboardSize;
     gl_Position = projectionMatrix * centerView;
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
 
     // On-screen quad size in pixels, computed once per quad: the fragment
     // shader previously derived this from fwidth(vQuadUv), which is noisy for
@@ -191,6 +188,7 @@ ${CLOUD_COVERAGE_GLSL}
 `;
 
 const VOLUMETRIC_FRAGMENT = /* glsl */ `
+  #include <logdepthbuf_pars_fragment>
   uniform vec3 sunDir;
   varying vec2 vQuadUv;
   varying float vDensity;
@@ -244,6 +242,7 @@ ${SKY_LIGHTING_GLSL}
   }
 
   void main() {
+    #include <logdepthbuf_fragment>
     vec2 centered = vQuadUv * 2.0 - 1.0;
     float radial = length(centered);
     // Pixel footprint of the quad: below a few fragments the FBM edge is

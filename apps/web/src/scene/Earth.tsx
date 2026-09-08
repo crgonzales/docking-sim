@@ -1,3 +1,5 @@
+import { LIBRARY_RENDERER } from './renderProbeConfig';
+import { EARTH_KTX_UV_GLSL } from './libraryEarthTextureOrientation';
 import { useCallback, useMemo, useRef } from 'react';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import {
@@ -9,6 +11,7 @@ import {
   FileLoader,
   FloatType,
   Group,
+  Mesh,
   HalfFloatType,
   LinearFilter,
   NoColorSpace,
@@ -46,7 +49,6 @@ import {
   SHADOW_FULL_LIGHT_COSINE,
   SPEC_GAIN,
   AERIAL_SKY_RADIANCE,
-  ATMOSPHERE_INTENSITY,
   EARTH_CENTER_DISTANCE_M,
   metersToSceneUnits,
   terrainFadeFromAltitudeM,
@@ -141,22 +143,21 @@ const earthVertex = /* glsl */ `
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec2 vUv;
-  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
-  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
-  // (fragment-depth writes across large transparent overdraw stressed the
-  // Metal driver into intermittent device hangs during v0.9.0).
-  uniform float logDepthBufFC;
+  // Preserve geometric clipping; use the same fragment depth as built-in materials.
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
   void main() {
     vUv = uv;
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     gl_Position = projectionMatrix * viewMatrix * wp;
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
   }
 `;
 
 const earthFragment = /* glsl */ `
+  #include <logdepthbuf_pars_fragment>
   #define AERIAL_SKY_RADIANCE vec3(${AERIAL_SKY_RADIANCE.map((c) => c.toFixed(2)).join(', ')})
   uniform sampler2D dayMap;
   uniform sampler2D nightMap;
@@ -190,6 +191,7 @@ const earthFragment = /* glsl */ `
 
 ${CLOUD_COVERAGE_GLSL}
 ${SKY_LIGHTING_GLSL}
+${EARTH_KTX_UV_GLSL}
 
   vec2 atmosphereLutUv(vec3 point, vec3 direction) {
     vec3 radial = point - planetCenter;
@@ -227,6 +229,15 @@ ${SKY_LIGHTING_GLSL}
   }
 
   void main() {
+    #include <logdepthbuf_fragment>
+    #ifdef LIBRARY_LIGHTING
+    // Opaque material metadata; aerial lighting restores alpha after decoding.
+    // Color and water classification must share the packaged KTX orientation.
+    vec2 libraryMapUv = earthMapUv(vUv);
+    float libraryWater = clamp(texture2D(specMap, libraryMapUv).r, 0.0, 1.0);
+    gl_FragColor = vec4(texture2D(dayMap, libraryMapUv).rgb, 1.0 - 0.5 * libraryWater);
+    return;
+    #endif
     vec3 n = normalize(vWorldNormal);
     float ndotl = dot(n, sunDir);
     float dayness = skyTerminatorRamp(ndotl);
@@ -356,29 +367,21 @@ ${SKY_LIGHTING_GLSL}
 
 const atmoVertex = /* glsl */ `
   varying vec3 vWorldPos;
-  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
-  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
-  // (fragment-depth writes across large transparent overdraw stressed the
-  // Metal driver into intermittent device hangs during v0.9.0).
-  uniform float logDepthBufFC;
+  // Preserve geometric clipping; use the same fragment depth as built-in materials.
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
   void main() {
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     gl_Position = projectionMatrix * viewMatrix * wp;
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
   }
 `;
 
 const atmoFragment = /* glsl */ `
-  #define ATMOSPHERE_INTENSITY ${ATMOSPHERE_INTENSITY.toFixed(1)}
+  #include <logdepthbuf_pars_fragment>
   const int ATMOSPHERE_OUTSIDE_STEPS = 12;
   const int ATMOSPHERE_INSIDE_STEPS = ${SKY_CONFIG.atmosphere.insideRaymarchSteps};
-  const float EXPOSURE_GROUND_ALTITUDE = ${kmToSceneUnits(SKY_CONFIG.exposure.groundAltitudeKm).toFixed(1)};
-  const float EXPOSURE_SPACE_ALTITUDE = ${kmToSceneUnits(SKY_CONFIG.exposure.spaceAltitudeKm).toFixed(1)};
-  const float EXPOSURE_GROUND = ${SKY_CONFIG.exposure.groundIntensity.toFixed(2)};
-  const float EXPOSURE_SPACE = ${SKY_CONFIG.exposure.spaceIntensity.toFixed(2)};
-  const float EXPOSURE_CURVE_POWER = ${SKY_CONFIG.exposure.curvePower.toFixed(3)};
-  const float EXPOSURE_INSIDE = ${SKY_CONFIG.exposure.insideIntensity.toFixed(2)};
   const float METERS_PER_RENDER_UNIT = ${SKY_CONFIG.renderScaleMPerUnit.toFixed(1)};
   uniform vec3 sunDir;
   uniform vec3 planetCenter;
@@ -440,6 +443,7 @@ ${SKY_LIGHTING_GLSL}
   }
 
   void main() {
+    #include <logdepthbuf_fragment>
     vec3 cameraToCenter = planetCenter - cameraPosition;
     vec3 ray = normalize(vWorldPos - cameraPosition);
     float closestDistance = dot(cameraToCenter, ray);
@@ -511,51 +515,15 @@ ${SKY_LIGHTING_GLSL}
       scattered += source * stepLength * METERS_PER_RENDER_UNIT;
     }
 
-    // Physically-normalized radiance needs a display exposure: without it the
-    // limb integrates to ~0.005-0.05 and the atmosphere is invisible. That
-    // calibration assumes the OUTSIDE/limb regime: a thin, short slice of
-    // atmosphere grazed from orbit, genuinely needing up to ~100x boost near
-    // "ground" altitude to read as visible at all. Looking from INSIDE the
-    // shell near the ground, a near-horizontal ray's path length through the
-    // dense low atmosphere can be very long — the raw integral is already
-    // large there, not tiny — so applying the same ground-boosted curve
-    // over-exposes by the same ~100x and clips the whole view to white. Use
-    // the curve (ground-boosted) only outside the shell, where it was
-    // actually calibrated; use the flat, conservative space-level exposure
-    // inside it.
-    float cameraAltitude = max(cameraRadius - surfaceRadius, 0.0);
-    float exposureOutside = skyExposureCurve(
-      cameraAltitude,
-      EXPOSURE_GROUND_ALTITUDE,
-      EXPOSURE_SPACE_ALTITUDE,
-      EXPOSURE_GROUND,
-      EXPOSURE_SPACE,
-      EXPOSURE_CURVE_POWER
-    );
-    // Blended, never branched: switching exposure on the inside/outside test
-    // steps it ~10x (about 29.6 -> 3) as the camera crosses the shell, which
-    // reads as a screen flash on descent. Ramp across the top tenth of the
-    // shell instead so the change is continuous.
-    float shellFraction = clamp(
-      (atmosphereRadius - cameraRadius) / max(atmosphereRadius - surfaceRadius, 1.0) * 10.0,
-      0.0,
-      1.0
-    );
-    float exposure = mix(exposureOutside, EXPOSURE_INSIDE, shellFraction);
-    scattered *= exposure;
-
-    // Exponential rolloff instead of a hard clamp: min() plateaued every
-    // bright channel at the same value, flattening the dense near-surface
-    // band into a clipped white line. 1 - exp(-x) compresses peaks smoothly,
-    // keeps the gradient monotonic, and lets the LUT's reddened sun
-    // transmittance produce the warm low-band tones — no hardcoded tint.
-    vec3 color = vec3(1.0) - exp(-scattered);
+    // Emit the integrated radiance directly. Frame exposure and the tonemap
+    // are owned by the post-processing composer, so this shell cannot apply
+    // a second altitude-dependent exposure or rolloff.
     // AdditiveBlending multiplies by srcAlpha. The earlier alpha sampled
     // transmittance AT the fragment — the top of the atmosphere, where T = 1 by
     // construction — so alpha was permanently 0 and the whole shell rendered
     // invisible. scattered already carries every attenuation term; the
     // additive contribution needs alpha 1.
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(scattered, 1.0);
   }
 `;
 
@@ -631,6 +599,9 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
 
   const radius = metersToSceneUnits(EARTH_RADIUS_M);
   const earthGroupRef = useRef<Group>(null);
+  const globeRef = useRef<Mesh>(null);
+  const terrainCoverageReady = useRef(false);
+  const onCoverageReadyChange = useCallback((ready: boolean) => { terrainCoverageReady.current = ready; }, []);
   const initialPosition = useMemo(
     () => new Vector3(...worldFrame.toRender(EARTH_CENTER_WORLD)),
     [worldFrame],
@@ -640,6 +611,7 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
   const earthMaterial = useMemo(
     () =>
       new ShaderMaterial({
+        defines: LIBRARY_RENDERER ? { LIBRARY_LIGHTING: 1 } : {},
         vertexShader: earthVertex,
         fragmentShader: earthFragment,
         uniforms: {
@@ -661,7 +633,7 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
           oceanTime: { value: 0 },
           farGlobeOpacity: { value: 1 },
         },
-        transparent: true,
+        transparent: !LIBRARY_RENDERER,
       }),
     [cloudMap, dayMap, initialPosition, mainDeckRotation, multipleScatteringLut, nightMap, normalMap, radius, specMap, transmittanceLut],
   );
@@ -724,15 +696,17 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
     // depth-write off unconditionally removed the depth reference other
     // transparent layers (clouds, atmosphere shell) were drawn against in
     // the normal far view.
-    earthMaterial.depthWrite = terrainFade <= 0;
+    earthMaterial.depthWrite = LIBRARY_RENDERER || terrainFade <= 0;
+    if (globeRef.current) globeRef.current.visible = !LIBRARY_RENDERER || terrainFade <= 0 || !terrainCoverageReady.current;
   });
 
   return (
     <>
       <group ref={earthGroupRef} position={initialPosition}>
-        <mesh material={earthMaterial} renderOrder={0}>
+        <mesh ref={globeRef} material={earthMaterial} renderOrder={0}>
           <sphereGeometry args={[radius, 192, 192]} />
         </mesh>
+        {!LIBRARY_RENDERER && <>
         <Clouds
           cloudMap={cloudMap}
           mainDeckRotation={mainDeckRotation}
@@ -756,8 +730,11 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
         >
           <sphereGeometry args={[radius, 192, 192]} />
         </mesh>
+        </>}
       </group>
       <TerrainPatches
+        onCoverageReadyChange={onCoverageReadyChange}
+        opaque={LIBRARY_RENDERER}
         worldFrame={worldFrame}
         terrainSourceRef={terrainSourceRef}
         earthCenterF64={EARTH_CENTER_WORLD}

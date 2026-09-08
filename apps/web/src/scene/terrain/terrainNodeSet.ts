@@ -9,7 +9,7 @@ import {
   type TerrainLodOptions,
   type Vec3,
 } from './quadtree';
-import { SKY_DERIVED, TERRAIN_MAX_LEVEL } from '../sky/skyConfig';
+import { SKY_DERIVED, TERRAIN_MAX_LEVEL, TERRAIN_MAX_LIVE_PATCHES } from '../sky/skyConfig';
 
 const ROOT_NODES: readonly TerrainNodeAddress[] = [0, 1, 2, 3, 4, 5].map((face) => ({
   face: face as TerrainNodeAddress['face'],
@@ -22,8 +22,10 @@ export interface TerrainNodeSelectionOptions extends TerrainLodOptions {
   readonly planetRadiusM?: number;
   readonly maxLevel?: number;
   readonly horizonCulling?: boolean;
-  /** Hard upper bound on the live leaf set, prioritized nearest-first. */
+  /** Budget for all six roots, coverage siblings AND retained ancestors. */
   readonly maxLivePatches?: number;
+  /** Optional operation counter for CPU regression checks (no timing dependency). */
+  readonly statistics?: { evaluatedNodes: number; splits: number; residentNodes: number };
 }
 
 function length(vector: Vec3): number {
@@ -127,10 +129,43 @@ export function isTerrainNodeHorizonVisible(
   return centerAngle <= horizonAngle + nodeAngularRadiusRadians(address);
 }
 
+/** The entire resident closure needed for atomic splits and later coarsening. */
+export function terrainResidencyKeys(nodes: readonly TerrainNodeAddress[]): Set<string> {
+  const keys = new Set<string>();
+  for (const leaf of nodes) {
+    let node: TerrainNodeAddress | null = leaf;
+    while (node !== null) {
+      const key = nodeAddressKey(node);
+      if (keys.has(key)) break;
+      keys.add(key);
+      node = parentAddress(node);
+    }
+  }
+  return keys;
+}
+
+/** Full, non-overlapping six-face cover, with every displayed mesh ready. */
+export function isTerrainCoverageReady(nodes: readonly TerrainNodeAddress[], ready: ReadonlySet<string>): boolean {
+  const areas = [0, 0, 0, 0, 0, 0];
+  const leaves = new Set(nodes.map(nodeAddressKey));
+  if (leaves.size !== nodes.length) return false;
+  for (const node of nodes) {
+    if (!ready.has(nodeAddressKey(node))) return false;
+    areas[node.face] += 4 ** -node.level;
+    let parent = parentAddress(node);
+    while (parent !== null) {
+      if (leaves.has(nodeAddressKey(parent))) return false;
+      parent = parentAddress(parent);
+    }
+  }
+  return areas.every((area) => area === 1);
+}
+
 /**
- * Deterministic front-to-back-independent leaf selection. The caller owns
- * residency/build gating; this function only answers what the camera would
- * like to see, which keeps LOD decisions reproducible across worker timing.
+ * Bounded best-first frontier. Every split reserves FOUR additional resident
+ * records: all siblings, while retaining their parent for fallback/coarsening.
+ * Roots and unsplit siblings stay in the cover even beyond the horizon; only
+ * refinement is horizon-culled. No full-depth tree is generated then capped.
  */
 export function selectTerrainNodes(
   cameraPosition: Vec3,
@@ -138,29 +173,67 @@ export function selectTerrainNodes(
 ): readonly TerrainNodeAddress[] {
   const planetRadiusM = options.planetRadiusM ?? SKY_DERIVED.earthRadiusM;
   const maxLevel = options.maxLevel ?? TERRAIN_MAX_LEVEL;
-  const horizonCulling = options.horizonCulling ?? true;
-  const selected: TerrainNodeAddress[] = [];
-  const visit = (address: TerrainNodeAddress): void => {
-    if (horizonCulling && !isTerrainNodeHorizonVisible(address, cameraPosition, planetRadiusM)) return;
-    const lod = decideLod(address, cameraPosition, {
-      ...options,
-      planetRadiusM,
-      maxLevel,
-    });
-    if (lod.action === 'split' && address.level < maxLevel) {
-      visit(childAddress(address, 0, 0));
-      visit(childAddress(address, 1, 0));
-      visit(childAddress(address, 0, 1));
-      visit(childAddress(address, 1, 1));
-      return;
+  const budget = options.maxLivePatches ?? TERRAIN_MAX_LIVE_PATCHES;
+  if (!Number.isSafeInteger(budget) || budget < ROOT_NODES.length) {
+    throw new Error('Terrain residency budget must accommodate all six roots');
+  }
+  const statistics = options.statistics;
+  if (statistics) Object.assign(statistics, { evaluatedNodes: 0, splits: 0, residentNodes: 6 });
+  const lodOptions = { ...options, planetRadiusM, maxLevel };
+  const leaves = new Map(ROOT_NODES.map((node) => [nodeAddressKey(node), node]));
+  type Candidate = { node: TerrainNodeAddress; error: number };
+  const heap: Candidate[] = [];
+  const before = (a: Candidate, b: Candidate): boolean => a.error > b.error
+    || (a.error === b.error && compareNodeAddress(a.node, b.node) < 0);
+  const offer = (node: TerrainNodeAddress): void => {
+    if (statistics) statistics.evaluatedNodes += 1;
+    if ((options.horizonCulling ?? true) && !isTerrainNodeHorizonVisible(node, cameraPosition, planetRadiusM)) return;
+    const lod = decideLod(node, cameraPosition, lodOptions);
+    if (lod.action !== 'split' || node.level >= maxLevel) return;
+    const candidate = { node, error: lod.screenSpaceErrorPx };
+    let index = heap.length;
+    heap.push(candidate);
+    while (index > 0) {
+      const parent = (index - 1) >> 1;
+      if (!before(candidate, heap[parent])) break;
+      heap[index] = heap[parent];
+      index = parent;
     }
-    selected.push(address);
+    heap[index] = candidate;
   };
-  for (const root of ROOT_NODES) visit(root);
-  const ordered = selected.sort(compareNodeAddress);
-  return options.maxLivePatches === undefined
-    ? ordered
-    : capTerrainNodes(ordered, cameraPosition, options.maxLivePatches, planetRadiusM);
+  const take = (): Candidate => {
+    const first = heap[0];
+    const last = heap.pop()!;
+    if (heap.length > 0) {
+      let index = 0;
+      while (index * 2 + 1 < heap.length) {
+        let child = index * 2 + 1;
+        if (child + 1 < heap.length && before(heap[child + 1], heap[child])) child += 1;
+        if (!before(heap[child], last)) break;
+        heap[index] = heap[child];
+        index = child;
+      }
+      heap[index] = last;
+    }
+    return first;
+  };
+  for (const root of ROOT_NODES) offer(root);
+  let residentNodes = ROOT_NODES.length;
+  while (heap.length > 0 && residentNodes + 4 <= budget) {
+    const { node } = take();
+    leaves.delete(nodeAddressKey(node));
+    residentNodes += 4;
+    if (statistics) {
+      statistics.splits += 1;
+      statistics.residentNodes = residentNodes;
+    }
+    for (const x of [0, 1] as const) for (const y of [0, 1] as const) {
+      const child = childAddress(node, x, y);
+      leaves.set(nodeAddressKey(child), child);
+      offer(child);
+    }
+  }
+  return [...leaves.values()].sort(compareNodeAddress);
 }
 
 function isDescendantOrSelf(candidate: TerrainNodeAddress, ancestor: TerrainNodeAddress): boolean {
@@ -203,14 +276,13 @@ export function swapCompleteSiblings(
   return next.sort(compareNodeAddress);
 }
 
-/** Merge a complete displayed sibling quartet only when the parent is wanted. */
+/** Coarsen toward a wanted ancestor, including camera jumps across many levels. */
 export function mergeCompleteSiblings(
   displayed: readonly TerrainNodeAddress[],
   desired: readonly TerrainNodeAddress[],
   ready: ReadonlySet<string>,
 ): readonly TerrainNodeAddress[] {
   const displayedKeys = new Set(displayed.map(nodeAddressKey));
-  const desiredKeys = new Set(desired.map(nodeAddressKey));
   const consumed = new Set<string>();
   const next: TerrainNodeAddress[] = [];
   for (const node of displayed) {
@@ -233,7 +305,7 @@ export function mergeCompleteSiblings(
       childAddress(parent, 1, 1),
     ];
     const childKeys = children.map(nodeAddressKey);
-    const canMerge = desiredKeys.has(nodeAddressKey(parent))
+    const canMerge = desired.some((target) => isDescendantOrSelf(parent, target))
       && ready.has(nodeAddressKey(parent))
       && childKeys.every((childKey) => displayedKeys.has(childKey));
     if (canMerge) {

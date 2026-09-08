@@ -47,15 +47,12 @@ const CLOUD_VERTEX = /* glsl */ `
   varying vec3 vWorldPos;
   varying vec2 vUv;
   varying float vThroughLayerFog;
-  // Vertex-side logarithmic depth: same encoding as three's logdepth chunks
-  // but computed per-vertex — no gl_FragDepth writes, so early-Z stays on
-  // (fragment-depth writes across large transparent overdraw stressed the
-  // Metal driver into intermittent device hangs during v0.9.0).
-  uniform float logDepthBufFC;
+  // Preserve geometric clipping; use the same fragment depth as built-in materials.
+  #include <common>
+  #include <logdepthbuf_pars_vertex>
 
 ${CLOUD_COVERAGE_GLSL}
 
-  const float PI = 3.14159265359;
   vec2 sphericalUv(vec3 point) {
     return vec2(atan(point.z, -point.x) / (2.0 * PI),
       0.5 + asin(clamp(point.y, -1.0, 1.0)) / PI);
@@ -81,11 +78,12 @@ ${CLOUD_COVERAGE_GLSL}
       ${CLOUD_THROUGH_LAYER_FOG_END.toFixed(1)},
       cameraLayerDistance));
     gl_Position = projectionMatrix * viewMatrix * wp;
-    gl_Position.z = (log2(max(1e-6, 1.0 + gl_Position.w)) * logDepthBufFC - 1.0) * gl_Position.w;
+    #include <logdepthbuf_vertex>
   }
 `;
 
 const CLOUD_FRAGMENT = /* glsl */ `
+  #include <logdepthbuf_pars_fragment>
   uniform sampler2D cloudMap;
   uniform vec3 sunDir;
   uniform float opacity;
@@ -104,6 +102,7 @@ ${CLOUD_COVERAGE_GLSL}
 ${SKY_LIGHTING_GLSL}
 
   void main() {
+    #include <logdepthbuf_fragment>
     // The lookup is deliberately camera-independent. A view-driven parallax
     // offset used to live here to fake thickness at the limb; it made the
     // cloud pattern slide across the planet whenever the camera zoomed or

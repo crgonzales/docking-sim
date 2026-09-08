@@ -15,19 +15,6 @@ export const SKY_LIGHTING_GLSL = /* glsl */ `
     return mix(vec3(1.0), vec3(1.0, 0.78, 0.56), 0.45 * warmth);
   }
 
-  float skyExposureCurve(
-    float altitude,
-    float groundAltitude,
-    float spaceAltitude,
-    float groundExposure,
-    float spaceExposure,
-    float curvePower
-  ) {
-    float t = clamp((altitude - groundAltitude) / max(spaceAltitude - groundAltitude, 0.0001), 0.0, 1.0);
-    float eased = t * t * (3.0 - 2.0 * t);
-    return groundExposure + (spaceExposure - groundExposure) * pow(eased, curvePower);
-  }
-
   // Exponential distance parameterisation for camera-inside atmosphere rays.
   // The increasing warp spends more samples near the camera, where the
   // Rayleigh density is highest, while callers retain the warped interval

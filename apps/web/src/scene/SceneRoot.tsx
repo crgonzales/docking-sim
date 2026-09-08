@@ -1,6 +1,9 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Color, DirectionalLight } from 'three';
+import { Color, DirectionalLight, NoToneMapping } from 'three';
+import { LibraryEffects } from './LibraryEffects';
+import { RenderProbe } from './RenderProbe';
+import { LIBRARY_RENDERER, PROBE_DPR, RENDER_PROBE } from './renderProbeConfig';
 import { Earth } from './Earth';
 import { Effects } from './Effects';
 import { CameraRig } from './CameraRig';
@@ -13,7 +16,9 @@ import {
   ATMOSPHERE_TRANSMITTANCE_LUT_PATH,
   CAMERA_FAR,
   CAMERA_NEAR,
+  EARTH_RADIUS_M,
   SKY_CONFIG,
+  SKY_DERIVED,
 } from './sky/skyConfig';
 import {
   sampleTransmittanceLut,
@@ -23,6 +28,43 @@ import { WorldFrame, type WorldPositionF64 } from './worldFrame';
 import { parseFlytoParam } from './flytoParam';
 import { useViewStore } from '../viewStore';
 import type { TerrainTileSource } from './terrain/tileSource';
+import { frameExposureFromCamera } from './sky/exposure';
+
+const EARTH_CENTER_WORLD: WorldPositionF64 = [-SKY_DERIVED.earthCenterDistanceM, 0, 0];
+
+interface FrameExposureControllerProps {
+  readonly worldFrame: WorldFrame;
+  readonly exposureRef: { current: number };
+}
+
+function FrameExposureController({ worldFrame, exposureRef }: FrameExposureControllerProps) {
+  const { camera } = useThree();
+
+  useFrame(() => {
+    const cameraWorld = worldFrame.toWorld([camera.position.x, camera.position.y, camera.position.z]);
+    const cameraDelta = [
+      cameraWorld[0] - EARTH_CENTER_WORLD[0],
+      cameraWorld[1] - EARTH_CENTER_WORLD[1],
+      cameraWorld[2] - EARTH_CENTER_WORLD[2],
+    ];
+    const cameraAltitudeKm = (Math.hypot(cameraDelta[0], cameraDelta[1], cameraDelta[2]) - EARTH_RADIUS_M) / 1000;
+    exposureRef.current = frameExposureFromCamera({
+      cameraPositionWorld: {
+        x: cameraWorld[0],
+        y: cameraWorld[1],
+        z: cameraWorld[2],
+      },
+      planetCenterWorld: {
+        x: EARTH_CENTER_WORLD[0],
+        y: EARTH_CENTER_WORLD[1],
+        z: EARTH_CENTER_WORLD[2],
+      },
+      cameraAltitudeKm,
+    }).exposure;
+  });
+
+  return null;
+}
 
 interface WorldFrameControllerProps {
   worldFrame: WorldFrame;
@@ -138,6 +180,7 @@ export function SceneRoot() {
   const sunTint = useSunExtinctionTint();
   const worldFrame = useMemo(() => new WorldFrame(), []);
   const terrainSourceRef = useRef<TerrainTileSource | null>(null);
+  const frameExposureRef = useRef(1);
 
   // Debug deep link: ?flyto=lat,lon,altM spawns the DEBUG FLY camera at a
   // geodetic position facing the local horizon — reproducible framings for
@@ -148,20 +191,28 @@ export function SceneRoot() {
     const view = useViewStore.getState();
     view.setMode('DEBUG');
     if (useViewStore.getState().debugSubmode !== 'FLY') view.toggleDebugSubmode();
-    view.setFlyPose(spawn.positionM, spawn.yawRad, spawn.pitchRad);
+    const query = new URLSearchParams(window.location.search);
+    view.setFlyPose(spawn.positionM, Number(query.get('yaw') ?? '90') * Math.PI / 180,
+      Number(query.get('pitch') ?? '0') * Math.PI / 180);
   }, []);
 
   return (
     <Canvas
-      dpr={[1, 1.75]}
+      // The library's full-screen buffers follow canvas DPR. Keep normal play
+      // on the same pixel budget as the measured profile (explicit override
+      // remains available), instead of silently tripling work on Retina.
+      dpr={RENDER_PROBE || LIBRARY_RENDERER ? PROBE_DPR : [1, 1.75]}
       gl={{ logarithmicDepthBuffer: true, powerPreference: 'high-performance', antialias: true }}
       camera={{ position: [40, -320, 60], fov: 45, near: CAMERA_NEAR, far: CAMERA_FAR }}
-      onCreated={({ camera }) => camera.lookAt(0, -80, 0)}
+      onCreated={({ camera, gl }) => {
+        gl.toneMapping = NoToneMapping;
+        camera.lookAt(0, -80, 0);
+      }}
     >
       <WorldFrameController worldFrame={worldFrame} />
       <Suspense fallback={null}>
-        <Starfield />
-        <SunSprite sunTint={sunTint} worldFrame={worldFrame} />
+        {!LIBRARY_RENDERER && <Starfield />}
+        {!LIBRARY_RENDERER && <SunSprite sunTint={sunTint} worldFrame={worldFrame} />}
         <Earth worldFrame={worldFrame} terrainSourceRef={terrainSourceRef} />
       </Suspense>
       <SunLight sunTint={sunTint} worldFrame={worldFrame} />
@@ -169,8 +220,10 @@ export function SceneRoot() {
       <ambientLight intensity={0.06} color="#7d9bff" />
       <Spacecraft worldFrame={worldFrame} />
       <CameraRig worldFrame={worldFrame} terrainSourceRef={terrainSourceRef} />
-      <DockingCameraPass worldFrame={worldFrame} />
-      <Effects />
+      <FrameExposureController worldFrame={worldFrame} exposureRef={frameExposureRef} />
+      <DockingCameraPass worldFrame={worldFrame} exposureRef={frameExposureRef} />
+      {LIBRARY_RENDERER ? <LibraryEffects worldFrame={worldFrame} exposureRef={frameExposureRef} /> : <Effects exposureRef={frameExposureRef} />}
+      {RENDER_PROBE && <RenderProbe worldFrame={worldFrame} />}
     </Canvas>
   );
 }
