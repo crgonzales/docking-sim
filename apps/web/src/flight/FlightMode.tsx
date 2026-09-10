@@ -6,7 +6,7 @@ import { Earth } from '../scene/Earth';
 import { WorldFrame } from '../scene/worldFrame';
 import { SKY_CONFIG } from '../scene/sky/skyConfig';
 import { SUN_DIR, SUN_LIGHT_DISTANCE_M } from '../scene/sun';
-import { LibraryEffects } from '../scene/LibraryEffects';
+import { LibraryEffects, libraryStatus } from '../scene/LibraryEffects';
 import { PROBE_DPR, PROBE_EXPOSURE, PROBE_QUALITY } from '../scene/renderProbeConfig';
 import type { TerrainTileSource } from '../scene/terrain/tileSource';
 import { flightWorldFrame } from './flightFrame';
@@ -25,10 +25,17 @@ const FLIGHT_ENVIRONMENT = (() => {
     quality: (query.has('quality') ? PROBE_QUALITY : 'medium') as 'low' | 'medium',
   };
 })();
-const FlightScene = memo(function FlightScene({ session, report, cameraMode }: { session: FlightSession; report: (data: Instruments) => void; cameraMode: FlightSession['camera'] }) {
+const FlightScene = memo(function FlightScene({ session, report, cameraMode, paused }: { session: FlightSession; report: (data: Instruments) => void; cameraMode: FlightSession['camera']; paused: boolean }) {
   const invalidate = useThree((state) => state.invalidate);
-  // Camera changes must redraw even when paused and no physics frame is due.
-  useEffect(() => invalidate(), [cameraMode, invalidate]);
+  const settlingFrames = useRef(0);
+  // A single paused-camera frame leaves temporal clouds at their noisy initial
+  // sample. Medium's column cache takes 64 frames (1024 rows / 16 per frame),
+  // followed by two 16-frame Bayer cycles. Then demand mode sleeps.
+  // This renders only: FlightSession.advance remains inert while paused.
+  useEffect(() => {
+    settlingFrames.current = paused ? 96 : 0;
+    invalidate();
+  }, [cameraMode, paused, invalidate]);
   const aircraft = useRef<Group>(null);
   const skyLight = useRef<HemisphereLight>(null);
   const terrainSourceRef = useRef<TerrainTileSource | null>(null);
@@ -37,6 +44,14 @@ const FlightScene = memo(function FlightScene({ session, report, cameraMode }: {
   const scratch = useMemo(() => ({ matrix: new Matrix4(), forward: new Vector3(), right: new Vector3(), down: new Vector3() }), []);
   const elapsed = useRef(0);
   useFrame(({ camera }, delta) => {
+    // Queue one frame at a time: unrelated R3F updates can replace a bulk
+    // invalidate(n) request with a single frame while assets finish loading.
+    // Asset completion invalidates once. Preserve the budget until then,
+    // rather than spending it on frames with no cloud history to accumulate.
+    if (settlingFrames.current > 0 && libraryStatus.state === 'ready') {
+      settlingFrames.current -= 1;
+      if (settlingFrames.current > 0) invalidate();
+    }
     session.advance(delta);
     const f = flightWorldFrame(session.state.position_N_m);
     skyLight.current?.position.fromArray(f.up);
@@ -104,7 +119,7 @@ export function FlightMode() {
   const status = data.status === 'CONTACT' ? 'SURFACE CONTACT · RESET TO FLY' : data.status === 'ENVELOPE' ? 'PROTOTYPE LIMIT · RESET TO FLY' : session.paused ? 'PAUSED · P TO RESUME' : Math.abs(degrees(data.alpha_rad)) > 20 ? 'HIGH ANGLE OF ATTACK' : data.airspeed_m_s < 90 ? 'LOW AIRSPEED' : 'FREE FLIGHT';
   return <section className="flight-mode" ref={root} tabIndex={0} aria-label="F/A-18 flight simulator">
     <Canvas frameloop={session.paused ? 'demand' : 'always'} dpr={FLIGHT_ENVIRONMENT.dpr} gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }} camera={{ fov: 52, near: 0.3, far: 30000000 }} onCreated={({ gl }) => { gl.toneMapping = NoToneMapping; }}>
-      <FlightScene session={session} report={report} cameraMode={session.camera} />
+      <FlightScene session={session} report={report} cameraMode={session.camera} paused={session.paused} />
     </Canvas>
     <header className="flight-title"><span>FLIGHT LAB / 01</span><h1>F/A-18C <small>Flight dynamics prototype</small></h1><p>Equatorial ocean · airborne start · no weapons</p></header>
     <div className="flight-status" role="status">{status}</div>

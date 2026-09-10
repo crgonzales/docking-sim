@@ -6,7 +6,7 @@
 .flight-title p { color: #d7e4e9; font-size: 10px; }
 .flight-status { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); padding: 8px 13px; color: #cbffdd; background: #0c2229bb; border: 1px solid #bbffd42e; border-radius: 4px; font-size: 10px; letter-spacing: 2px; white-space: nowrap; }
 .flight-instruments { position: absolute; left: 50%; bottom: 164px; transform: translateX(-50%); display: flex; align-items: center; gap: 28px; pointer-events: none; text-shadow: 0 2px 5px #071821; }
-.flight-number { min-width: 148px; }
+.flight-number { min-width: 148px; box-sizing: border-box; padding: 10px 12px; background: #071722cc; border: 1px solid #c9e9ff25; border-radius: 6px; }
 .flight-number span { display: block; font-size: 9px; letter-spacing: 2px; color: #d5e9ec; }
 .flight-number strong { display: block; font-size: 36px; font-weight: 500; margin: 4px 0; }
 .flight-number small { font-size: 12px; color: #c4d7df; }

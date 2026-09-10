@@ -67,16 +67,36 @@ vec3 readNormal(`);
   #else // HAS_SHADOW
   float sunTransmittance = 1.0;
   #endif // HAS_SHADOW`, `  float sunTransmittance = 1.0;
+  // Ocean vertices can round just below the light volume's geoid boundary.
+  // Keep the physical position for atmosphere/depth/BRDF, and lift only the
+  // shared opaque-water shadow receiver by a small precision guard.
+  vec3 eveShadowReceiverECEFM = evePhysicalPositionECEFM;
+  if (waterOpaque && waterFraction > 0.0) {
+    vec3 eveGeoidReceiverECEFM = normalize(evePhysicalPositionECEFM) *
+      (eveCloudPlanetRadiusM + 2.0);
+    eveShadowReceiverECEFM = eveGeoidReceiverECEFM;
+  }
   float eveSurfaceSkyVisibility = 1.0;
   float eveSurfaceShadowStrength = clamp(cloudSurfaceShadowStrength, 0.0, 1.0);
   if (!degenerateNormal && eveSurfaceShadowStrength > 0.0) {
-    sunTransmittance = mix(1.0,
-      eveSunTransmittance(evePhysicalPositionECEFM, 0.0, eveSurfaceFootprintM),
-      eveSurfaceShadowStrength);
+    sunTransmittance = eveSunTransmittance(eveShadowReceiverECEFM, 0.0, eveSurfaceFootprintM);
     #ifdef SKY_LIGHT
-    eveSurfaceSkyVisibility = mix(1.0,
-      eveSkyVisibility(evePhysicalPositionECEFM, eveSurfaceFootprintM),
-      eveSurfaceShadowStrength);
+    eveSurfaceSkyVisibility = eveSkyVisibility(eveShadowReceiverECEFM, eveSurfaceFootprintM);
+    #endif
+    // Blend visibility, not receiver height: an interpolated height would
+    // still cross the cache's hard sea-level boundary along fractional shores.
+    // Only mixed coastal pixels pay for both physical land and geoid queries.
+    if (waterFraction > 0.0 && waterFraction < 1.0) {
+      sunTransmittance = mix(eveSunTransmittance(evePhysicalPositionECEFM, 0.0, eveSurfaceFootprintM),
+        sunTransmittance, waterFraction);
+      #ifdef SKY_LIGHT
+      eveSurfaceSkyVisibility = mix(eveSkyVisibility(evePhysicalPositionECEFM, eveSurfaceFootprintM),
+        eveSurfaceSkyVisibility, waterFraction);
+      #endif
+    }
+    sunTransmittance = mix(1.0, sunTransmittance, eveSurfaceShadowStrength);
+    #ifdef SKY_LIGHT
+    eveSurfaceSkyVisibility = mix(1.0, eveSurfaceSkyVisibility, eveSurfaceShadowStrength);
     #endif
   }`);
 

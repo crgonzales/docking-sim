@@ -34,6 +34,12 @@ export class CloudConformanceResources {
     this.camera.lookAt(-1, 0, 0);
     this.camera.updateMatrixWorld();
     this.plane.rotation.y = Math.PI / 2;
+    // Opaque BasicMaterial otherwise forces alpha=1. Keep depth/opaque drawing
+    // while letting surface fixtures supply the scene's material metadata.
+    this.plane.material.onBeforeCompile = shader => {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>',
+        '#include <opaque_fragment>\n  gl_FragColor.a = opacity;');
+    };
     this.scene.add(this.plane);
   }
 
@@ -82,9 +88,10 @@ export class CloudConformanceResources {
   }
 
   /** Ordinary geometry writes the same logarithmic depth encoding as the scene. */
-  renderTerrain(distanceM: number | null, color?: readonly [number, number, number]): void {
+  renderTerrain(distanceM: number | null, color?: readonly [number, number, number], materialAlpha = 1): void {
     this.plane.visible = distanceM !== null;
     this.plane.material.color.setRGB(...(color ?? [1, 1, 1]));
+    this.plane.material.opacity = materialAlpha;
     this.plane.position.set(-(distanceM ?? 0), 0, 0);
     this.draw(() => {
       this.renderer.setRenderTarget(this.depth);

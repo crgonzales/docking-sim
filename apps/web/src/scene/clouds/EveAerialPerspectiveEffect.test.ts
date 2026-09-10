@@ -83,8 +83,8 @@ describe('EVE atmosphere bridge against the pinned diagnostic/water shader', () 
     expect(physical).toBeGreaterThan(main.indexOf('(worldToECEFMatrix * vec4(worldPosition, 1.0)).xyz'));
     expect(physical).toBeLessThan(main.indexOf('positionECEF * METER_TO_LENGTH_UNIT + vGeometryAltitudeCorrection'));
     expect(physical).toBeLessThan(main.indexOf('correctGeometricError(positionECEF, normalECEF)'));
-    expect(main.match(/eveSunTransmittance\(evePhysicalPositionECEFM, 0\.0, eveSurfaceFootprintM\)/g)).toHaveLength(1);
-    expect(main.match(/eveSkyVisibility\(evePhysicalPositionECEFM, eveSurfaceFootprintM\)/g)).toHaveLength(1);
+    expect(main.match(/eveSunTransmittance\(eveShadowReceiverECEFM, 0\.0, eveSurfaceFootprintM\)/g)).toHaveLength(1);
+    expect(main.match(/eveSkyVisibility\(eveShadowReceiverECEFM, eveSurfaceFootprintM\)/g)).toHaveLength(1);
     expect(main).not.toContain('sampleShadowOpticalDepth(');
     expect(main).not.toContain('texture(shadowLengthBuffer');
     expect(main).toContain('viewPosition = viewRay * (viewZ / viewRay.z)');
@@ -125,7 +125,7 @@ describe('EVE atmosphere bridge against the pinned diagnostic/water shader', () 
       const pass = own(new EffectPass(camera, aerial, new ToneMappingEffect()));
       pass.recompile();
       const material = pass.fullscreenMaterial as ShaderMaterial;
-      expect(material.fragmentShader).toContain('e0EveSunTransmittance(evePhysicalPositionECEFM');
+      expect(material.fragmentShader).toContain('e0EveSunTransmittance(eveShadowReceiverECEFM');
       expect(material.fragmentShader).toContain('e0SampleCloudMedia(');
       expect(material.fragmentShader).toContain('uniform float e0EveCloudPlanetRadiusM;');
       expect(material.fragmentShader).not.toContain('length(positionECEFM) - e0BottomRadius');

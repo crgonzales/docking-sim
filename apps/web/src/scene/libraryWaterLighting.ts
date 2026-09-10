@@ -121,13 +121,17 @@ export function waterAerialLighting(source: string): string {
   return mix(diffuseRadiance, waterSurfaceRadiance(positionECEF, normal,
     waterViewDirection, sunIrradiance, skyIrradiance),
     waterFraction * clamp(waterLightingEnabled, 0.0, 1.0));`);
-  source = once(source, '  vec3 radiance;\n  #if defined(SUN_LIGHT) || defined(SKY_LIGHT)', `  bool waterOpaque = false;
+  source = once(source, `  #ifdef HAS_SHADOW
+  float stbn = getSTBN();`, `  bool waterOpaque = false;
   #ifdef HAS_LIGHTING_MASK
   waterOpaque = !degenerateNormal && inputColor.a >= 0.5 && inputColor.a <= 1.0
     && texture(lightingMaskBuffer, uv).LIGHTING_MASK_CHANNEL_ > 0.5;
   #endif
   float waterFraction = waterOpaque ? clamp(2.0 * (1.0 - inputColor.a), 0.0, 1.0) : 0.0;
-  vec3 waterViewDelta = vCameraPosition - positionECEF;
+
+  #ifdef HAS_SHADOW
+  float stbn = getSTBN();`);
+  source = once(source, '  vec3 radiance;\n  #if defined(SUN_LIGHT) || defined(SKY_LIGHT)', `  vec3 waterViewDelta = vCameraPosition - positionECEF;
   vec3 waterViewDirection = waterViewDelta / max(length(waterViewDelta), 1e-6);
   vec3 radiance;
   #if defined(SUN_LIGHT) || defined(SKY_LIGHT)`);
