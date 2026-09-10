@@ -25,6 +25,7 @@ import { WorldFrame } from './worldFrame';
 import { directionToECEF, updateWorldToECEF } from './libraryFrame';
 import { installComposerPassTimings, renderTimings } from './renderTimings';
 import { PROBE_CLOUDS, PROBE_DPR, PROBE_EXPOSURE, PROBE_QUALITY, PROBE_WEATHER, PROBE_WEATHER_STRUCTURE } from './renderProbeConfig';
+import type { CloudLightQuality } from './clouds/cloudLightVolumeLayout';
 
 export const libraryStatus = { state: 'loading', error: '', shadowRange: null as CloudShadowRange | null, shadowTexelM: [] as number[], lightingSelection: [0, 0, 0], eve: null as EveCloudSystem['status'] | null };
 const ROOT = '/vendor/takram';
@@ -42,8 +43,26 @@ function publishComposerBufferContext(composer: EffectComposer): void {
     output: targetContext(composer.outputBuffer),
   });
 }
-export function LibraryEffects({ worldFrame, exposureRef }: { worldFrame: WorldFrame; exposureRef: { current: number } }) {
-  const { gl, scene, camera, size } = useThree();
+export interface LibraryEffectsProps {
+  readonly worldFrame: WorldFrame;
+  readonly exposureRef: { current: number };
+  /** Omitted preserves SceneRoot's existing query-selected cloud backend. */
+  readonly cloudSystem?: 'legacy' | 'eve';
+  /** Omitted preserves the existing diagnostic query default. */
+  readonly quality?: CloudLightQuality;
+  /** Omitted preserves the existing diagnostic query default. */
+  readonly exposure?: number;
+  /** Used for render diagnostics; the Canvas remains the DPR owner. */
+  readonly dpr?: number;
+}
+
+export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, exposure, dpr }: LibraryEffectsProps) {
+  const { gl, scene, camera, size, invalidate } = useThree();
+  const query = new URLSearchParams(window.location.search);
+  const selectedCloudSystem = cloudSystem ?? (query.get('cloudSystem') === 'eve' ? 'eve' : 'legacy');
+  const selectedQuality = quality ?? PROBE_QUALITY;
+  const selectedExposure = exposure ?? PROBE_EXPOSURE;
+  const selectedDpr = dpr ?? PROBE_DPR;
   const latestSize = useRef(size);
   const cloudFrame = useRef(new CloudReprojectionFrame());
   const cameraECEF = useRef(new Vector3());
@@ -68,8 +87,8 @@ export function LibraryEffects({ worldFrame, exposureRef }: { worldFrame: WorldF
     composer.addPass(mask);
     const ellipsoid = new Ellipsoid(EARTH_RADIUS_M, EARTH_RADIUS_M, EARTH_RADIUS_M);
     const stage = new URLSearchParams(window.location.search).get('stage') ?? 'full';
-    const eveEnabled = new URLSearchParams(window.location.search).get('cloudSystem') === 'eve';
-    const eve = PROBE_CLOUDS && eveEnabled ? new EveCloudSystem(camera, PROBE_QUALITY === 'low' ? 'low' : 'medium', directionToECEF(SUN_DIR)) : undefined;
+    const eveEnabled = selectedCloudSystem === 'eve';
+    const eve = PROBE_CLOUDS && eveEnabled ? new EveCloudSystem(camera, selectedQuality, directionToECEF(SUN_DIR)) : undefined;
     const invalidateEve = () => eve?.invalidateGraphicsContext();
     gl.domElement.addEventListener('webglcontextlost', invalidateEve);
     gl.domElement.addEventListener('webglcontextrestored', invalidateEve);
@@ -88,7 +107,7 @@ export function LibraryEffects({ worldFrame, exposureRef }: { worldFrame: WorldF
     if (clouds) {
       const cloudSetupStartedAt = renderTimings.start('cloud.setup');
       try {
-        clouds.qualityPreset = PROBE_QUALITY;
+        clouds.qualityPreset = selectedQuality;
         configureCloudShadowStorage(clouds);
         stabilizeCloudDepth(clouds);
         stabilizeCloudHeight(clouds);
@@ -174,9 +193,10 @@ export function LibraryEffects({ worldFrame, exposureRef }: { worldFrame: WorldF
         publishComposerBufferContext(composer);
         live.current = { composer, aerial, clouds, eve, mask, originalShadow: clouds ? { maxFar: clouds.shadow.maxFar, splitLambda: clouds.shadow.splitLambda } : undefined, firstUsePending: true };
         libraryStatus.state = 'ready';
+        invalidate(); // A paused flight renders on demand; show completed asset loading too.
       }).catch(error => { if (!disposed) { libraryStatus.state = 'failed'; libraryStatus.error = String(error); console.error(error); } });
     return () => { disposed = true; gl.domElement.removeEventListener('webglcontextlost', invalidateEve); gl.domElement.removeEventListener('webglcontextrestored', invalidateEve); eve?.dispose(); live.current = undefined; passTimingCleanup(); renderTimings.detachRenderer(gl); composer.dispose(); owned.forEach(texture => texture.dispose()); owned.clear(); };
-  }, [gl, scene, camera, worldFrame]);
+  }, [gl, scene, camera, worldFrame, selectedCloudSystem, selectedQuality, invalidate]);
   useEffect(() => {
     const composer = live.current?.composer;
     if (composer === undefined) return;
@@ -184,9 +204,9 @@ export function LibraryEffects({ worldFrame, exposureRef }: { worldFrame: WorldF
     publishComposerBufferContext(composer);
   }, [size]);
   useFrame((_, delta) => {
-    exposureRef.current = PROBE_EXPOSURE;
-    gl.toneMappingExposure = PROBE_EXPOSURE;
-    renderTimings.updateRendererContext(gl, 'library', PROBE_DPR);
+    exposureRef.current = selectedExposure;
+    gl.toneMappingExposure = selectedExposure;
+    renderTimings.updateRendererContext(gl, 'library', selectedDpr);
     renderTimings.beginFrame();
     const value = live.current;
     if (!value) { gl.render(scene, camera); return; }

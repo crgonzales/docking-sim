@@ -159,6 +159,23 @@ describe('one opaque library terrain surface', () => {
     }
   });
 
+  it.each([false, true])('allows a mode to override the page renderer (library=%s)', library => {
+    rendererMode.library = !library;
+    const texture = own(new Texture());
+    const options = { planetCenter: [0, 0, 0] as const, surfaceRadius: radius,
+      atmosphereRadius: radius + 60000, libraryRenderer: library };
+    const terrain = own(createTerrainPatchMaterial({ dayMap: texture, specMap: texture,
+      cloudMap: texture, transmittanceLut: texture }, options));
+    const water = own(createWaterMaterial(options));
+    const result = patch(-1000);
+    const geometry = surface(result, library);
+    expect(terrain.defines.LIBRARY_LIGHTING === 1).toBe(library);
+    expect(terrain.defines.TERRAIN_WATER_MAP === 1).toBe(library);
+    expect(geometry.hasAttribute('terrainWaterMask')).toBe(library);
+    expect(terrain.transparent).toBe(!library);
+    expect(water.depthWrite).toBe(library);
+  });
+
   it.each([false, true])('retains the renderer material/depth contract (library=%s)', library => {
     rendererMode.library = library;
     const texture = own(new Texture());

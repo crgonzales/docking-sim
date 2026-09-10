@@ -5,6 +5,6 @@ dist/
 apps/web/scripts/.cache/
 
 # Recreated and checksum-verified by setupRendererSpikeAssets.mjs.
-/apps/web/public/vendor/takram/atmosphere/
-/apps/web/public/vendor/takram/clouds/
+/apps/web/public/vendor/takram/atmosphere
+/apps/web/public/vendor/takram/clouds
 /apps/web/public/vendor/takram/stbn.bin

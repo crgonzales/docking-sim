@@ -102,6 +102,8 @@ export interface TerrainPatchesProps {
   readonly onCoverageReadyChange?: (ready: boolean) => void;
   /** Pass LIBRARY_RENDERER here; omitted preserves the legacy alpha fade. */
   readonly opaque?: boolean;
+  /** Material/geometry path; defaults to the existing query-selected renderer. */
+  readonly libraryRenderer?: boolean;
   readonly worldFrame: WorldFrame;
   readonly terrainSourceRef: { current: TerrainTileSource | null };
   readonly earthCenterF64: WorldPositionF64;
@@ -214,7 +216,8 @@ function waterMeshGeometry(data: WaterPatchGeometry): BufferGeometry {
  */
 export function TerrainPatches({
   onCoverageReadyChange,
-  opaque = false,
+  opaque,
+  libraryRenderer = LIBRARY_RENDERER,
   worldFrame,
   terrainSourceRef,
   earthCenterF64,
@@ -225,6 +228,8 @@ export function TerrainPatches({
   mainDeckRotation,
   radius,
 }: TerrainPatchesProps) {
+  const LIBRARY_RENDERER = libraryRenderer;
+  const opaqueTerrain = opaque ?? libraryRenderer;
   const { camera, size } = useThree();
   const coverageReadyRef = useRef(false);
   const coverageCallbackRef = useRef(onCoverageReadyChange);
@@ -356,7 +361,7 @@ export function TerrainPatches({
     let waterData: WaterPatchGeometry;
     try {
       waterData = buildWaterPatchGeometry(result, radius);
-      geometry = createTerrainPatchGeometry(result, waterData);
+      geometry = createTerrainPatchGeometry(result, waterData, LIBRARY_RENDERER);
     } finally {
       renderTimings.end('terrain.geometryPreparation', geometryStartedAt);
     }
@@ -366,6 +371,7 @@ export function TerrainPatches({
         planetCenter: worldFrame.toRender(earthCenterF64),
         surfaceRadius: radius,
         atmosphereRadius: radius * SKY_DERIVED.atmosphereRadiusMultiplier,
+        libraryRenderer: LIBRARY_RENDERER,
       },
     );
     const mesh = new Mesh(geometry, material);
@@ -392,6 +398,7 @@ export function TerrainPatches({
         planetCenter: worldFrame.toRender(earthCenterF64),
         surfaceRadius: radius,
         atmosphereRadius: radius * SKY_DERIVED.atmosphereRadiusMultiplier,
+        libraryRenderer: LIBRARY_RENDERER,
       });
       waterMesh = new Mesh(waterGeometry, waterMaterial);
       waterMesh.visible = false; // Placed and made visible with its terrain patch.
@@ -667,16 +674,16 @@ export function TerrainPatches({
       ]);
       record.mesh.position.set(renderCenter[0], renderCenter[1], renderCenter[2]);
       record.mesh.visible = displayedKeys.has(key)
-        && (opaque || isTerrainNodeHorizonVisible(record.result.address, cameraFromEarth, radius));
+        && (opaqueTerrain || isTerrainNodeHorizonVisible(record.result.address, cameraFromEarth, radius));
       record.mesh.material.uniforms.planetCenter!.value.fromArray(renderEarthCenter);
       record.mesh.material.uniforms.terrainSurfaceCameraPositionM?.value.fromArray(cameraFromEarth);
-      record.mesh.material.uniforms.terrainOpacity!.value = opaque ? 1 : fade;
+      record.mesh.material.uniforms.terrainOpacity!.value = opaqueTerrain ? 1 : fade;
       record.mesh.material.uniforms.cloudRotationOffset!.value = mainDeckRotation.current;
       if (record.waterMesh !== null) {
         record.waterMesh.position.set(renderCenter[0], renderCenter[1], renderCenter[2]);
         record.waterMesh.visible = record.mesh.visible;
         record.waterMesh.material.uniforms.planetCenter!.value.fromArray(renderEarthCenter);
-        record.waterMesh.material.uniforms.terrainOpacity!.value = opaque ? 1 : fade;
+        record.waterMesh.material.uniforms.terrainOpacity!.value = opaqueTerrain ? 1 : fade;
         record.waterMesh.material.uniforms.oceanTime!.value = waterTimeRef.current;
       }
     }

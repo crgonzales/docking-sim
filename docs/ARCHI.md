@@ -22,7 +22,9 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
   (`acceptance.test.ts`).
 - `apps/web` — Vite + React + react-three-fiber. Rendering, HUD, switch
   panel, scenario/Monte Carlo UI. Consumes sim-core/scenario through public
-  APIs only. App modes: SANDBOX / MISSION / ANALYSIS (`appModeStore`).
+  APIs only. App modes: SANDBOX / MISSION / ANALYSIS / FLIGHT (`appModeStore`).
+  Optional FLIGHT owns its input, camera and fixed-step session; no orbital
+  SimLoop, FSW or spacecraft audio runs while it is selected.
 - FSW is a pure function of sensor data: `FswTick(SensorFrame) →
   {ThrusterCommand, TelemetryFrame}`. FSW never reads `TruthState`.
 - External actors (UI, ScenarioDirector, Monte Carlo) act only through the
@@ -46,6 +48,34 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
   (`cloudSphericalUv`); renderer values derive from `SKY_CONFIG`, never
   free-standing constants.
 
+## Atmospheric flight prototype (isolated from orbital GNC)
+
+`sim-core/flight.ts` exports a deterministic 100 Hz RK4 rigid-body model,
+solved level-flight trim and truth-derived instruments. Pure TS, no sensors
+or FSW coupling. SI and scalar-first Hamilton quaternions still apply.
+Flight-only N = north/east/down, B = forward/right/down; q_BN rotates N→B.
+Gravity is constant local down; wind is NED; rates and diagonal inertia are
+body-frame. Lift/drag/sideforce, stability/control moments, rate damping,
+dry atmosphere and spool-lag thrust use documented approximate parameters.
+These coefficients are not a validated F/A-18 dataset.
+
+`apps/web/src/flight` owns pacing (whole truth ticks, capped catch-up),
+pause/reset/blur handling, aircraft visuals, HUD and NED→world adapter.
+It reuses Earth/WorldFrame through explicit renderer options without changing
+the renderer internals: FLIGHT owns one camera/floating origin and one
+`LibraryEffects` composer, with medium EVE clouds, exposure 2 and DPR 1 by
+default. Existing `quality`, `dpr`, `exposure` and cloud diagnostic query
+overrides remain available. Flat local physics are mapped onto a spherical
+equatorial ocean chart for presentation; 50 km radius, 20 km ceiling and M
+0.95 boundaries stop the run. Sea contact is a terminal latch, not a
+landing-gear solver. FLIGHT uses the retained CC BY 4.0 Rhine_Lab_Muelsyse
+F/A-18C GLB through a narrow adapter; the original procedural Hornet remains
+the loading/error fallback. The adapter preserves source transforms, maps
+glTF `(x,y,z)` into body FRD `(z,-x,-y)`, normalizes the measured length to
+17.06 m and hides deployed stores/gear without animating source control
+groups. Default mode stays SANDBOX; `?mode=flight` explicitly selects FLIGHT.
+Provenance, frame math and limits: `docs/6-memo/f18-flight-prototype.md`.
+
 ## Stack
 
 TypeScript + Vite + pnpm workspace. Web: React 18, react-three-fiber, drei,
@@ -62,22 +92,22 @@ physical inputs → in-code derivations), baked Hillaire atmosphere LUTs
 RGB float is unfilterable in WebGL2), KTX2/UASTC textures + seeded cloud
 placement mask via `scripts/make*.mjs` (provenance: `assets/ASSETS.md`).
 
-Development renderer (`renderer=library&cloudSystem=eve`, isolated EVE worktree):
-Takram Bruneton atmosphere and a maintained Three-clouds fork provide the host
-passes. Canonical world-fixed cloud density feeds local volumes, shared lighting
-and a prepared opacity/height column atlas for orbital views. Light-cache
-texels average transmitted light from canonical subrays, never prethreshold
-noise. Premultiplied
-transport blends once over 50–120 km. The reference weather patch is opt-in.
-Terrain selection uses a bounded best-first quadtree (300 records, depth ≤16);
-workers build the existing DEM/procedural height field. Four shared periodic
-RGBA16F textures hold material heights and baked spatial slopes. Patch-local
-phase reduction preserves ground precision. Color and normal passes share the
-geographic water classifier and bounded imagery-to-reflectance calibration.
-The latter is artistic calibration, not measured albedo. Resource ownership and
-verified limits: `6-memo/eve-cloud-system/stabilization-completion.md`. This
-development selector has not replaced the root URL renderer or integrated the
-separate F/A-18 prototype.
+Library renderer (`renderer=library&cloudSystem=eve` for query-selected
+SceneRoot diagnostics; FLIGHT selects the same components explicitly): Takram
+Bruneton atmosphere and a maintained Three-clouds fork provide the host passes.
+Canonical world-fixed cloud density feeds local volumes, shared lighting and a
+prepared opacity/height column atlas for orbital views. Light-cache texels
+average transmitted light from canonical subrays, never prethreshold noise.
+Premultiplied transport blends once over 50–120 km. The reference weather patch
+is opt-in. Terrain selection uses a bounded best-first quadtree (300 records,
+depth ≤16); workers build the existing DEM/procedural height field. Four shared
+periodic RGBA16F textures hold material heights and baked spatial slopes.
+Patch-local phase reduction preserves ground precision. Color and normal passes
+share the geographic water classifier and bounded imagery-to-reflectance
+calibration. The latter is artistic calibration, not measured albedo. Resource
+ownership and verified limits: `6-memo/eve-cloud-system/stabilization-completion.md`.
+The query-selected SceneRoot behavior remains unchanged for nonflight modes;
+integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
 
 ## Roadmap
 

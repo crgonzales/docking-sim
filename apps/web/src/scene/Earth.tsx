@@ -552,9 +552,14 @@ function supportsFloatLinear(renderer: WebGLRenderer): boolean {
 export interface EarthProps {
   worldFrame: WorldFrame;
   terrainSourceRef: { current: TerrainTileSource | null };
+  /** Explicitly select the library material path for integrated modes. */
+  libraryRenderer?: boolean;
 }
 
-export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
+export function Earth({ worldFrame, terrainSourceRef, libraryRenderer = LIBRARY_RENDERER }: EarthProps) {
+  // Keep the existing query-selected SceneRoot default while allowing FLIGHT
+  // to opt into the stabilized renderer without rewriting the URL.
+  const LIBRARY_RENDERER = libraryRenderer;
   const { gl: renderer, camera } = useThree();
   const dayMapUrl = useMemo(() => getEarthDayMapUrl(renderer), [renderer]);
   const configureKtx2Loader = useCallback((loader: KTX2Loader) => {
@@ -635,7 +640,7 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
         },
         transparent: !LIBRARY_RENDERER,
       }),
-    [cloudMap, dayMap, initialPosition, mainDeckRotation, multipleScatteringLut, nightMap, normalMap, radius, specMap, transmittanceLut],
+    [cloudMap, dayMap, initialPosition, libraryRenderer, mainDeckRotation, multipleScatteringLut, nightMap, normalMap, radius, specMap, transmittanceLut],
   );
 
   const atmoMaterial = useMemo(
@@ -735,6 +740,7 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
       <TerrainPatches
         onCoverageReadyChange={onCoverageReadyChange}
         opaque={LIBRARY_RENDERER}
+        libraryRenderer={LIBRARY_RENDERER}
         worldFrame={worldFrame}
         terrainSourceRef={terrainSourceRef}
         earthCenterF64={EARTH_CENTER_WORLD}

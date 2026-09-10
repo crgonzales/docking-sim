@@ -1,4 +1,4 @@
-import { LIBRARY_RENDERER } from '../renderProbeConfig';
+import { LIBRARY_RENDERER as DEFAULT_LIBRARY_RENDERER } from '../renderProbeConfig';
 import { EARTH_KTX_UV_GLSL } from '../libraryEarthTextureOrientation';
 import { TERRAIN_SURFACE_GLSL } from './terrainSurface';
 import {
@@ -31,6 +31,8 @@ export interface TerrainShaderOptions {
   readonly planetCenter: readonly [number, number, number];
   readonly surfaceRadius: number;
   readonly atmosphereRadius: number;
+  /** Explicit renderer selection; omitted preserves the query-selected path. */
+  readonly libraryRenderer?: boolean;
 }
 
 export const TERRAIN_VERTEX_SHADER = /* glsl */ `
@@ -218,6 +220,7 @@ export function createTerrainPatchMaterial(
   textures: TerrainShaderTextures,
   options: TerrainShaderOptions,
 ): ShaderMaterial {
+  const LIBRARY_RENDERER = options.libraryRenderer ?? DEFAULT_LIBRARY_RENDERER;
   return new ShaderMaterial({
     defines: LIBRARY_RENDERER ? { LIBRARY_LIGHTING: 1, ...(textures.specMap ? { TERRAIN_WATER_MAP: 1 } : {}) } : {},
     vertexShader: TERRAIN_VERTEX_SHADER,
@@ -313,6 +316,7 @@ ${SKY_LIGHTING_GLSL}
 `;
 
 export function createWaterMaterial(options: TerrainShaderOptions): ShaderMaterial {
+  const LIBRARY_RENDERER = options.libraryRenderer ?? DEFAULT_LIBRARY_RENDERER;
   return new ShaderMaterial({
     defines: LIBRARY_RENDERER ? { LIBRARY_LIGHTING: 1 } : {},
     vertexShader: WATER_VERTEX_SHADER,

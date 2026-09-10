@@ -208,7 +208,7 @@ function startFlightAudio(): () => void {
 /** Attach flight audio while SANDBOX or MISSION is mounted. */
 export function useFlightAudio(mode: AppMode): void {
   useEffect(() => {
-    if (mode === 'ANALYSIS') return undefined;
+    if (mode !== 'SANDBOX' && mode !== 'MISSION') return undefined;
     return startFlightAudio();
   }, [mode]);
 }

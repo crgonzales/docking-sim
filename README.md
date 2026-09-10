@@ -88,6 +88,27 @@ pnpm test        # oracle + consistency suites (sim-core) and web tests
 pnpm dev         # live closed-loop approach at localhost:5173
 ```
 
+## Optional F/A-18-style flight prototype
+
+Select **FLIGHT**, or open `http://127.0.0.1:5175/?mode=flight` after starting
+the isolated checkout with:
+
+```bash
+pnpm --filter @docking/web exec vite --host 127.0.0.1 --port 5175 --strictPort
+```
+
+Start airborne at 1,500 m and 180 m/s. W/S (or arrow up/down) pitches the nose down/up;
+Q/E (or left/right arrows) rolls; A/D yaws; Shift/Ctrl changes throttle; brackets
+change pitch trim. P pauses, R resets and C switches chase/nose view. Buttons
+and a throttle slider also work. Losing focus pauses the flight.
+
+This uses the stabilized EVE cloud/atmosphere/terrain renderer and a
+licensed textured F/A-18C aircraft. The dynamics are an engineering approximation, **not a validated F/A-18 flight model**. It runs within
+a 50 km local ocean area, below 20 km and Mach 0.95. Contact or leaving that
+domain stops the run. It has no landing model, avionics or weapons. Default
+docking behavior is unchanged. Model sources, tests, limitations and the
+JSBSim migration seam are in [the handoff](docs/6-memo/f18-flight-prototype.md).
+
 ## Workflow
 
 Each change gets a feature/fix branch, which is fast-forward merged into `main`

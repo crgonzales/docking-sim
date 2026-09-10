@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type AppMode = 'SANDBOX' | 'MISSION' | 'ANALYSIS';
+export type AppMode = 'SANDBOX' | 'MISSION' | 'ANALYSIS' | 'FLIGHT';
 
 interface AppModeState {
   mode: AppMode;
@@ -8,6 +8,6 @@ interface AppModeState {
 }
 
 export const useAppModeStore = create<AppModeState>((set) => ({
-  mode: 'SANDBOX',
+  mode: typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'flight' ? 'FLIGHT' : 'SANDBOX',
   setMode: (mode) => set({ mode }),
 }));
