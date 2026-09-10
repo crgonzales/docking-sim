@@ -9,7 +9,9 @@ import { EARTH_KTX_UV_GLSL } from './libraryEarthTextureOrientation';
 type Uv = readonly [number, number];
 // Execute the exported GLSL arithmetic itself; only the function declaration
 // and vec2 constructor need JS equivalents. No renderer or shader compilation.
-const mapUv = new Function('vec2', EARTH_KTX_UV_GLSL.replace(
+const uvFunction = EARTH_KTX_UV_GLSL.match(/vec2 earthMapUv\(vec2 uv\) \{[^}]+\}/)?.[0];
+if (!uvFunction) throw new Error('Packaged Earth UV function seam changed');
+const mapUv = new Function('vec2', uvFunction.replace(
   'vec2 earthMapUv(vec2 uv)', 'function earthMapUv(uv)',
 ) + '\nreturn earthMapUv;')((x: number, y: number): Uv => [x, y]) as
   (uv: { x: number; y: number }) => Uv;

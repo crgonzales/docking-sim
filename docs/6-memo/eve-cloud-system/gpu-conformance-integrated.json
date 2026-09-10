@@ -1,0 +1,2646 @@
+{
+  "context": {
+    "url": "http://127.0.0.1:5174/?renderer=library&cloudSystem=eve&probe=1&fixture=clouds&quality=medium&dpr=1",
+    "lat": 28.6,
+    "lon": -80.6,
+    "altitude": 400000,
+    "pitch": -20,
+    "yaw": 90,
+    "profile": false,
+    "videoRecording": false,
+    "sampleLimit": 900
+  },
+  "report": {
+    "status": "passed",
+    "tolerance": 0.001,
+    "cases": [
+      {
+        "name": "empty",
+        "measured": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "slab",
+        "measured": [
+          0.3160621225833893,
+          0.3160621225833893,
+          0.3160621225833893,
+          0.6321226358413696
+        ],
+        "expected": [
+          0.31606027941427883,
+          0.31606027941427883,
+          0.31606027941427883,
+          0.6321205588285577
+        ],
+        "maxError": 2.0770128119629305e-06,
+        "passed": true
+      },
+      {
+        "name": "overlap",
+        "measured": [
+          0.3167375326156616,
+          0.3167375326156616,
+          0.3167375326156616,
+          0.9502133131027222
+        ],
+        "expected": [
+          0.3167376438773787,
+          0.3167376438773787,
+          0.3167376438773787,
+          0.950212931632136
+        ],
+        "maxError": 3.814705861193701e-07,
+        "passed": true
+      },
+      {
+        "name": "overlap-reversed",
+        "measured": [
+          0.3167375326156616,
+          0.3167375326156616,
+          0.3167375326156616,
+          0.9502133131027222
+        ],
+        "expected": [
+          0.3167376438773787,
+          0.3167376438773787,
+          0.3167376438773787,
+          0.950212931632136
+        ],
+        "maxError": 3.814705861193701e-07,
+        "passed": true
+      },
+      {
+        "name": "terrain-before",
+        "measured": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "terrain-inside",
+        "measured": [
+          0.19673606753349304,
+          0.19673606753349304,
+          0.19673606753349304,
+          0.3934710621833801
+        ],
+        "expected": [
+          0.1967346701436833,
+          0.1967346701436833,
+          0.1967346701436833,
+          0.3934693402873666
+        ],
+        "maxError": 1.7218960135512162e-06,
+        "passed": true
+      },
+      {
+        "name": "terrain-partial-step",
+        "measured": [
+          0.177176833152771,
+          0.177176833152771,
+          0.177176833152771,
+          0.3543526530265808
+        ],
+        "expected": [
+          0.17717573678605397,
+          0.17717573678605397,
+          0.17717573678605397,
+          0.35435147357210794
+        ],
+        "maxError": 1.1794544728660483e-06,
+        "passed": true
+      },
+      {
+        "name": "terrain-behind",
+        "measured": [
+          0.3160621225833893,
+          0.3160621225833893,
+          0.3160621225833893,
+          0.6321226358413696
+        ],
+        "expected": [
+          0.31606027941427883,
+          0.31606027941427883,
+          0.31606027941427883,
+          0.6321205588285577
+        ],
+        "maxError": 2.0770128119629305e-06,
+        "passed": true
+      },
+      {
+        "name": "adaptive-terrain-partial-segment",
+        "measured": [
+          0.17717556655406952,
+          0.17717556655406952,
+          0.17717556655406952,
+          0.3543511629104614
+        ],
+        "expected": [
+          0.17717573678605397,
+          0.17717573678605397,
+          0.17717573678605397,
+          0.35435147357210794
+        ],
+        "maxError": 3.106616465187173e-07,
+        "passed": true
+      },
+      {
+        "name": "near-far-partial-terrain-blend-0",
+        "measured": [
+          0.17717556655406952,
+          0.17717556655406952,
+          0.17717556655406952,
+          0.3543511629104614
+        ],
+        "expected": [
+          0.17717573678605397,
+          0.17717573678605397,
+          0.17717573678605397,
+          0.35435147357210794
+        ],
+        "maxError": 3.106616465187173e-07,
+        "passed": true
+      },
+      {
+        "name": "near-far-partial-terrain-blend-0.5",
+        "measured": [
+          0.1771753877401352,
+          0.1771753877401352,
+          0.1771753877401352,
+          0.354351282119751
+        ],
+        "expected": [
+          0.17717573678605397,
+          0.17717573678605397,
+          0.17717573678605397,
+          0.35435147357210794
+        ],
+        "maxError": 3.490459187793782e-07,
+        "passed": true
+      },
+      {
+        "name": "near-far-partial-terrain-blend-1",
+        "measured": [
+          0.17717520892620087,
+          0.17717520892620087,
+          0.17717520892620087,
+          0.3543514013290405
+        ],
+        "expected": [
+          0.17717573678605397,
+          0.17717573678605397,
+          0.17717573678605397,
+          0.35435147357210794
+        ],
+        "maxError": 5.278598531055501e-07,
+        "passed": true
+      },
+      {
+        "name": "shadow-total-optical-depth",
+        "measured": [
+          1.0000636102631688
+        ],
+        "expected": [
+          1
+        ],
+        "maxError": 6.36102631688118e-05,
+        "passed": true
+      },
+      {
+        "name": "secondary-total-optical-depth",
+        "measured": [
+          0.9999993443489075
+        ],
+        "expected": [
+          1
+        ],
+        "maxError": 6.556510925292969e-07,
+        "passed": true
+      },
+      {
+        "name": "near-plus-cache-disjoint",
+        "measured": [
+          0.3678794503211975
+        ],
+        "expected": [
+          0.36787944117144233
+        ],
+        "maxError": 9.149755175741348e-09,
+        "passed": true
+      },
+      {
+        "name": "invalid-cache-direct-fallback",
+        "measured": [
+          0.36787956953048706
+        ],
+        "expected": [
+          0.36787944117144233
+        ],
+        "maxError": 1.283590447265226e-07,
+        "passed": true
+      },
+      {
+        "name": "zero-near-budget-direct-fallback",
+        "measured": [
+          0.3678796887397766
+        ],
+        "expected": [
+          0.36787944117144233
+        ],
+        "maxError": 2.4756833427730385e-07,
+        "passed": true
+      },
+      {
+        "name": "zero-near-budget-full-cache",
+        "measured": [
+          0.3678794801235199
+        ],
+        "expected": [
+          0.36787944117144233
+        ],
+        "maxError": 3.895207756343666e-08,
+        "passed": true
+      },
+      {
+        "name": "single-atmosphere-overlay-composition",
+        "measured": [
+          0.3896375894546509,
+          0.42642533779144287,
+          0.4632130563259125
+        ],
+        "expected": [
+          0.3896361676485673,
+          0.42642411176571154,
+          0.46321205588285574
+        ],
+        "maxError": 1.4218060835902158e-06,
+        "passed": true
+      },
+      {
+        "name": "light-volume-no-partial-publication",
+        "measured": [
+          0
+        ],
+        "expected": [
+          0
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "light-volume-complete-publication",
+        "measured": [
+          1,
+          1
+        ],
+        "expected": [
+          1,
+          1
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "light-volume-camera-slab",
+        "measured": [
+          0.36793774366378784
+        ],
+        "expected": [
+          0.36787944117144233
+        ],
+        "maxError": 5.830249234550777e-05,
+        "passed": true
+      },
+      {
+        "name": "light-volume-below-layer-sun-path",
+        "measured": [
+          0.36793774366378784
+        ],
+        "expected": [
+          0.36787944117144233
+        ],
+        "maxError": 5.830249234550777e-05,
+        "passed": true
+      },
+      {
+        "name": "light-volume-outside-cap-fallback",
+        "measured": [
+          0.3604148030281067
+        ],
+        "expected": [
+          0.3604739608455343
+        ],
+        "maxError": 5.9157817427601955e-05,
+        "passed": true
+      },
+      {
+        "name": "aerial-surface-sun-strength-1",
+        "measured": [
+          0.3678557574748993
+        ],
+        "expected": [
+          0.36787944117144233
+        ],
+        "maxError": 2.3683696543042032e-05,
+        "passed": true
+      },
+      {
+        "name": "aerial-surface-sun-strength-0.5",
+        "measured": [
+          0.6839278936386108
+        ],
+        "expected": [
+          0.6839397205857212
+        ],
+        "maxError": 1.1826947110327168e-05,
+        "passed": true
+      },
+      {
+        "name": "aerial-surface-sun-strength-0",
+        "measured": [
+          1
+        ],
+        "expected": [
+          1
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-first-frame-odd-edges",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-disabled-history-reference",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-valid-history-odd-edges",
+        "measured": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25
+        ],
+        "expected": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-depth-disocclusion-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-behind-camera-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-zero-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-nan-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-infinite-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-offscreen-left-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-offscreen-right-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-offscreen-bottom-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-offscreen-top-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-history-clear-gap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-current-clear-gap-zero-depth",
+        "measured": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-invalid-current-zero-depth",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-bilinear-matched-tuple",
+        "measured": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25
+        ],
+        "expected": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-bilinear-disoccluded-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-off-bilinear-clear-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-first-frame-odd-edges",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-disabled-history-reference",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-valid-history-odd-edges",
+        "measured": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25,
+          1.1875,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125
+        ],
+        "expected": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25,
+          1.1875,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125,
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-depth-disocclusion-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-behind-camera-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-zero-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-nan-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-infinite-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-offscreen-left-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-offscreen-right-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-offscreen-bottom-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-offscreen-top-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-history-clear-gap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-current-clear-gap-zero-depth",
+        "measured": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1.75
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-invalid-current-zero-depth",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-bilinear-matched-tuple",
+        "measured": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25,
+          1.1875
+        ],
+        "expected": [
+          0.59375,
+          0.5625,
+          0.53125,
+          0.59375,
+          1.25,
+          1.1875
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-bilinear-disoccluded-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-native-shafts-on-bilinear-clear-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-first-frame-odd-edges",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-disabled-history-reference",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-valid-history-odd-edges",
+        "measured": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25
+        ],
+        "expected": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-fresh-bayer-current",
+        "measured": [
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25
+        ],
+        "expected": [
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-fresh-bayer-accumulation",
+        "measured": [
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25
+        ],
+        "expected": [
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-depth-disocclusion-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-behind-camera-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-zero-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-nan-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-infinite-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-offscreen-left-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-offscreen-right-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-offscreen-bottom-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-offscreen-top-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-history-clear-gap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-current-clear-gap-zero-depth",
+        "measured": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-invalid-current-zero-depth",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-bilinear-matched-tuple",
+        "measured": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25
+        ],
+        "expected": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-bilinear-disoccluded-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-off-bilinear-clear-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-first-frame-odd-edges",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75,
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-disabled-history-reference",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-valid-history-odd-edges",
+        "measured": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1
+        ],
+        "expected": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1,
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-fresh-bayer-current",
+        "measured": [
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25
+        ],
+        "expected": [
+          0.125,
+          0.25,
+          0.375,
+          0.25,
+          1.25,
+          0.25
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-fresh-bayer-accumulation",
+        "measured": [
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125
+        ],
+        "expected": [
+          0.40625,
+          0.4375,
+          0.46875,
+          0.4375,
+          1.25,
+          0.8125
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-depth-disocclusion-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-behind-camera-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-zero-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-nan-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-infinite-previous-depth-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-offscreen-left-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-offscreen-right-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-offscreen-bottom-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-offscreen-top-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-history-clear-gap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-current-clear-gap-zero-depth",
+        "measured": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1.75
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-invalid-current-zero-depth",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          0,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-bilinear-matched-tuple",
+        "measured": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1
+        ],
+        "expected": [
+          0.5,
+          0.5,
+          0.5,
+          0.5,
+          1.25,
+          1
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-bilinear-disoccluded-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "temporal-upscale-shafts-on-bilinear-clear-tap-rejects",
+        "measured": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "expected": [
+          0.875,
+          0.75,
+          0.625,
+          0.875,
+          1.25,
+          1.75
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "weather-broken-cumulus-midheight-atmosphere-6371000",
+        "measured": [
+          0.5262420773506165,
+          0.21049684286117554,
+          0.14734777808189392,
+          7
+        ],
+        "expected": [
+          0.5262631859731232,
+          0.21050527438924924,
+          0.14735369207247448,
+          7
+        ],
+        "maxError": 2.1108622506704755e-05,
+        "passed": true
+      },
+      {
+        "name": "weather-deep-convective-midheight-atmosphere-6371000",
+        "measured": [
+          0.5637001991271973,
+          0.3945901095867157,
+          0.29312410950660706,
+          7
+        ],
+        "expected": [
+          0.5636939114334181,
+          0.39458573800339264,
+          0.2931208339453774,
+          7
+        ],
+        "maxError": 6.28769377919447e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-stratus-midheight-atmosphere-6371000",
+        "measured": [
+          0.46643704175949097,
+          0.1399311125278473,
+          0.08395867049694061,
+          7
+        ],
+        "expected": [
+          0.46644552857502874,
+          0.13993365857250864,
+          0.08396019514350518,
+          7
+        ],
+        "maxError": 8.486815537778192e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-cirrus-midheight-atmosphere-6371000",
+        "measured": [
+          0.24612243473529816,
+          0.024612242355942726,
+          0.01476734597235918,
+          7
+        ],
+        "expected": [
+          0.24613986485641184,
+          0.024613986485641188,
+          0.014768391891384711,
+          7
+        ],
+        "maxError": 1.7430121113687358e-05,
+        "passed": true
+      },
+      {
+        "name": "weather-interpolated-deep-stratus-midheight-atmosphere-6371000",
+        "measured": [
+          0.527182400226593,
+          0.2635911703109741,
+          0.18451382219791412,
+          7
+        ],
+        "expected": [
+          0.5271807298146857,
+          0.26359036490734283,
+          0.18451325543513997,
+          7
+        ],
+        "maxError": 1.6704119073507329e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-broken-cumulus-midheight-atmosphere-6360000",
+        "measured": [
+          0.5262420773506165,
+          0.21049684286117554,
+          0.14734777808189392,
+          7
+        ],
+        "expected": [
+          0.5262631859731232,
+          0.21050527438924924,
+          0.14735369207247448,
+          7
+        ],
+        "maxError": 2.1108622506704755e-05,
+        "passed": true
+      },
+      {
+        "name": "weather-deep-convective-midheight-atmosphere-6360000",
+        "measured": [
+          0.5637001991271973,
+          0.3945901095867157,
+          0.29312410950660706,
+          7
+        ],
+        "expected": [
+          0.5636939114334181,
+          0.39458573800339264,
+          0.2931208339453774,
+          7
+        ],
+        "maxError": 6.28769377919447e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-stratus-midheight-atmosphere-6360000",
+        "measured": [
+          0.46643704175949097,
+          0.1399311125278473,
+          0.08395867049694061,
+          7
+        ],
+        "expected": [
+          0.46644552857502874,
+          0.13993365857250864,
+          0.08396019514350518,
+          7
+        ],
+        "maxError": 8.486815537778192e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-cirrus-midheight-atmosphere-6360000",
+        "measured": [
+          0.24612243473529816,
+          0.024612242355942726,
+          0.01476734597235918,
+          7
+        ],
+        "expected": [
+          0.24613986485641184,
+          0.024613986485641188,
+          0.014768391891384711,
+          7
+        ],
+        "maxError": 1.7430121113687358e-05,
+        "passed": true
+      },
+      {
+        "name": "weather-interpolated-deep-stratus-midheight-atmosphere-6360000",
+        "measured": [
+          0.527182400226593,
+          0.2635911703109741,
+          0.18451382219791412,
+          7
+        ],
+        "expected": [
+          0.5271807298146857,
+          0.26359036490734283,
+          0.18451325543513997,
+          7
+        ],
+        "maxError": 1.6704119073507329e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-below-and-above-support-empty",
+        "measured": [
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          0,
+          7
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          0,
+          7
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "weather-zero-coverage-empty",
+        "measured": [
+          0,
+          0,
+          0,
+          7
+        ],
+        "expected": [
+          0,
+          0,
+          0,
+          7
+        ],
+        "maxError": 0,
+        "passed": true
+      },
+      {
+        "name": "weather-jitter-invariant",
+        "measured": [
+          0.527182400226593,
+          0.2635911703109741,
+          0.18451382219791412,
+          7,
+          0,
+          0,
+          0,
+          0
+        ],
+        "expected": [
+          0.5271807298146857,
+          0.26359036490734283,
+          0.18451325543513997,
+          7,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maxError": 1.6704119073507329e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-footprint-lod-finite-constant-medium",
+        "measured": [
+          0.527182400226593,
+          0.2635911703109741,
+          0.18451382219791412,
+          7,
+          0.527182400226593,
+          0.2635911703109741,
+          0.18451382219791412,
+          7
+        ],
+        "expected": [
+          0.5271807298146857,
+          0.26359036490734283,
+          0.18451325543513997,
+          7,
+          0.5271807298146857,
+          0.26359036490734283,
+          0.18451325543513997,
+          7
+        ],
+        "maxError": 1.6704119073507329e-06,
+        "passed": true
+      },
+      {
+        "name": "weather-assets-noise-fixed-scale-type-continuity",
+        "measured": [
+          0.09375441819429398,
+          0.04687720537185669,
+          0.03281404450535774,
+          7,
+          0.09364593774080276,
+          0.04681172966957092,
+          0.03276652470231056,
+          7,
+          -0.00010848045349121094,
+          -6.54757022857666e-05,
+          -4.7519803047180176e-05,
+          0
+        ],
+        "expected": [
+          0.09380477074037084,
+          0.04690238537018542,
+          0.032831669759129795,
+          7,
+          0.09369635881624125,
+          0.04683693397931334,
+          0.03278416697119824,
+          7,
+          -0.000108411924129595,
+          -6.545139087207885e-05,
+          -4.7502787931551216e-05,
+          0
+        ],
+        "maxError": 5.042107543848373e-05,
+        "passed": true
+      },
+      {
+        "name": "weather-assets-global-north-source-texel",
+        "measured": [
+          0.3294117748737335,
+          0.4470588266849518,
+          0.7998046278953552,
+          7
+        ],
+        "expected": [
+          0.32941176470588235,
+          0.4470588235294118,
+          0.7998046875,
+          7
+        ],
+        "maxError": 5.960464477539063e-08,
+        "passed": true
+      },
+      {
+        "name": "weather-assets-global-south-source-texel",
+        "measured": [
+          0.6039215922355652,
+          0.48627451062202454,
+          0.20019537210464478,
+          7
+        ],
+        "expected": [
+          0.6039215686274509,
+          0.48627450980392156,
+          0.2001953125,
+          7
+        ],
+        "maxError": 5.960464477539063e-08,
+        "passed": true
+      },
+      {
+        "name": "weather-assets-reference-isolated-south-first",
+        "measured": [
+          0.7411764860153198,
+          0.1764705926179886,
+          0.7272916436195374,
+          7
+        ],
+        "expected": [
+          0.7411764705882353,
+          0.17647058823529413,
+          0.7272916666666667,
+          7
+        ],
+        "maxError": 2.3047129316111636e-08,
+        "passed": true
+      },
+      {
+        "name": "weather-assets-reference-deep-south-first",
+        "measured": [
+          0.9764705896377563,
+          0.43921568989753723,
+          0.7239583134651184,
+          7
+        ],
+        "expected": [
+          0.9764705882352941,
+          0.4392156862745098,
+          0.7239583333333334,
+          7
+        ],
+        "maxError": 1.9868214962137642e-08,
+        "passed": true
+      },
+      {
+        "name": "weather-assets-reference-clear-gap",
+        "measured": [
+          0,
+          0,
+          0.7227083444595337,
+          7
+        ],
+        "expected": [
+          0,
+          0,
+          0.7227083333333333,
+          7
+        ],
+        "maxError": 1.1126200405442432e-08,
+        "passed": true
+      }
+    ]
+  }
+}

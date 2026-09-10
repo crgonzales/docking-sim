@@ -236,10 +236,34 @@ export function selectTerrainNodes(
   return [...leaves.values()].sort(compareNodeAddress);
 }
 
-function isDescendantOrSelf(candidate: TerrainNodeAddress, ancestor: TerrainNodeAddress): boolean {
-  if (candidate.face !== ancestor.face || candidate.level < ancestor.level) return false;
-  const shift = candidate.level - ancestor.level;
-  return (candidate.x >> shift) === ancestor.x && (candidate.y >> shift) === ancestor.y;
+export interface DesiredTerrainIndex {
+  readonly leaves: ReadonlySet<string>;
+  readonly splits: ReadonlySet<string>;
+}
+
+/** Compile ancestry once per desired cover, including sparse oracle inputs. */
+export function indexDesiredTerrain(nodes: readonly TerrainNodeAddress[]): DesiredTerrainIndex {
+  const leaves = new Set(nodes.map(nodeAddressKey));
+  const splits = new Set<string>();
+  for (const node of nodes) {
+    let parent = parentAddress(node);
+    while (parent !== null) {
+      const key = nodeAddressKey(parent);
+      if (splits.has(key)) break;
+      splits.add(key);
+      parent = parentAddress(parent);
+    }
+  }
+  return { leaves, splits };
+}
+
+function hasDesiredAncestor(node: TerrainNodeAddress, index: DesiredTerrainIndex): boolean {
+  let ancestor: TerrainNodeAddress | null = node;
+  while (ancestor !== null) {
+    if (index.leaves.has(nodeAddressKey(ancestor))) return true;
+    ancestor = parentAddress(ancestor);
+  }
+  return false;
 }
 
 /**
@@ -258,18 +282,21 @@ export function swapCompleteSiblings(
   displayed: readonly TerrainNodeAddress[],
   desired: readonly TerrainNodeAddress[],
   ready: ReadonlySet<string>,
+  index = indexDesiredTerrain(desired),
 ): readonly TerrainNodeAddress[] {
-  const desiredNodes = [...desired];
   const next: TerrainNodeAddress[] = [];
   for (const node of displayed) {
+    if (!index.splits.has(nodeAddressKey(node))) {
+      next.push(node);
+      continue;
+    }
     const children = [
       childAddress(node, 0, 0),
       childAddress(node, 1, 0),
       childAddress(node, 0, 1),
       childAddress(node, 1, 1),
     ];
-    const canSwap = children.every((child) => ready.has(nodeAddressKey(child)))
-      && children.some((child) => desiredNodes.some((candidate) => isDescendantOrSelf(candidate, child)));
+    const canSwap = children.every((child) => ready.has(nodeAddressKey(child)));
     if (canSwap) next.push(...children);
     else next.push(node);
   }
@@ -281,6 +308,7 @@ export function mergeCompleteSiblings(
   displayed: readonly TerrainNodeAddress[],
   desired: readonly TerrainNodeAddress[],
   ready: ReadonlySet<string>,
+  index = indexDesiredTerrain(desired),
 ): readonly TerrainNodeAddress[] {
   const displayedKeys = new Set(displayed.map(nodeAddressKey));
   const consumed = new Set<string>();
@@ -305,7 +333,7 @@ export function mergeCompleteSiblings(
       childAddress(parent, 1, 1),
     ];
     const childKeys = children.map(nodeAddressKey);
-    const canMerge = desired.some((target) => isDescendantOrSelf(parent, target))
+    const canMerge = hasDesiredAncestor(parent, index)
       && ready.has(nodeAddressKey(parent))
       && childKeys.every((childKey) => displayedKeys.has(childKey));
     if (canMerge) {

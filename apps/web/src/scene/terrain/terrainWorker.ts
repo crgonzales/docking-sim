@@ -20,6 +20,7 @@ import {
   type TerrainTile,
 } from './heightField';
 import { TERRAIN_SKIRT_DEPTH_M, SKY_DERIVED } from '../sky/skyConfig';
+import { renderTimings } from '../renderTimings';
 
 const GRID_SEGMENTS = 32;
 const GRID_SIZE = GRID_SEGMENTS + 1;
@@ -105,6 +106,8 @@ export interface PatchHeroTile {
 export interface PatchBuildRequest {
   readonly type: 'buildPatch';
   readonly requestId?: number;
+  /** Main-thread opt-in forwarded explicitly because workers have no window URL. */
+  readonly profile?: boolean;
   readonly address: TerrainNodeAddress;
   /** Request-scoped structured-clone data; workers do not own a persistent tile cache. */
   readonly tiles: readonly TerrainTile[];
@@ -137,6 +140,10 @@ export interface PatchBuildResult {
   readonly baseVertexCount: number;
   readonly skirtVertexCount: number;
   readonly boundingSphereRadiusM: number;
+  /** Optional worker-only diagnostic; absent on normal render requests. */
+  readonly diagnostics?: {
+    readonly cpuBuildMs: number;
+  };
 }
 
 export interface PatchBuildError {
@@ -497,8 +504,13 @@ export function createTerrainWorkerMessageHandler(
   return (event: MessageEvent<PatchBuildRequest>): void => {
     const request = event.data;
     try {
+      const startedAt = request.profile === true && typeof performance !== 'undefined' ? performance.now() : -1;
       const result = builder(request);
-      postMessage(result, patchBuildTransferables(result));
+      const profiledResult = startedAt < 0 ? result : {
+        ...result,
+        diagnostics: { cpuBuildMs: Math.max(0, performance.now() - startedAt) },
+      };
+      postMessage(profiledResult, patchBuildTransferables(profiledResult));
     } catch (error) {
       const failure: PatchBuildError = {
         type: 'patchBuildError',
@@ -541,6 +553,7 @@ export class TerrainWorkerPool {
     readonly resolve: (result: PatchBuildResult) => void;
     readonly reject: (error: Error) => void;
     readonly workerIndex: number;
+    readonly dispatchedAt: number;
   }>();
   private readonly queued: Array<{
     readonly requestId: number;
@@ -553,6 +566,14 @@ export class TerrainWorkerPool {
   private disposed = false;
   private nextRequestId = 0;
   private nextWorker = 0;
+
+  get queuedCount(): number {
+    return this.queued.length;
+  }
+
+  get activeBuildCount(): number {
+    return this.activeBuilds;
+  }
 
   constructor(options: TerrainWorkerPoolOptions = {}) {
     const requestedCount = options.workerCount ?? Math.min(globalThis.navigator?.hardwareConcurrency ?? 4, 8);
@@ -620,6 +641,10 @@ export class TerrainWorkerPool {
     if (pending === undefined) return;
     this.pending.delete(message.requestId);
     this.activeBuilds -= 1;
+    if (pending.dispatchedAt >= 0) renderTimings.record('terrain.worker.roundTrip', performance.now() - pending.dispatchedAt);
+    if (message.type === 'patchBuilt' && message.diagnostics !== undefined) {
+      renderTimings.record('terrain.worker.cpuBuild', message.diagnostics.cpuBuildMs);
+    }
     if (message.type === 'patchBuildError') pending.reject(new Error(message.message));
     else {
       try {
@@ -660,10 +685,14 @@ export class TerrainWorkerPool {
 
   private dispatchQueued(): void {
     while (this.activeBuilds < this.maxConcurrentBuilds && this.queued.length > 0) {
+      const busy = new Set([...this.pending.values()].map(entry => entry.workerIndex));
+      let workerIndex = this.nextWorker % this.workers.length;
+      while (busy.has(workerIndex)) workerIndex = (workerIndex + 1) % this.workers.length;
+      this.nextWorker = (workerIndex + 1) % this.workers.length;
       const queued = this.queued.shift()!;
-      const workerIndex = this.nextWorker++ % this.workers.length;
       const worker = this.workers[workerIndex]!;
-      this.pending.set(queued.requestId, { ...queued, workerIndex });
+      const dispatchedAt = renderTimings.enabled ? performance.now() : -1;
+      this.pending.set(queued.requestId, { ...queued, workerIndex, dispatchedAt });
       this.activeBuilds += 1;
       try {
         // Deliberately omit a transfer list: request-scoped tile data remains
@@ -673,6 +702,8 @@ export class TerrainWorkerPool {
         this.pending.delete(queued.requestId);
         this.activeBuilds -= 1;
         queued.reject(error instanceof Error ? error : new Error(String(error)));
+      } finally {
+        if (dispatchedAt >= 0) renderTimings.record('terrain.worker.dispatch', performance.now() - dispatchedAt);
       }
     }
   }

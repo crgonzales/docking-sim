@@ -1,0 +1,929 @@
+{
+  "context": {
+    "url": "http://127.0.0.1:5174/?renderer=library&cloudSystem=eve&probe=1&profile=1&quality=medium&dpr=1&flyto=46.472,-73.6077,459&pitch=0&yaw=90",
+    "lat": 46.472,
+    "lon": -73.6077,
+    "altitude": 3000,
+    "pitch": 0,
+    "yaw": 90,
+    "shadow": {
+      "mode": "on",
+      "overlay": true,
+      "range": "fitted",
+      "waterReflections": true
+    },
+    "dpr": 1,
+    "profile": true,
+    "videoRecording": false,
+    "sweep": null,
+    "drawingBuffer": [
+      981,
+      1043
+    ],
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36"
+  },
+  "samples": [
+    {
+      "seconds": 244.3,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 3000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.7,
+      "frames": 14597,
+      "rebases": 77,
+      "geometries": 110,
+      "textures": 34,
+      "tiles": {
+        "fetches": 228,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "enabled": true,
+        "intervalMs": 1016.5,
+        "cpu": {
+          "frame.callbacksCpuWall": {
+            "count": 61,
+            "totalMs": 161.7,
+            "averageMs": 2.6508,
+            "maxMs": 4.4,
+            "lastMs": 2.2
+          },
+          "cameraRig.frameCpuWall": {
+            "count": 61,
+            "totalMs": 3.9,
+            "averageMs": 0.0639,
+            "maxMs": 0.2,
+            "lastMs": 0
+          },
+          "cameraRig.groundCpuWall": {
+            "count": 61,
+            "totalMs": 3.1,
+            "averageMs": 0.0508,
+            "maxMs": 0.2,
+            "lastMs": 0
+          },
+          "profiling.gpuPollCpuWall": {
+            "count": 62,
+            "totalMs": 1.1,
+            "averageMs": 0.0177,
+            "maxMs": 0.1,
+            "lastMs": 0
+          },
+          "pip.render": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "terrain.selection": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0.5
+          },
+          "terrain.reconciliation": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0.4
+          },
+          "terrain.worker.dispatch": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0.2
+          },
+          "terrain.worker.roundTrip": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 15.4
+          },
+          "terrain.worker.cpuBuild": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 15
+          },
+          "terrain.geometryPreparation": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0.1
+          },
+          "composer.setup": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 20
+          },
+          "composer.renderCpuWall": {
+            "count": 61,
+            "totalMs": 83.2,
+            "averageMs": 1.3639,
+            "maxMs": 2,
+            "lastMs": 1
+          },
+          "composer.firstUseCpuWall": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 72.6
+          },
+          "composer.pass.renderScene": {
+            "count": 61,
+            "totalMs": 38.1,
+            "averageMs": 0.6246,
+            "maxMs": 1.1,
+            "lastMs": 0.4
+          },
+          "composer.pass.surfaceNormals": {
+            "count": 61,
+            "totalMs": 25.8,
+            "averageMs": 0.423,
+            "maxMs": 0.6,
+            "lastMs": 0.3
+          },
+          "composer.pass.lightingMask": {
+            "count": 61,
+            "totalMs": 7.3,
+            "averageMs": 0.1197,
+            "maxMs": 0.2,
+            "lastMs": 0
+          },
+          "composer.pass.clouds": {
+            "count": 61,
+            "totalMs": 7.7,
+            "averageMs": 0.1262,
+            "maxMs": 0.3,
+            "lastMs": 0.1
+          },
+          "composer.pass.atmosphereToneMapping": {
+            "count": 61,
+            "totalMs": 3.6,
+            "averageMs": 0.059,
+            "maxMs": 0.2,
+            "lastMs": 0.1
+          },
+          "cloud.setup": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "cloud.assetsAssignmentCpuWall": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 16.1
+          },
+          "cloud.schedule.reprojectionBefore": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "cloud.schedule.shadowRange": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "cloud.schedule.lightingMask": {
+            "count": 61,
+            "totalMs": 4.5,
+            "averageMs": 0.0738,
+            "maxMs": 0.8,
+            "lastMs": 0
+          },
+          "cloud.schedule.reprojectionAfter": {
+            "count": 61,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "cloud.columnAtlasCpuWall": {
+            "count": 61,
+            "totalMs": 1.3,
+            "averageMs": 0.0213,
+            "maxMs": 0.1,
+            "lastMs": 0
+          },
+          "cloud.lightVolumeCpuWall": {
+            "count": 61,
+            "totalMs": 0.4,
+            "averageMs": 0.0066,
+            "maxMs": 0.1,
+            "lastMs": 0
+          }
+        },
+        "cpuCumulative": {
+          "frame.callbacksCpuWall": {
+            "count": 14596,
+            "totalMs": 35925.7,
+            "averageMs": 2.4613,
+            "maxMs": 84.6,
+            "lastMs": 2.2
+          },
+          "cameraRig.frameCpuWall": {
+            "count": 14597,
+            "totalMs": 836.3,
+            "averageMs": 0.0573,
+            "maxMs": 1.2,
+            "lastMs": 0
+          },
+          "cameraRig.groundCpuWall": {
+            "count": 14597,
+            "totalMs": 420.9,
+            "averageMs": 0.0288,
+            "maxMs": 0.6,
+            "lastMs": 0
+          },
+          "profiling.gpuPollCpuWall": {
+            "count": 14839,
+            "totalMs": 280.8,
+            "averageMs": 0.0189,
+            "maxMs": 1,
+            "lastMs": 0
+          },
+          "pip.render": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "terrain.selection": {
+            "count": 2907,
+            "totalMs": 1349,
+            "averageMs": 0.4641,
+            "maxMs": 2.4,
+            "lastMs": 0.5
+          },
+          "terrain.reconciliation": {
+            "count": 830,
+            "totalMs": 307,
+            "averageMs": 0.3699,
+            "maxMs": 1,
+            "lastMs": 0.4
+          },
+          "terrain.worker.dispatch": {
+            "count": 1361,
+            "totalMs": 529.8,
+            "averageMs": 0.3893,
+            "maxMs": 6.2,
+            "lastMs": 0.2
+          },
+          "terrain.worker.roundTrip": {
+            "count": 1361,
+            "totalMs": 29589.8,
+            "averageMs": 21.7412,
+            "maxMs": 85.1,
+            "lastMs": 15.4
+          },
+          "terrain.worker.cpuBuild": {
+            "count": 1361,
+            "totalMs": 27121.6,
+            "averageMs": 19.9277,
+            "maxMs": 75.6,
+            "lastMs": 15
+          },
+          "terrain.geometryPreparation": {
+            "count": 1351,
+            "totalMs": 123.7,
+            "averageMs": 0.0916,
+            "maxMs": 2.2,
+            "lastMs": 0.1
+          },
+          "composer.setup": {
+            "count": 1,
+            "totalMs": 20,
+            "averageMs": 20,
+            "maxMs": 20,
+            "lastMs": 20
+          },
+          "composer.renderCpuWall": {
+            "count": 14592,
+            "totalMs": 19240.1,
+            "averageMs": 1.3185,
+            "maxMs": 72.6,
+            "lastMs": 1
+          },
+          "composer.firstUseCpuWall": {
+            "count": 1,
+            "totalMs": 72.6,
+            "averageMs": 72.6,
+            "maxMs": 72.6,
+            "lastMs": 72.6
+          },
+          "composer.pass.renderScene": {
+            "count": 14592,
+            "totalMs": 8618.1,
+            "averageMs": 0.5906,
+            "maxMs": 47.3,
+            "lastMs": 0.4
+          },
+          "composer.pass.surfaceNormals": {
+            "count": 14592,
+            "totalMs": 5540.8,
+            "averageMs": 0.3797,
+            "maxMs": 6.1,
+            "lastMs": 0.3
+          },
+          "composer.pass.lightingMask": {
+            "count": 14592,
+            "totalMs": 1843.6,
+            "averageMs": 0.1263,
+            "maxMs": 6.2,
+            "lastMs": 0
+          },
+          "composer.pass.clouds": {
+            "count": 14592,
+            "totalMs": 2165.5,
+            "averageMs": 0.1484,
+            "maxMs": 36.7,
+            "lastMs": 0.1
+          },
+          "composer.pass.atmosphereToneMapping": {
+            "count": 14592,
+            "totalMs": 822.5,
+            "averageMs": 0.0564,
+            "maxMs": 26.3,
+            "lastMs": 0.1
+          },
+          "cloud.setup": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "cloud.assetsAssignmentCpuWall": {
+            "count": 1,
+            "totalMs": 16.1,
+            "averageMs": 16.1,
+            "maxMs": 16.1,
+            "lastMs": 16.1
+          },
+          "cloud.schedule.reprojectionBefore": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "cloud.schedule.shadowRange": {
+            "count": 0,
+            "totalMs": 0,
+            "averageMs": 0,
+            "maxMs": 0,
+            "lastMs": 0
+          },
+          "cloud.schedule.lightingMask": {
+            "count": 14592,
+            "totalMs": 686.7,
+            "averageMs": 0.0471,
+            "maxMs": 1.2,
+            "lastMs": 0
+          },
+          "cloud.schedule.reprojectionAfter": {
+            "count": 14592,
+            "totalMs": 13.9,
+            "averageMs": 0.001,
+            "maxMs": 0.1,
+            "lastMs": 0
+          },
+          "cloud.columnAtlasCpuWall": {
+            "count": 14592,
+            "totalMs": 140,
+            "averageMs": 0.0096,
+            "maxMs": 5.1,
+            "lastMs": 0
+          },
+          "cloud.lightVolumeCpuWall": {
+            "count": 14592,
+            "totalMs": 386.2,
+            "averageMs": 0.0265,
+            "maxMs": 6.2,
+            "lastMs": 0
+          }
+        },
+        "gpu": {
+          "status": "supported",
+          "pendingQueries": 7,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {
+            "frame.callbacksCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cameraRig.frameCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cameraRig.groundCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "profiling.gpuPollCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "pip.render": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.selection": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.reconciliation": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.worker.dispatch": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.worker.roundTrip": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.worker.cpuBuild": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.geometryPreparation": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.setup": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.renderCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.firstUseCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.pass.renderScene": {
+              "count": 61,
+              "totalMs": 125.7692,
+              "averageMs": 2.0618,
+              "maxMs": 4.6156,
+              "lastMs": 2.382
+            },
+            "composer.pass.surfaceNormals": {
+              "count": 61,
+              "totalMs": 151.0397,
+              "averageMs": 2.4761,
+              "maxMs": 5.2989,
+              "lastMs": 3.3107
+            },
+            "composer.pass.lightingMask": {
+              "count": 61,
+              "totalMs": 168.6699,
+              "averageMs": 2.7651,
+              "maxMs": 6.2514,
+              "lastMs": 3.6826
+            },
+            "composer.pass.clouds": {
+              "count": 61,
+              "totalMs": 471.8326,
+              "averageMs": 7.735,
+              "maxMs": 14.3181,
+              "lastMs": 8.7821
+            },
+            "composer.pass.atmosphereToneMapping": {
+              "count": 61,
+              "totalMs": 512.8402,
+              "averageMs": 8.4072,
+              "maxMs": 16.3511,
+              "lastMs": 9.8746
+            },
+            "cloud.setup": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.assetsAssignmentCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.reprojectionBefore": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.shadowRange": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.lightingMask": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.reprojectionAfter": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.columnAtlas": {
+              "count": 61,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.lightVolume": {
+              "count": 61,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            }
+          },
+          "cumulative": {
+            "frame.callbacksCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cameraRig.frameCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cameraRig.groundCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "profiling.gpuPollCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "pip.render": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.selection": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.reconciliation": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.worker.dispatch": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.worker.roundTrip": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.worker.cpuBuild": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "terrain.geometryPreparation": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.setup": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.renderCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.firstUseCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "composer.pass.renderScene": {
+              "count": 14571,
+              "totalMs": 30537.8651,
+              "averageMs": 2.0958,
+              "maxMs": 35.0046,
+              "lastMs": 2.382
+            },
+            "composer.pass.surfaceNormals": {
+              "count": 14570,
+              "totalMs": 33305.7165,
+              "averageMs": 2.2859,
+              "maxMs": 25.2351,
+              "lastMs": 3.3107
+            },
+            "composer.pass.lightingMask": {
+              "count": 14569,
+              "totalMs": 42893.2861,
+              "averageMs": 2.9441,
+              "maxMs": 25.1856,
+              "lastMs": 3.6826
+            },
+            "composer.pass.clouds": {
+              "count": 14569,
+              "totalMs": 103222.6775,
+              "averageMs": 7.0851,
+              "maxMs": 27.6912,
+              "lastMs": 8.7821
+            },
+            "composer.pass.atmosphereToneMapping": {
+              "count": 14569,
+              "totalMs": 126883.3606,
+              "averageMs": 8.7091,
+              "maxMs": 30.0671,
+              "lastMs": 9.8746
+            },
+            "cloud.setup": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.assetsAssignmentCpuWall": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.reprojectionBefore": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.shadowRange": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.lightingMask": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.schedule.reprojectionAfter": {
+              "count": 0,
+              "totalMs": 0,
+              "averageMs": 0,
+              "maxMs": 0,
+              "lastMs": 0
+            },
+            "cloud.columnAtlas": {
+              "count": 14584,
+              "totalMs": 730.8139,
+              "averageMs": 0.0501,
+              "maxMs": 27.736,
+              "lastMs": 0
+            },
+            "cloud.lightVolume": {
+              "count": 14584,
+              "totalMs": 2259.0692,
+              "averageMs": 0.1549,
+              "maxMs": 20.3137,
+              "lastMs": 0
+            }
+          }
+        },
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        },
+        "pip": {
+          "visible": false,
+          "renderedLastFrame": false,
+          "renderCount": 0,
+          "renderCountCumulative": 0
+        }
+      }
+    }
+  ],
+  "sourceCapture": "capture-eve-medium-full-1789046185606.json"
+}

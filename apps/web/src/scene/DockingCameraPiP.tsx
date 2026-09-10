@@ -20,6 +20,7 @@ import { shouldShowPip, useViewStore } from '../viewStore';
 import { FRAME_TONE_MAPPING } from './Effects';
 import { COCKPIT_CAMERA_NEAR, PIP_CAMERA_FAR } from './sky/skyConfig';
 import { WorldFrame } from './worldFrame';
+import { renderTimings } from './renderTimings';
 
 /**
  * Runs AFTER the main render: the EffectComposer owns the frame at priority 1,
@@ -82,6 +83,7 @@ export function DockingCameraPass({ worldFrame, exposureRef }: DockingCameraPass
   }, []);
 
   useEffect(() => () => {
+    renderTimings.setPipState(false);
     pipRender.target.dispose();
     pipRender.material.dispose();
     pipRender.compositeScene.traverse((object) => {
@@ -93,67 +95,80 @@ export function DockingCameraPass({ worldFrame, exposureRef }: DockingCameraPass
     // The rectangle comes from the measured DOM overlay (single source of
     // truth) so the crosshair and the rendered image always coincide.
     const rect = useViewStore.getState().pipRect;
+    renderTimings.setPipState(visible);
     if (!visible || !renderState || !rect) return;
-    const q_HB = conjugateQuaternion(renderState.q_BH);
-    const originWorld = new Vector3(...renderState.r_hill_m)
-      .add(new Vector3(...rotateVector(q_HB, [0, 1.6, 0])));
-    const forward = new Vector3(...rotateVector(q_HB, [0, 1, 0]));
-    const up = new Vector3(...rotateVector(q_HB, [0, 0, 1]));
-    const origin = worldFrame.toRender([originWorld.x, originWorld.y, originWorld.z]);
-    const lookAtWorld = originWorld.clone().add(forward.clone().multiplyScalar(30));
-    const lookAt = worldFrame.toRender([lookAtWorld.x, lookAtWorld.y, lookAtWorld.z]);
-    camera.current.aspect = rect.width / rect.height;
-    camera.current.position.set(origin[0], origin[1], origin[2]);
-    camera.current.up.copy(up);
-    camera.current.lookAt(new Vector3(lookAt[0], lookAt[1], lookAt[2]));
-    camera.current.updateProjectionMatrix();
+    const startedAt = renderTimings.start('pip.render');
+    // Priority 2 runs after every composer pass has closed its query.
+    // beginGpu also refuses a nested query or an exhausted query pool.
+    const gpuSlot = renderTimings.beginGpu('pip.render');
+    try {
+      const q_HB = conjugateQuaternion(renderState.q_BH);
+      const originWorld = new Vector3(...renderState.r_hill_m)
+        .add(new Vector3(...rotateVector(q_HB, [0, 1.6, 0])));
+      const forward = new Vector3(...rotateVector(q_HB, [0, 1, 0]));
+      const up = new Vector3(...rotateVector(q_HB, [0, 0, 1]));
+      const origin = worldFrame.toRender([originWorld.x, originWorld.y, originWorld.z]);
+      const lookAtWorld = originWorld.clone().add(forward.clone().multiplyScalar(30));
+      const lookAt = worldFrame.toRender([lookAtWorld.x, lookAtWorld.y, lookAtWorld.z]);
+      camera.current.aspect = rect.width / rect.height;
+      camera.current.position.set(origin[0], origin[1], origin[2]);
+      camera.current.up.copy(up);
+      camera.current.lookAt(new Vector3(lookAt[0], lookAt[1], lookAt[2]));
+      camera.current.updateProjectionMatrix();
 
-    // Render targets are sized in PHYSICAL pixels, but setViewport/setScissor
-    // take CSS pixels and multiply by the pixel ratio themselves. Mixing the
-    // two spaces is the trap here: pre-scaling the rect and then handing it to
-    // setViewport applies the ratio twice, which mispositions and oversizes
-    // the on-screen composite on any DPR > 1 display.
-    const pixelRatio = gl.getPixelRatio();
-    const targetWidth = Math.max(1, Math.floor(rect.width * pixelRatio));
-    const targetHeight = Math.max(1, Math.floor(rect.height * pixelRatio));
-    const viewport = new Vector4();
-    const scissor = new Vector4();
-    gl.getViewport(viewport);
-    gl.getScissor(scissor);
-    const scissorTest = gl.getScissorTest();
-    const previousTarget = gl.getRenderTarget();
-    const previousAutoClear = gl.autoClear;
-    // Target is sized to the PiP rectangle, NOT the drawing buffer: the PiP
-    // camera's aspect already comes from that rect, so a full-buffer target
-    // renders the same framing at the full screen's fragment count and then
-    // throws most of it away — roughly 27x the shading work for a 320x240
-    // inset on a 1080p buffer, every frame the docking view is up.
-    if (pipRender.target.width !== targetWidth || pipRender.target.height !== targetHeight) {
-      pipRender.target.setSize(targetWidth, targetHeight);
+      // Render targets are sized in PHYSICAL pixels, but setViewport/setScissor
+      // take CSS pixels and multiply by the pixel ratio themselves. Mixing the
+      // two spaces is the trap here: pre-scaling the rect and then handing it to
+      // setViewport applies the ratio twice, which mispositions and oversizes
+      // the on-screen composite on any DPR > 1 display.
+      const pixelRatio = gl.getPixelRatio();
+      const targetWidth = Math.max(1, Math.floor(rect.width * pixelRatio));
+      const targetHeight = Math.max(1, Math.floor(rect.height * pixelRatio));
+      const viewport = new Vector4();
+      const scissor = new Vector4();
+      gl.getViewport(viewport);
+      gl.getScissor(scissor);
+      const scissorTest = gl.getScissorTest();
+      const previousTarget = gl.getRenderTarget();
+      const previousAutoClear = gl.autoClear;
+      // Target is sized to the PiP rectangle, NOT the drawing buffer: the PiP
+      // camera's aspect already comes from that rect, so a full-buffer target
+      // renders the same framing at the full screen's fragment count and then
+      // throws most of it away — roughly 27x the shading work for a 320x240
+      // inset on a 1080p buffer, every frame the docking view is up.
+      if (pipRender.target.width !== targetWidth || pipRender.target.height !== targetHeight) {
+        pipRender.target.setSize(targetWidth, targetHeight);
+      }
+
+      // Scene into the private target, then a viewport/scissor-limited quad
+      // applies the same ACES function the composer uses. No setViewport here:
+      // setRenderTarget already installs the target's own full viewport, in
+      // physical pixels and without the pixel-ratio multiply.
+      try {
+        gl.autoClear = true;
+        gl.setRenderTarget(pipRender.target);
+        gl.setScissorTest(false);
+        gl.clear(true, true, true);
+        gl.render(scene, camera.current);
+
+        gl.toneMappingExposure = exposureRef.current;
+        gl.setRenderTarget(null);
+        gl.setScissorTest(true);
+        gl.setViewport(rect.x, rect.y, rect.width, rect.height);
+        gl.setScissor(rect.x, rect.y, rect.width, rect.height);
+        gl.render(pipRender.compositeScene, pipRender.compositeCamera);
+      } finally {
+        gl.autoClear = previousAutoClear;
+        gl.setRenderTarget(previousTarget);
+        gl.setViewport(viewport);
+        gl.setScissor(scissor);
+        gl.setScissorTest(scissorTest);
+      }
+      renderTimings.setPipState(visible, true);
+    } finally {
+      renderTimings.endGpu(gpuSlot);
+      renderTimings.end('pip.render', startedAt);
     }
-
-    // Scene into the private target, then a viewport/scissor-limited quad
-    // applies the same ACES function the composer uses. No setViewport here:
-    // setRenderTarget already installs the target's own full viewport, in
-    // physical pixels and without the pixel-ratio multiply.
-    gl.autoClear = true;
-    gl.setRenderTarget(pipRender.target);
-    gl.setScissorTest(false);
-    gl.clear(true, true, true);
-    gl.render(scene, camera.current);
-
-    gl.toneMappingExposure = exposureRef.current;
-    gl.setRenderTarget(null);
-    gl.setScissorTest(true);
-    gl.setViewport(rect.x, rect.y, rect.width, rect.height);
-    gl.setScissor(rect.x, rect.y, rect.width, rect.height);
-    gl.render(pipRender.compositeScene, pipRender.compositeCamera);
-
-    gl.autoClear = previousAutoClear;
-    gl.setRenderTarget(previousTarget);
-    gl.setViewport(viewport);
-    gl.setScissor(scissor);
-    gl.setScissorTest(scissorTest);
   }, PIP_RENDER_PRIORITY);
 
   return null;

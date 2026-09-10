@@ -1,0 +1,298 @@
+{
+  "schema": 1,
+  "package": "@takram/three-clouds",
+  "upstreamVersion": "0.7.6",
+  "upstreamPackageJsonSha256": "320a9a736ea74e63e4524e173df0b9f320951b8d6896c1a94a5c6b32acf22e6e",
+  "pnpmLockIntegrity": "sha512-cfoEI3W5NJuYUL1Pd4k5UXLlb7rLThh3dNIOO+/EPw8cbuRUgiIVEVtNPmA+v5KRJf87gPI+rjuxgK0huAajDw==",
+  "source": {
+    "installedPath": "apps/web/node_modules/@takram/three-clouds/src",
+    "vendorPath": "apps/web/src/scene/clouds/vendor/takram/src",
+    "copiedByteForByte": false,
+    "upstreamFilesVerifiedBeforeFork": true,
+    "fileCount": 48,
+    "files": [
+      {
+        "path": "src/CascadedShadowMaps.ts",
+        "sha256": "8ff64d8d1b13cb6f9485f58e0715b418170b87b6440d30dcd0154f7eeec8d587"
+      },
+      {
+        "path": "src/CloudLayer.ts",
+        "sha256": "7d4d9b91ed18eddf6ddc9f05123b780c721f5368e08849796f8db28d68e5c078"
+      },
+      {
+        "path": "src/CloudLayers.ts",
+        "sha256": "0038c64d36e76ac63f98d4b2f834329e2b12b04c57a240a40cf16002146178fb"
+      },
+      {
+        "path": "src/CloudShape.ts",
+        "sha256": "2454514e0ff5af9fd2d471daabbd7843109d98e256c5ab574b5eabe3c6393b15"
+      },
+      {
+        "path": "src/CloudShapeDetail.ts",
+        "sha256": "d9dddedfb8eeaf1242ff28d2814ab0148ece0852a019c884d1cee9b4aed1d903"
+      },
+      {
+        "path": "src/CloudsEffect.ts",
+        "sha256": "db3800833dfb13e96ec292a631f9a782f7637909fb167c9443cd64583c9b43c3"
+      },
+      {
+        "path": "src/CloudsMaterial.ts",
+        "sha256": "ff72428e0d8008ed3489b26eb0d297b488d48a58187ad7d0b3aa758aa2f21e80"
+      },
+      {
+        "path": "src/CloudsPass.ts",
+        "sha256": "d233ab3284d6e6596802e4994c1c04d41392159e175751ee3cb047f8000ae5a9"
+      },
+      {
+        "path": "src/CloudsResolveMaterial.ts",
+        "sha256": "8f4182075456963374e1e7e1de963f2b0488b445c21e7b394e50438d4795c5c1"
+      },
+      {
+        "path": "src/DensityProfile.ts",
+        "sha256": "9364479ba789b5e5664060b48fed8999c0446235be97a465a206d8f076a1e557"
+      },
+      {
+        "path": "src/LocalWeather.ts",
+        "sha256": "e0e2947e1fcbf7dc75242505bbedb8c17a1e9f8255575698155a07bb91f7b096"
+      },
+      {
+        "path": "src/PassBase.ts",
+        "sha256": "1406141b208316719c02ded61fb771d29cf602eb196cf669a806d2d71a9110e5"
+      },
+      {
+        "path": "src/Procedural3DTexture.ts",
+        "sha256": "f96fe7b3d76e57988cc06a9543a4756e86221edcf261aa9264d3f81e4fb0c815"
+      },
+      {
+        "path": "src/ProceduralTexture.ts",
+        "sha256": "8e62e07c9fa5628a9ba6e3a9be48ad1a5eaf441b47f85222f68f9899f955eb96"
+      },
+      {
+        "path": "src/ShaderArrayPass.ts",
+        "sha256": "eabb6cdfe6608763fbd49b31cef388257acb97c3a25ce8d1d2b3fc58d9b83d8e"
+      },
+      {
+        "path": "src/ShadowMaterial.ts",
+        "sha256": "663e184663c87a8b8a5209bea6cfda208e7133bd0b359232b6668e824a90f4d8"
+      },
+      {
+        "path": "src/ShadowPass.ts",
+        "sha256": "321868e4cbdb58bfb664f9079a225e5543bf9a85f266e11f15d3625a013033b5"
+      },
+      {
+        "path": "src/ShadowResolveMaterial.ts",
+        "sha256": "4bd720c2da3bfa0e2070a080d46230fd3f48466df17004e640611829fcf3962c"
+      },
+      {
+        "path": "src/Turbulence.ts",
+        "sha256": "3e7e4cca1d0e0996315cd5870fa89fdca9958535b32371c50592b877918d3034"
+      },
+      {
+        "path": "src/bayer.ts",
+        "sha256": "3c8fc10bdc9bff3f537d776af52d1c3ba64065b0ede6a8830ef20088f4191d21"
+      },
+      {
+        "path": "src/constants.ts",
+        "sha256": "1341d55de83f45b1db5937c854845a8f8fdf31431b324625016621eae0e4e95b"
+      },
+      {
+        "path": "src/helpers/FrustumCorners.ts",
+        "sha256": "cbe00e374c6dc4e69fca0f83e7b10562ca2bb7024dc930267ad0eb7edfa2523d"
+      },
+      {
+        "path": "src/helpers/setArrayRenderTargetLayers.ts",
+        "sha256": "8f5e7a83eea22b74c4d1f2fcda83b3428acf78249b2ecec1c20ac834a23c2343"
+      },
+      {
+        "path": "src/helpers/splitFrustum.ts",
+        "sha256": "72797fdd5205303205524c7e86ba74738a12e12cfa2a0c5b00911b7988d276be"
+      },
+      {
+        "path": "src/index.ts",
+        "sha256": "ac0c542ddeca1ae7111325a08444226429273a82627d8d22ebd5f98c48d49e0b"
+      },
+      {
+        "path": "src/qualityPresets.ts",
+        "sha256": "b60588de42b80614e083a32fc4d26d479a266db7bc272c0d9fead2aeaf7091e9"
+      },
+      {
+        "path": "src/shaders/catmullRomSampling.glsl",
+        "sha256": "1934d33aa226ca2da34be3bce4af287ca9d2dcaa858ab4c996bae870e9d5980d"
+      },
+      {
+        "path": "src/shaders/cloudShape.frag",
+        "sha256": "0a2e83960f2aa8f29488699c2ba266fdfb3f2c23ff05d930c5792c37df33f764"
+      },
+      {
+        "path": "src/shaders/cloudShapeDetail.frag",
+        "sha256": "0d75842283971b40004919bc5d124e057099ee95a76a2850a66bce4ee297861f"
+      },
+      {
+        "path": "src/shaders/clouds.frag",
+        "sha256": "9bdbae45569399ed43728a374583f75f1ef2e873deab65fa79131e2bfd825994"
+      },
+      {
+        "path": "src/shaders/clouds.glsl",
+        "sha256": "bbb3f037e55aed6c989d77d197af33f44ee5565b0ca7988eab44f52ddd509eb5"
+      },
+      {
+        "path": "src/shaders/clouds.vert",
+        "sha256": "5c18ec6948b49764cae6a2498278cea45feeb7a92e703c32ac393fa0839e5947"
+      },
+      {
+        "path": "src/shaders/cloudsEffect.frag",
+        "sha256": "a204544e5e17f239d1037506badc9e628e38a2406c9747b90c5b3cdd3d947950"
+      },
+      {
+        "path": "src/shaders/cloudsResolve.frag",
+        "sha256": "ed36ccbf85ac017f3e220bd89ed65cfc73a74c40f2e2013439360eaf9421f67c"
+      },
+      {
+        "path": "src/shaders/cloudsResolve.vert",
+        "sha256": "9b2a5730178336f17216545f68c51bd4eb0877563999293bcc43747c15b4169c"
+      },
+      {
+        "path": "src/shaders/localWeather.frag",
+        "sha256": "b2108dd56f3aa1790e885892aa761f0d134463dbda717f8217a9681dd8045fac"
+      },
+      {
+        "path": "src/shaders/parameters.glsl",
+        "sha256": "2e09f0951d1e9312424bc0b3fe916024e8109bcb5b6856e11044364c61e8226f"
+      },
+      {
+        "path": "src/shaders/perlin.glsl",
+        "sha256": "eb5523c83dd86a848cf61ac2659113df185c561290abc2e2c26cb2e7e68f917d"
+      },
+      {
+        "path": "src/shaders/shadow.frag",
+        "sha256": "7c80aceb815e56a639ff8709fc3969eff67cff3ac50894966811d6e39e449c35"
+      },
+      {
+        "path": "src/shaders/shadow.vert",
+        "sha256": "9b2a5730178336f17216545f68c51bd4eb0877563999293bcc43747c15b4169c"
+      },
+      {
+        "path": "src/shaders/shadowResolve.frag",
+        "sha256": "b23889a2bc99631bb29b721588e09a0cacc5b571b6618b9b27d35daf5d447926"
+      },
+      {
+        "path": "src/shaders/shadowResolve.vert",
+        "sha256": "9b2a5730178336f17216545f68c51bd4eb0877563999293bcc43747c15b4169c"
+      },
+      {
+        "path": "src/shaders/structuredSampling.glsl",
+        "sha256": "057e53764ffb6cc2dd510316f62aedc6821baf9b4d14acba7c1812e2c93756d7"
+      },
+      {
+        "path": "src/shaders/tileableNoise.glsl",
+        "sha256": "7746f7ec38efbe4e547fe7140838d3fea67e87228176e8a68ff1a3c3c397146c"
+      },
+      {
+        "path": "src/shaders/turbulence.frag",
+        "sha256": "417c19cfa5541eed068ec93538636c9b7c279a815be11101797f139fe1885978"
+      },
+      {
+        "path": "src/shaders/types.glsl",
+        "sha256": "c7c351a59bf3b58648de4447cb1d9a3a8317a713c83fc6f5e804866d7c4fe397"
+      },
+      {
+        "path": "src/shaders/varianceClipping.glsl",
+        "sha256": "b7ef065e7e7b9e8069ea3f6a3597f4e25e3ca4809b0ad2aa1bdae10abcbeaba6"
+      },
+      {
+        "path": "src/uniforms.ts",
+        "sha256": "7c32bcb5572f795580fe102d990bfd09340c7810e2ebc91ab8a7b1402c6b1480"
+      }
+    ]
+  },
+  "excluded": {
+    "src/CloudLayers.test.ts": "upstream test; testing gate belongs to the parent batch",
+    "src/r3f/": "React Three Fiber entry points are not part of the local Three.js runtime closure",
+    "assets/": "runtime assets remain under the existing public Takram asset provenance",
+    "build/": "generated package output is not vendored",
+    "types/": "TypeScript checks the pinned source directly",
+    "README.md": "package documentation/demo entry point is not runtime source",
+    "WebGPU": "no WebGPU source is present in the installed 0.7.6 clouds package"
+  },
+  "upstreamDiff": {
+    "mechanism": "byte-for-byte directory diff against the installed package source",
+    "command": "diff -ruN --exclude=CloudLayers.test.ts --exclude=r3f apps/web/node_modules/@takram/three-clouds/src apps/web/src/scene/clouds/vendor/takram/src",
+    "expectedExitCode": 1,
+    "localSourceEdits": [
+      "src/CloudsEffect.ts",
+      "src/CloudsMaterial.ts",
+      "src/CloudsPass.ts",
+      "src/ShadowMaterial.ts",
+      "src/ShadowPass.ts",
+      "src/ShadowResolveMaterial.ts",
+      "src/index.ts",
+      "src/shaders/clouds.frag",
+      "src/shaders/clouds.glsl",
+      "src/shaders/parameters.glsl",
+      "src/shaders/shadow.frag",
+      "src/shaders/types.glsl",
+      "src/shaders/varianceClipping.glsl"
+    ]
+  },
+  "fork": {
+    "purpose": "Maintained media/lighting backend, shared transport, alternate near/far integration, and per-view temporal reconstruction; opt-in EVE development selector, visual acceptance pending.",
+    "modifiedFileCount": 15,
+    "addedFileCount": 4,
+    "modifiedUpstreamFiles": {
+      "src/CloudsEffect.ts": "Forward hooks; shared-lighting mode retires stock Beer shadow updates and exports one cloud overlay.",
+      "src/CloudsMaterial.ts": "Shared hook uniforms, bounded reference/far schedules, camera-depth and Bayer reprojection controls.",
+      "src/CloudsPass.ts": "Own paired view/history targets and invalidation; detect consecutive stationary physical camera frames across render-origin rebases.",
+      "src/ShadowMaterial.ts": "Resolve the media include and share hook uniforms with the shadow producer.",
+      "src/ShadowPass.ts": "Forward shader hooks to the production shadow material.",
+      "src/index.ts": "Export the local hook contract and stock hook factory.",
+      "src/shaders/clouds.frag": "Canonical physical media and disjoint light transport; native/far alternate L/T integrals and single atmosphere blend; conservative whole-ray budgets, log-depth, positive previous/current cloud depth, and GPU diagnostics. Near/far reconstruction depth follows finite opacity contributions with exact endpoints. Optional EVE low-flight horizon presentation blends premultiplied cloud light/opacity into the background after transport.",
+      "src/shaders/clouds.glsl": "Initialize finite media coefficients, weights and phase parameters.",
+      "src/shaders/parameters.glsl": "Declare physical reference sampling controls and stock phase defaults.",
+      "src/shaders/shadow.frag": "Canonical media shadow integration, clipped midpoint reference segments, finite opaque front depth, paired half-float storage and motion-depth encoding.",
+      "src/shaders/types.glsl": "Declare the lighting hook result ABI.",
+      "src/ShadowResolveMaterial.ts": "Tag scaled shadow storage so temporal clipping uses matching physical epsilon.",
+      "src/shaders/varianceClipping.glsl": "Paired per-channel epsilon for scaled half-float shadow history.",
+      "src/CloudsResolveMaterial.ts": "Bind paired history depth, stationary-camera eligibility, validity/disocclusion controls and opt-in stationary quadrature-depth allowance.",
+      "src/shaders/cloudsResolve.frag": "Per-tap history guards; exact stationary footprints and Bayer tuples; bounded opt-in stationary quadrature-depth allowance; jitter-aware spatial reconstruction and opacity-weighted metadata for unsampled moving/cut pixels."
+    },
+    "addedFiles": [
+      {
+        "path": "src/ShaderHooks.ts",
+        "purpose": "Immutable named shader include and shared-uniform bundle.",
+        "sha256": "11cb63c5b6caba1a038540a807be625743a4e142f8323bb7de9b13db8d235ca2"
+      },
+      {
+        "path": "src/shaders/lighting.glsl",
+        "purpose": "Invalid stock lighting hook preserving Takram fallback terms.",
+        "sha256": "173b09d0188d39721835ddaa1020cdeb0a601e6a6d8d0a9ec10a933a2f58018c"
+      },
+      {
+        "path": "src/shaders/media.glsl",
+        "purpose": "Stock media hook preserving Takram weather defaults.",
+        "sha256": "85d9492f794bf6f014992ba847fd71929308134ca60cf71e79cf0e4391b0d0e5"
+      },
+      {
+        "path": "src/tsconfig.json",
+        "purpose": "Scope assignment-style class-field emit to upstream decorated source; define-style fields shadow shader property accessors.",
+        "sha256": "9f96f57d6395ba9b5024226c5d863d4f4f5571919cf82121525acf2eb07dba38"
+      }
+    ],
+    "currentSha256": {
+      "src/CloudsEffect.ts": "f0d914fb1072e317fcf132a41bb4f0bfebaa2a42ad7c4c0cfc74c36182e431e3",
+      "src/CloudsMaterial.ts": "aba90a068639f62468dc1ccbd30f11723c8d2bde1a25c843b641e0df25a05be4",
+      "src/CloudsPass.ts": "0975358f4ffc819d658d01da0dc325d70b6e3980742796ea9b5198ec4b33f05f",
+      "src/ShadowMaterial.ts": "7c5f57e8dd42de74abe76a5d844da8a7912a09a198fef57767f190ccd18a6963",
+      "src/ShadowPass.ts": "5a6364d85abc2ca16669ef9cd8b31e2b517bc7fc1bf95d9830630c9e4e177b22",
+      "src/index.ts": "d6286007c2011f450c55d396bf012aac11a3d752a76ae9e1c46808b59a808734",
+      "src/shaders/clouds.frag": "7f112509c5c0df5a8676200a009eedc9a18018d78ba7e466c0ad1bbb3a7a94a3",
+      "src/shaders/clouds.glsl": "bda021b23bd847fa5de38c10031ff503ec01f754766de9a92f5ce0b76ea9085c",
+      "src/shaders/parameters.glsl": "e37b148ef19dfef28c26c10294886fad0a6860ed8947fcb225292e59e94f1dfc",
+      "src/shaders/shadow.frag": "0afb1b50a98bf3781005e11490f9cbb96c4dffac5da9c4201defcb86a8218590",
+      "src/shaders/types.glsl": "7318a117346a5ba60cab93708ce04ac16a2729047458cdfc557e498762dc5afc",
+      "src/ShadowResolveMaterial.ts": "ed4475031f5653b8988afe1062a0ca1575339f3c48720335317e7d8fe194c203",
+      "src/shaders/varianceClipping.glsl": "4c3a512abaf981299e2512e9a712c80bcf32c7c91a376dd93e980c53e85f5e92",
+      "src/CloudsResolveMaterial.ts": "d9fc987b426fe5f67fcef58549f2abe3baa60c87f59b22c0beb86fbe7bcbb0d4",
+      "src/shaders/cloudsResolve.frag": "72e36df25a5e53ce4586220bb7795ef5c325ec7088c6b1314e4da0fbd6d730a3"
+    }
+  }
+}

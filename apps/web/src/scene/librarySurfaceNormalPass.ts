@@ -1,5 +1,6 @@
 import { NormalPass, RenderPass } from 'postprocessing';
-import { Camera, Color, Line, Material, Mesh, MeshNormalMaterial, Object3D, Points, Scene, Sprite } from 'three';
+import { Camera, Color, Line, Material, Mesh, MeshNormalMaterial, Object3D, Points, Scene, ShaderMaterial, Sprite } from 'three';
+import { createTerrainSurfaceNormalMaterial } from './terrain/terrainSurfaceNormal';
 
 type NormalShader = Pick<Parameters<MeshNormalMaterial['onBeforeCompile']>[0], 'vertexShader' | 'fragmentShader'>;
 
@@ -22,12 +23,13 @@ export function maskSurfaceNormalShader(shader: NormalShader): void {
   shader.fragmentShader = fragmentShader;
 }
 
-/** Drop-in NormalPass for geometric normals with the terrain water coverage mask. */
+/** Geometric normals, with coverage discard only for separate water overlays. */
 export class SurfaceNormalPass extends NormalPass {
   // Public at runtime, omitted from the pinned postprocessing declarations.
   declare readonly renderPass: RenderPass;
   #normalMaterial: MeshNormalMaterial;
   #waterMaterial = new MeshNormalMaterial();
+  #terrainMaterials = new Map<ShaderMaterial, { material: MeshNormalMaterial; release: () => void }>();
   #originalMaterials = new Map<Mesh, Material | Material[]>();
   #originalLayers = new Map<Object3D, number>();
   #clearColor = new Color();
@@ -54,6 +56,25 @@ export class SurfaceNormalPass extends NormalPass {
   #replaceMaterials = (object: Object3D): void => {
     if (object instanceof Mesh) {
       this.#originalMaterials.set(object, object.material);
+      const source = object.material;
+      if (source instanceof ShaderMaterial && source.uniforms.terrainSurfaceNoiseTexture) {
+        let entry = this.#terrainMaterials.get(source);
+        if (!entry) {
+          const material = createTerrainSurfaceNormalMaterial(source);
+          const release = () => {
+            source.removeEventListener('dispose', release);
+            this.#terrainMaterials.delete(source);
+            material.dispose();
+          };
+          entry = { material, release };
+          source.addEventListener('dispose', release);
+          this.#terrainMaterials.set(source, entry);
+        }
+        object.material = entry.material;
+        return;
+      }
+      // Unified terrainWaterMask tiles cover both land and water. Their stock
+      // normal material must keep every fragment, matching their color/depth.
       object.material = object.geometry.hasAttribute('waterMask') ? this.#waterMaterial : this.#normalMaterial;
     } else if (object instanceof Line || object instanceof Points || object instanceof Sprite) {
       // Exclude unsupported drawables without hiding their mesh children or changing materials.
@@ -96,6 +117,7 @@ export class SurfaceNormalPass extends NormalPass {
     // JS private fields keep Pass.dispose's shallow walk from disposing these twice.
     this.#normalMaterial.dispose();
     this.#waterMaterial.dispose();
+    for (const entry of this.#terrainMaterials.values()) entry.release();
     super.dispose();
   }
 }

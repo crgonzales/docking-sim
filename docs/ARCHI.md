@@ -62,6 +62,23 @@ physical inputs → in-code derivations), baked Hillaire atmosphere LUTs
 RGB float is unfilterable in WebGL2), KTX2/UASTC textures + seeded cloud
 placement mask via `scripts/make*.mjs` (provenance: `assets/ASSETS.md`).
 
+Development renderer (`renderer=library&cloudSystem=eve`, isolated EVE worktree):
+Takram Bruneton atmosphere and a maintained Three-clouds fork provide the host
+passes. Canonical world-fixed cloud density feeds local volumes, shared lighting
+and a prepared opacity/height column atlas for orbital views. Light-cache
+texels average transmitted light from canonical subrays, never prethreshold
+noise. Premultiplied
+transport blends once over 50–120 km. The reference weather patch is opt-in.
+Terrain selection uses a bounded best-first quadtree (300 records, depth ≤16);
+workers build the existing DEM/procedural height field. Four shared periodic
+RGBA16F textures hold material heights and baked spatial slopes. Patch-local
+phase reduction preserves ground precision. Color and normal passes share the
+geographic water classifier and bounded imagery-to-reflectance calibration.
+The latter is artistic calibration, not measured albedo. Resource ownership and
+verified limits: `6-memo/eve-cloud-system/stabilization-completion.md`. This
+development selector has not replaced the root URL renderer or integrated the
+separate F/A-18 prototype.
+
 ## Roadmap
 
 1. ~~Restructure + cinematic visual pass (Earth, starfield, craft, HUD)~~ ✅ v0.2.0 (primitive craft; normalized glTF models are a documented follow-up — see `apps/web/public/assets/ASSETS.md`)

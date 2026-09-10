@@ -9,6 +9,7 @@ import {
   retiredTerrainNodeKeys,
   selectTerrainNodes,
   swapCompleteSiblings,
+  indexDesiredTerrain,
 } from './terrainNodeSet';
 
 describe('terrain live node policy', () => {
@@ -120,5 +121,19 @@ describe('terrain live node policy', () => {
     ];
     expect(retiredTerrainNodeKeys([parent], children)).toEqual([nodeAddressKey(parent)]);
     expect(retiredTerrainNodeKeys(children, [parent])).toEqual(children.map(nodeAddressKey).sort());
+  });
+
+  it('refines toward a sparse grandchild without merging unrelated branches', () => {
+    const parent = rootTerrainNodes()[0]!;
+    const children = [childAddress(parent, 0, 0), childAddress(parent, 1, 0), childAddress(parent, 0, 1), childAddress(parent, 1, 1)];
+    const desired = [childAddress(children[0]!, 0, 0)];
+    const index = indexDesiredTerrain(desired);
+    const ready = terrainResidencyKeys(children);
+    ready.delete(nodeAddressKey(children[3]!));
+    expect(swapCompleteSiblings([parent], desired, ready, index)).toEqual([parent]);
+    ready.add(nodeAddressKey(children[3]!));
+    expect(new Set(swapCompleteSiblings([parent], desired, ready, index).map(nodeAddressKey)))
+      .toEqual(new Set(children.map(nodeAddressKey)));
+    expect(mergeCompleteSiblings(children, desired, ready, index)).toHaveLength(4);
   });
 });

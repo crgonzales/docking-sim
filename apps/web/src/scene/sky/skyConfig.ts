@@ -170,12 +170,12 @@ export const SKY_CONFIG: SkyConfig = {
     // level 16 ~5 m. Below the raster's depth, height comes from the finest
     // resident ancestor tile plus procedural detail.
     //
-    // Kept at 10 for frame budget, not fidelity: selectTerrainNodes walks the
-    // tree every frame until screen-space error is satisfied, so cost grows
-    // sharply with depth near the ground — 16 pegged the main thread (55 fps
-    // -> under 2, then an unresponsive renderer). Raise deliberately, and
-    // re-measure low-altitude fps when doing so.
-    maxLevel: 10,
+    // The selector now reserves its full resident closure before each split;
+    // it evaluates at most the 300-record budget, even with a deep LOD ceiling.
+    // The old depth-10 workaround left ~305 m vertices near the camera and
+    // could not represent the existing metre-scale height field. Refine only
+    // the nearest footprint to ~5 m while retaining the same memory/work cap.
+    maxLevel: 16,
     tileCacheBudgetMB: 64,
     maxLivePatches: 300,
     workerBuildConcurrency: 4,

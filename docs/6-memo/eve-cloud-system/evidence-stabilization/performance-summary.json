@@ -1,0 +1,48 @@
+{
+  "hardware": "Apple M3 / ANGLE Metal",
+  "drawingBuffer": [
+    981,
+    1043
+  ],
+  "dpr": 1,
+  "quality": "medium",
+  "runs": [
+    {
+      "name": "final-shadow-descent",
+      "durationSeconds": 88.9,
+      "fpsMedian": 60,
+      "fpsMin": 12.7,
+      "intervalP95MsMedian": 17.7,
+      "intervalP95MsMax": 181,
+      "maxLightUpdateGpuMs": 56.3372,
+      "textureRange": [
+        30,
+        34
+      ],
+      "maxResident": 298,
+      "rendererErrors": []
+    },
+    {
+      "name": "final-shadow-ascent",
+      "durationSeconds": 83.8,
+      "fpsMedian": 60.0,
+      "fpsMin": 58.9,
+      "intervalP95MsMedian": 17.7,
+      "intervalP95MsMax": 20.8,
+      "maxLightUpdateGpuMs": 15.8927,
+      "textureRange": [
+        34,
+        34
+      ],
+      "maxResident": 298,
+      "rendererErrors": []
+    }
+  ],
+  "limits": [
+    "No weaker hardware measured",
+    "Per-second FPS and interval p95; not an aggregate raw-frame p95",
+    "GPU pass timers are reported separately, not added into a frame time",
+    "No complete JS heap leak audit",
+    "First-descent loading hitches remain"
+  ]
+}

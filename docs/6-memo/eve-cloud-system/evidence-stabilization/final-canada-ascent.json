@@ -1,0 +1,5801 @@
+{
+  "context": {
+    "url": "http://127.0.0.1:5174/?renderer=library&cloudSystem=eve&probe=1&profile=1&quality=medium&dpr=1&flyto=46.472,-73.6077,459&pitch=0&yaw=90",
+    "lat": 46.472,
+    "lon": -73.6077,
+    "altitude": 400000,
+    "pitch": 0,
+    "yaw": 90,
+    "profile": true,
+    "videoRecording": false,
+    "sampleLimit": 900
+  },
+  "samples": [
+    {
+      "seconds": 73.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 459,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.4,
+      "frames": 4364,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 74.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 459,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.8,
+      "frames": 4424,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 75.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 459,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.6,
+      "frames": 4484,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 76.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 459,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.7,
+      "frames": 4545,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 77.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 459,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.7,
+      "frames": 4606,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 78.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 459,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.1,
+      "p95ms": 18.7,
+      "frames": 4667,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 79.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 459,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.5,
+      "frames": 4727,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 80.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 473,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.8,
+      "frames": 4787,
+      "rebases": 1,
+      "geometries": 107,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 81.7,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 641,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.5,
+      "frames": 4848,
+      "rebases": 1,
+      "geometries": 103,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 82.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 869,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.2,
+      "p95ms": 18.1,
+      "frames": 4909,
+      "rebases": 1,
+      "geometries": 98,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 83.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 1172,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.6,
+      "frames": 4969,
+      "rebases": 1,
+      "geometries": 96,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 84.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 1582,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 17.9,
+      "frames": 5029,
+      "rebases": 1,
+      "geometries": 95,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        295,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 294,
+          "displayed": 222,
+          "desired": 225,
+          "pendingBuilds": 4,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 4,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 85.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 2144,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.7,
+      "frames": 5090,
+      "rebases": 1,
+      "geometries": 95,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 86.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 2893,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.5,
+      "frames": 5150,
+      "rebases": 1,
+      "geometries": 95,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        295,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 294,
+          "displayed": 222,
+          "desired": 225,
+          "pendingBuilds": 4,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 4,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 87.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 3924,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.2,
+      "frames": 5211,
+      "rebases": 1,
+      "geometries": 92,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 88.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 5294,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.5,
+      "frames": 5271,
+      "rebases": 1,
+      "geometries": 92,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 89.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 7179,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.1,
+      "p95ms": 18.6,
+      "frames": 5332,
+      "rebases": 1,
+      "geometries": 88,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 90.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 9687,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.5,
+      "frames": 5392,
+      "rebases": 1,
+      "geometries": 85,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 91.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 13135,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18,
+      "frames": 5453,
+      "rebases": 2,
+      "geometries": 91,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 92.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 17810,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.5,
+      "frames": 5514,
+      "rebases": 2,
+      "geometries": 92,
+      "textures": 32,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 1,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 93.8,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 24045,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.6,
+      "frames": 5574,
+      "rebases": 3,
+      "geometries": 91,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 2,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 94.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 32602,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.1,
+      "p95ms": 18.2,
+      "frames": 5635,
+      "rebases": 4,
+      "geometries": 91,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 2,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 95.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 43957,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.8,
+      "frames": 5695,
+      "rebases": 5,
+      "geometries": 86,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 2,
+          "pendingSlices": 7,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 96.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 59362,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 24.4,
+      "frames": 5755,
+      "rebases": 6,
+      "geometries": 90,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 3,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "transition",
+        "farWeight": 0.048881681795929395
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 97.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 80078,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.1,
+      "p95ms": 18.3,
+      "frames": 5815,
+      "rebases": 8,
+      "geometries": 89,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        295,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 4,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "transition",
+        "farWeight": 0.3952151319412954
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 294,
+          "displayed": 222,
+          "desired": 225,
+          "pendingBuilds": 4,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 4,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 98.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 108586,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.7,
+      "frames": 5876,
+      "rebases": 11,
+      "geometries": 85,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        299,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 5,
+          "pendingSlices": 10,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "transition",
+        "farWeight": 0.928907243612798
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 298,
+          "displayed": 225,
+          "desired": 225,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": true
+        }
+      }
+    },
+    {
+      "seconds": 99.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 147195,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.5,
+      "frames": 5937,
+      "rebases": 15,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 7,
+          "pendingSlices": 27,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 100.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 199437,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 19,
+      "frames": 5998,
+      "rebases": 20,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 9,
+          "pendingSlices": 7,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 101.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 269241,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 19.6,
+      "frames": 6058,
+      "rebases": 26,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 12,
+          "pendingSlices": 33,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 102.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 365061,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.1,
+      "p95ms": 19.1,
+      "frames": 6119,
+      "rebases": 35,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "ascending",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 15,
+          "pendingSlices": 6,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 103.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 19,
+      "frames": 6179,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 104.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.2,
+      "p95ms": 18.9,
+      "frames": 6240,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 105.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 19.2,
+      "frames": 6300,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 106.9,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 19.4,
+      "frames": 6360,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 108,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 19.2,
+      "frames": 6421,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 109,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 19.4,
+      "frames": 6481,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 110,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 19.2,
+      "frames": 6542,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 111,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.8,
+      "frames": 6602,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 112,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.2,
+      "p95ms": 19.4,
+      "frames": 6663,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 113,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.7,
+      "frames": 6724,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 114,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 19.4,
+      "frames": 6784,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 115,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.9,
+      "frames": 6845,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 116,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 18.7,
+      "frames": 6906,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 117.1,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60.2,
+      "p95ms": 18.8,
+      "frames": 6967,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 118.1,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.6,
+      "frames": 7027,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 119.1,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 59.9,
+      "p95ms": 19.1,
+      "frames": 7087,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 120.1,
+      "renderer": "library",
+      "profile": true,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 46.472,
+      "longitude": -73.6077,
+      "pitch": 0,
+      "fps": 60,
+      "p95ms": 18.5,
+      "frames": 7147,
+      "rebases": 39,
+      "geometries": 4,
+      "textures": 33,
+      "tiles": {
+        "fetches": 114,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "timings": {
+        "context": {
+          "backend": "library",
+          "webgl": "webgl2",
+          "vendor": "Google Inc. (Apple)",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+          "canvas": [
+            981,
+            1043
+          ],
+          "drawingBuffer": [
+            981,
+            1043
+          ],
+          "dpr": 1,
+          "contextAttributes": {
+            "alpha": true,
+            "antialias": true,
+            "depth": true,
+            "stencil": false
+          },
+          "buffer": {
+            "owner": "effect-composer",
+            "input": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            },
+            "output": {
+              "size": [
+                981,
+                1043
+              ],
+              "format": 1023,
+              "type": 1016,
+              "samples": 0,
+              "colorSpace": ""
+            }
+          }
+        },
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    }
+  ],
+  "source": "timings-clouds-1789046062088.json"
+}

@@ -2,6 +2,8 @@
 const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
 export const LIBRARY_RENDERER = query.get('renderer') === 'library';
 export const RENDER_PROBE = query.get('probe') === '1';
+/** Phase 1 profiling is deliberately opt-in; normal flights add no timers. */
+export const PROBE_PROFILE = query.get('profile') === '1';
 export const PROBE_CLOUDS = query.get('clouds') !== '0';
 export const PROBE_DPR = Math.max(0.5, Math.min(1.75, Number(query.get('dpr') ?? '1')));
 // One photographic exposure for the entire prototype, including spacecraft.

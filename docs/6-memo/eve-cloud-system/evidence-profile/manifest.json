@@ -1,0 +1,141 @@
+{
+  "sourceCheckpoint": "ffd53b55a4e9a7748720f9d01e5792ea7f97a5a2",
+  "instrumentedTree": "ccd91109c99250fb30424f2c6a983fff03611ee2",
+  "device": "Apple M3 via ANGLE Metal; Chromium WebGL2",
+  "drawingBuffer": [
+    1292,
+    1059
+  ],
+  "video": false,
+  "notes": [
+    "Cloud shader fork is not active in these captures.",
+    "Scene-cold means fresh scene/terrain workers; assets/browser caches may already be warm.",
+    "The final device-identity capture adds WEBGL_debug_renderer_info diagnostics only.",
+    "CPU metrics are elapsed wall time, not exclusive CPU samples.",
+    "No build or asset generation overlapped sweep captures; ordinary desktop applications and bounded agent work were present.",
+    "Performance varies from earlier visual-only baseline; results fail acceptance and are not a benchmark promise."
+  ],
+  "captures": [
+    {
+      "file": "timings-clear-1788839002620.json",
+      "profile": true,
+      "clouds": false,
+      "run": "idle",
+      "samples": 28,
+      "medianIntervalFps": 16.2,
+      "minimumIntervalFps": 1.2,
+      "maximumIntervalP95ms": 2158.6,
+      "sha256": "5beb4abb104a949d4464d53b939a7af67064c54d45bd4ec49124e030733d38c4"
+    },
+    {
+      "file": "timings-clear-1788839066250.json",
+      "profile": true,
+      "clouds": false,
+      "run": "descending",
+      "samples": 28,
+      "medianIntervalFps": 8.5,
+      "minimumIntervalFps": 6.1,
+      "maximumIntervalP95ms": 493.3,
+      "sha256": "b4b1fd592e6c0a37df645b1b1928b859ebd06949309ee08dcd9076027f42d1e8"
+    },
+    {
+      "file": "timings-clear-1788839131801.json",
+      "profile": true,
+      "clouds": false,
+      "run": "ascending",
+      "samples": 28,
+      "medianIntervalFps": 8.5,
+      "minimumIntervalFps": 6.1,
+      "maximumIntervalP95ms": 421.4,
+      "sha256": "b5852d4e1c0aeb641407df68da2a59acb626e80c400efbbc997ae19783a53128"
+    },
+    {
+      "file": "timings-clear-1788839221466.json",
+      "profile": true,
+      "clouds": false,
+      "run": "descending",
+      "samples": 27,
+      "medianIntervalFps": 8.1,
+      "minimumIntervalFps": 4.6,
+      "maximumIntervalP95ms": 588.8,
+      "sha256": "54e4fae92357916ad14229cd3bda77772e882642dbc177e460217a76d03f8342"
+    },
+    {
+      "file": "timings-clouds-1788838825647.json",
+      "profile": true,
+      "clouds": true,
+      "run": "idle",
+      "samples": 16,
+      "medianIntervalFps": 10.9,
+      "minimumIntervalFps": 1,
+      "maximumIntervalP95ms": 2298.9,
+      "sha256": "556d28d4f1350f62e97ec3dbab166cdb90875a8b7f5d64a9e29f5c6223e9793c"
+    },
+    {
+      "file": "timings-clouds-1788838867259.json",
+      "profile": true,
+      "clouds": true,
+      "run": "descending",
+      "samples": 26,
+      "medianIntervalFps": 8.6,
+      "minimumIntervalFps": 5.9,
+      "maximumIntervalP95ms": 517.4,
+      "sha256": "13a09f68a847474e19243c5b7de0759599c0e4d603860a76a879bd22a8da0aff"
+    },
+    {
+      "file": "timings-clouds-1788838927430.json",
+      "profile": true,
+      "clouds": true,
+      "run": "ascending",
+      "samples": 28,
+      "medianIntervalFps": 9.1,
+      "minimumIntervalFps": 6.4,
+      "maximumIntervalP95ms": 522.9,
+      "sha256": "12306f163f15d4438f2f2277b06e5c31d2f877f75a6b2660955bf60307400f3a"
+    },
+    {
+      "file": "timings-clouds-1788838964503.json",
+      "profile": true,
+      "clouds": true,
+      "run": "descending",
+      "samples": 27,
+      "medianIntervalFps": 8.6,
+      "minimumIntervalFps": 5.4,
+      "maximumIntervalP95ms": 378.5,
+      "sha256": "92451b865e9a7a1f8b457839be436b52f077088d9c2ef77a458415785147901d"
+    },
+    {
+      "file": "timings-clouds-1788839263077.json",
+      "profile": false,
+      "clouds": true,
+      "run": "idle",
+      "samples": 30,
+      "medianIntervalFps": 12.9,
+      "minimumIntervalFps": 0.5,
+      "maximumIntervalP95ms": 2028.1,
+      "sha256": "abf299576cafbdeda320cdfc760d8e0adac613805aec7b5823d769de0c04d561"
+    },
+    {
+      "file": "timings-clouds-1788839336046.json",
+      "profile": false,
+      "clouds": true,
+      "run": "descending",
+      "samples": 26,
+      "medianIntervalFps": 7.9,
+      "minimumIntervalFps": 3.9,
+      "maximumIntervalP95ms": 707.3,
+      "sha256": "8f240aa590908790506402565a1aa38b4c5c320ff4d549b360d47f3c22c2d0ed"
+    },
+    {
+      "file": "timings-clouds-1788839577669.json",
+      "profile": true,
+      "clouds": true,
+      "run": "idle",
+      "samples": 24,
+      "medianIntervalFps": 22.3,
+      "minimumIntervalFps": 1.1,
+      "maximumIntervalP95ms": 1847,
+      "sha256": "802313aeb9cc47dea2cef204f5c648fbd99861855112e07a569a70cc39808277"
+    }
+  ]
+}

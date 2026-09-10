@@ -1,0 +1,19 @@
+No new blocking findings in the scoped lighting-volume delta.
+
+### Prior finding
+
+- “Capture filenames can exceed the recorder’s 100-character limit.” — **Addressed and unchanged.** The bounded, allowlisted naming helper remains at [renderEvidenceName.ts:2](/Users/carlosgonzales/dev/docking-sim-eve-clouds/apps/web/src/scene/renderEvidenceName.ts:2), used at [RenderProbe.tsx:98](/Users/carlosgonzales/dev/docking-sim-eve-clouds/apps/web/src/scene/RenderProbe.tsx:98). The immediately preceding review had no remaining findings.
+
+### New issues
+
+None.
+
+The producer now evaluates canonical zero-footprint subrays and averages transmittance after nonlinear density evaluation at [CloudLightVolume.ts:94](/Users/carlosgonzales/dev/docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudLightVolume.ts:94). Direct and ambient quantities remain separate, atomically published, and safely invalidated on failure.
+
+The fixture independently derives curved-shell Beer expectations at [CloudLightVolumeFixture.ts:118](/Users/carlosgonzales/dev/docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudLightVolumeFixture.ts:118), reads the actual stored array texels at [CloudLightVolumeFixture.ts:156](/Users/carlosgonzales/dev/docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudLightVolumeFixture.ts:156), and separately proves the canonical and prematurely filtered outcomes at [CloudLightVolumeFixture.ts:188](/Users/carlosgonzales/dev/docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudLightVolumeFixture.ts:188).
+
+Pending evidence: four spatial subrays make an active default update roughly three times as march-heavy despite the direct pacing reduction at [CloudLightVolume.ts:189](/Users/carlosgonzales/dev/docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudLightVolume.ts:189). The parent’s movement-cost measurement should close that empirical risk; there is no demonstrated performance failure to flag in this review.
+
+The reported 353 GPU cases, 47 affected tests, and full workspace build satisfy the review gate.
+
+APPROVED

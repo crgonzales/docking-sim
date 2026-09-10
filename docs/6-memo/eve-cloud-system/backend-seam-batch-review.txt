@@ -1,0 +1,17 @@
+Implemented Phase 1 backend seam.
+
+Files changed:
+
+- `CloudBackend.ts` — media/lighting contracts and overlay ABI.
+- `takramCloudBackend.ts` — immutable Takram backend adapter.
+- `clouds/index.ts` — public local exports.
+- Vendor constructors/materials/passes — shader hooks, shared uniforms, diagnostics, reference controls.
+- Vendor GLSL — media/lighting routing, physical transmittance, midpoint sampling, log-depth and spherical-height fixes.
+- `ShaderHooks.ts`, `media.glsl`, `lighting.glsl` — stock defaults and hook definitions.
+- `manifest.json`, `UPSTREAM.md` — preserved 48-file upstream inventory/hashes and recorded 11 modified plus 3 added fork files.
+
+Upstream/runtime path remains unchanged; no selector or `LibraryEffects` wiring was added. Weather/type fields, lighting volumes, distant clouds, fixtures, and tests remain for later batches.
+
+`git diff --check`, manifest parsing, and fork hash verification passed. Web build, typecheck, lint, tests, and install were not run due to the explicit parent profiling constraint.
+
+IMPLEMENTATION_COMPLETE

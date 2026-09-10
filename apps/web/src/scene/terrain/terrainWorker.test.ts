@@ -289,7 +289,7 @@ describe('terrain worker patch builder', () => {
     expect(messages[0].positions).toBeInstanceOf(ArrayBuffer);
   });
 
-  it('bounds structured-clone dispatch and drains queued builds in order', async () => {
+  it.each([1, 2])('bounds dispatch and uses idle workers with concurrency %i', async (concurrency) => {
     class FakeWorker implements TerrainWorkerLike {
       onmessage: ((event: MessageEvent<TerrainWorkerMessage>) => void) | null = null;
       onerror: ((event: ErrorEvent) => void) | null = null;
@@ -327,7 +327,7 @@ describe('terrain worker patch builder', () => {
     const workers: FakeWorker[] = [];
     const pool = new TerrainWorkerPool({
       workerCount: 2,
-      maxConcurrentBuilds: 1,
+      maxConcurrentBuilds: concurrency,
       workerFactory: () => {
         const worker = new FakeWorker();
         workers.push(worker);
@@ -339,7 +339,20 @@ describe('terrain worker patch builder', () => {
     const second = pool.build(buildRequest);
     const third = pool.build(buildRequest);
     expect(workers[0]?.posted).toHaveLength(1);
-    expect(workers[1]?.posted).toHaveLength(0);
+    expect(workers[1]?.posted).toHaveLength(concurrency - 1);
+
+    if (concurrency === 2) {
+      // Worker 0 remains occupied: request 2 must use the newly idle worker 1.
+      workers[1]!.complete(workers[1]!.posted[0]!.requestId!);
+      await second;
+      expect(workers[0]?.posted).toHaveLength(1);
+      expect(workers[1]?.posted).toHaveLength(2);
+      workers[0]!.complete(workers[0]!.posted[0]!.requestId!);
+      workers[1]!.complete(workers[1]!.posted[1]!.requestId!);
+      await Promise.all([first, third]);
+      pool.dispose();
+      return;
+    }
 
     workers[0]!.complete(workers[0]!.posted[0]!.requestId!);
     await first;

@@ -1,0 +1,2286 @@
+{
+  "context": {
+    "url": "http://127.0.0.1:5174/?renderer=library&probe=1&quality=medium&dpr=1&flyto=40.5,-75,400000&pitch=-20&yaw=90",
+    "lat": 40.5,
+    "lon": -75,
+    "altitude": 400000,
+    "pitch": -20,
+    "yaw": 90,
+    "profile": false,
+    "videoRecording": false,
+    "sampleLimit": 900
+  },
+  "samples": [
+    {
+      "seconds": 1.2,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "loading",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 4.9,
+      "p95ms": 401.7,
+      "frames": 6,
+      "rebases": 1,
+      "geometries": 14,
+      "textures": 1,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        0,
+        0,
+        0
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 2.3,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "loading",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 2.8,
+      "p95ms": 367.6,
+      "frames": 9,
+      "rebases": 1,
+      "geometries": 14,
+      "textures": 1,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        0,
+        0,
+        0
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 4.7,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "loading",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 0.4,
+      "p95ms": 2428.2,
+      "frames": 10,
+      "rebases": 1,
+      "geometries": 14,
+      "textures": 1,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": null,
+      "shadowTexelM": [],
+      "lightingSelection": [
+        0,
+        0,
+        0
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 6.9,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 0.5,
+      "p95ms": 2028.1,
+      "frames": 11,
+      "rebases": 1,
+      "geometries": 15,
+      "textures": 23,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        0,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 8,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 9.8,
+      "p95ms": 313.9,
+      "frames": 23,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 9.1,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 11.1,
+      "p95ms": 316.7,
+      "frames": 35,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 10.2,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 10.2,
+      "p95ms": 320.7,
+      "frames": 46,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 11.2,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 11.1,
+      "p95ms": 320.3,
+      "frames": 58,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 12.6,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 9.8,
+      "p95ms": 338.4,
+      "frames": 71,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 13.6,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 10.4,
+      "p95ms": 433.5,
+      "frames": 82,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 15,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 6.5,
+      "p95ms": 453,
+      "frames": 91,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 16.2,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 8.5,
+      "p95ms": 364.5,
+      "frames": 101,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 17.2,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 9.7,
+      "p95ms": 335.7,
+      "frames": 111,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 18.3,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 9.7,
+      "p95ms": 332.2,
+      "frames": 121,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 19.3,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 11.2,
+      "p95ms": 301,
+      "frames": 133,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 20.3,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 12.7,
+      "p95ms": 278.5,
+      "frames": 146,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 22.1,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 2.9,
+      "p95ms": 1644.5,
+      "frames": 151,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 23.1,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 14.9,
+      "p95ms": 305,
+      "frames": 167,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 24.1,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 13.1,
+      "p95ms": 297.2,
+      "frames": 180,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 25.2,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 12.6,
+      "p95ms": 200,
+      "frames": 193,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 26.2,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 17.1,
+      "p95ms": 103.6,
+      "frames": 211,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 27.4,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 18.7,
+      "p95ms": 201.2,
+      "frames": 233,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 28.4,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 25.6,
+      "p95ms": 100.3,
+      "frames": 259,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 29.4,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 18,
+      "p95ms": 256,
+      "frames": 277,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 30.4,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 24.8,
+      "p95ms": 98.1,
+      "frames": 302,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 31.5,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 24.1,
+      "p95ms": 85,
+      "frames": 328,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 32.5,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 15.9,
+      "p95ms": 422.2,
+      "frames": 344,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 33.5,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 16.9,
+      "p95ms": 254.3,
+      "frames": 361,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 34.5,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 26.5,
+      "p95ms": 94.3,
+      "frames": 388,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 35.6,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 15.3,
+      "p95ms": 312.8,
+      "frames": 404,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 36.6,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 20.4,
+      "p95ms": 84.8,
+      "frames": 425,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 37.6,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 21,
+      "p95ms": 86.8,
+      "frames": 446,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    },
+    {
+      "seconds": 38.6,
+      "renderer": "library",
+      "profile": false,
+      "clouds": true,
+      "quality": "medium",
+      "weather": "global",
+      "dpr": 1,
+      "state": "ready",
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 15.8,
+      "p95ms": 312.4,
+      "frames": 462,
+      "rebases": 1,
+      "geometries": 16,
+      "textures": 27,
+      "tiles": {
+        "fetches": 0,
+        "decodes": 0,
+        "evictions": 0,
+        "failures": 0
+      },
+      "run": "idle",
+      "videoRecording": false,
+      "visibility": "visible",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "weatherStructure": "legacy",
+      "waterReflections": true,
+      "shadowFarM": 2742752.919270909,
+      "shadowTexelM": [
+        3191.354016526659,
+        6670.609095489697,
+        16679.66656442717
+      ],
+      "lightingSelection": [
+        1,
+        29,
+        2
+      ],
+      "timings": {
+        "enabled": false,
+        "intervalMs": 0,
+        "cpu": {},
+        "cpuCumulative": {},
+        "gpu": {
+          "status": "profile-disabled",
+          "pendingQueries": 0,
+          "disjointEvents": 0,
+          "discardedQueries": 0,
+          "timings": {},
+          "cumulative": {}
+        },
+        "context": null,
+        "terrain": {
+          "resident": 0,
+          "displayed": 0,
+          "desired": 0,
+          "pendingBuilds": 0,
+          "pendingWorkerQueue": 0,
+          "activeWorkerBuilds": 0,
+          "coverageReady": false
+        }
+      }
+    }
+  ],
+  "curation": {
+    "original": "timings-clouds-1788839263077.json",
+    "originalSha256": "5ea57164fb99a864ce2fc9d16179d037c46e77f2cb5341a06aeab091fffbb603",
+    "rule": "All sweep samples plus final three idle samples; startup-only captures kept in full.",
+    "profileTree": "ccd91109c99250fb30424f2c6a983fff03611ee2"
+  }
+}

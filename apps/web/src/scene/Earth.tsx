@@ -234,8 +234,8 @@ ${EARTH_KTX_UV_GLSL}
     // Opaque material metadata; aerial lighting restores alpha after decoding.
     // Color and water classification must share the packaged KTX orientation.
     vec2 libraryMapUv = earthMapUv(vUv);
-    float libraryWater = clamp(texture2D(specMap, libraryMapUv).r, 0.0, 1.0);
-    gl_FragColor = vec4(texture2D(dayMap, libraryMapUv).rgb, 1.0 - 0.5 * libraryWater);
+    float libraryWater = earthWaterFraction(texture2D(specMap, libraryMapUv).r);
+    gl_FragColor = vec4(earthSurfaceAlbedo(texture2D(dayMap, libraryMapUv).rgb), 1.0 - 0.5 * libraryWater);
     return;
     #endif
     vec3 n = normalize(vWorldNormal);
@@ -739,6 +739,7 @@ export function Earth({ worldFrame, terrainSourceRef }: EarthProps) {
         terrainSourceRef={terrainSourceRef}
         earthCenterF64={EARTH_CENTER_WORLD}
         dayMap={dayMap}
+        specMap={specMap}
         cloudMap={cloudMap}
         transmittanceLut={transmittanceLut}
         mainDeckRotation={mainDeckRotation}

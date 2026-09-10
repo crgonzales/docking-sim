@@ -1,0 +1,31 @@
+{
+  "checkpoint": "ffd53b55a4e9a7748720f9d01e5792ea7f97a5a2",
+  "tree": "22e78a9563b6dce7172d928785478cfd55acbc9f",
+  "note": "Visual baseline only. Captured while implementation agents ran; not a controlled performance benchmark. Source camera angles checked via visible probe.",
+  "files": [
+    {
+      "file": "20000m-p-45.png",
+      "sha256": "72e511e3b6c2f844e2160250fe5ce9e7dca4b032825be67255ff3c8386bc8b51"
+    },
+    {
+      "file": "20000m-p-45.json",
+      "sha256": "13157f5228436e66f8622cebc49bd37bf051c7977e7e5b2bc914875a49127594"
+    },
+    {
+      "file": "400000m-p-20.png",
+      "sha256": "b42a2317baec2ec1e4fc700b20c93266d133ec9c4548d81c37608c9288af6c87"
+    },
+    {
+      "file": "400000m-p-20.json",
+      "sha256": "7b644bd994a26281eb8afcdb5892425f1b638458372ccb9977b90bfbea01c7bc"
+    },
+    {
+      "file": "3000m-p-10.png",
+      "sha256": "79dba373308e42e4aa72689f31c5ca8f6d1577900b1cd85d880cfe9c3be81fbb"
+    },
+    {
+      "file": "3000m-p-10.json",
+      "sha256": "388bddb032ed66cf0b7cbab4d106a95e9ffe2caf842f20c0e7c9a9ad4b6b6636"
+    }
+  ]
+}

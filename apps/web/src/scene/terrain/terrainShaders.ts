@@ -1,5 +1,6 @@
 import { LIBRARY_RENDERER } from '../renderProbeConfig';
 import { EARTH_KTX_UV_GLSL } from '../libraryEarthTextureOrientation';
+import { TERRAIN_SURFACE_GLSL } from './terrainSurface';
 import {
   NormalBlending,
   ShaderMaterial,
@@ -21,6 +22,7 @@ import { SUN_DIR } from '../sun';
 
 export interface TerrainShaderTextures {
   readonly dayMap: Texture;
+  readonly specMap?: Texture;
   readonly cloudMap: Texture;
   readonly transmittanceLut: Texture;
 }
@@ -33,17 +35,30 @@ export interface TerrainShaderOptions {
 
 export const TERRAIN_VERTEX_SHADER = /* glsl */ `
   uniform vec3 planetCenter;
+  #ifdef LIBRARY_LIGHTING
+  attribute float terrainWaterMask;
+  varying float vTerrainWaterMask;
+  #endif
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec3 vRadial;
+  #ifdef TERRAIN_SURFACE_DETAIL
+  varying vec3 vTerrainLocalM;
+  #endif
   // Preserve geometric clipping; use the same fragment depth as built-in materials.
   #include <common>
   #include <logdepthbuf_pars_vertex>
   void main() {
+    #ifdef LIBRARY_LIGHTING
+    vTerrainWaterMask = terrainWaterMask;
+    #endif
     vWorldNormal = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWorldPos = wp.xyz;
     vRadial = wp.xyz - planetCenter;
+    #ifdef TERRAIN_SURFACE_DETAIL
+    vTerrainLocalM = position;
+    #endif
     gl_Position = projectionMatrix * viewMatrix * wp;
     #include <logdepthbuf_vertex>
   }
@@ -53,6 +68,9 @@ export const TERRAIN_FRAGMENT_SHADER = /* glsl */ `
   #include <logdepthbuf_pars_fragment>
   #define AERIAL_SKY_RADIANCE vec3(${AERIAL_SKY_RADIANCE.map((value) => value.toFixed(2)).join(', ')})
   uniform sampler2D dayMap;
+  #ifdef TERRAIN_WATER_MAP
+  uniform sampler2D specMap;
+  #endif
   uniform sampler2D cloudMap;
   uniform sampler2D transmittanceLut;
   uniform vec3 sunDir;
@@ -64,12 +82,22 @@ export const TERRAIN_FRAGMENT_SHADER = /* glsl */ `
   varying vec3 vWorldNormal;
   varying vec3 vWorldPos;
   varying vec3 vRadial;
+  #ifdef TERRAIN_SURFACE_DETAIL
+  uniform float terrainSurfaceMetersPerUnit;
+  varying vec3 vTerrainLocalM;
+  #endif
+  #ifdef LIBRARY_LIGHTING
+  varying float vTerrainWaterMask;
+  #endif
 
   const float PI = 3.14159265359;
 
 ${CLOUD_COVERAGE_GLSL}
 ${SKY_LIGHTING_GLSL}
 ${EARTH_KTX_UV_GLSL}
+#ifdef TERRAIN_SURFACE_DETAIL
+${TERRAIN_SURFACE_GLSL}
+#endif
 
   vec3 rotateY(vec3 point, float angle) {
     float c = cos(angle);
@@ -119,13 +147,36 @@ ${EARTH_KTX_UV_GLSL}
     // procedural palette keeps the terrain legible where the map is dark or
     // minified, without making an imagery dependency for the DEM.
     vec3 albedo = texture2D(dayMap, uv).rgb;
+    #ifdef LIBRARY_LIGHTING
+    albedo = earthSurfaceAlbedo(albedo);
+    #endif
     vec3 regional = proceduralTerrainColor(altitudeM, slope, latitude);
     vec3 surface = regional * mix(vec3(0.72), albedo * 1.18, 0.62);
 
     #ifdef LIBRARY_LIGHTING
+    #ifdef TERRAIN_SURFACE_DETAIL
+    vec3 detailAlbedo = terrainSurfaceAlbedo(albedo, vRadial * terrainSurfaceMetersPerUnit, n, vTerrainLocalM);
+    #endif
     // Share the globe's linear imagery albedo across the LOD transition. The
     // legacy elevation palette paints every low, flat region sand-colored.
-    gl_FragColor = vec4(albedo, 1.0);
+    // One opaque surface owns both materials and depth, including shorelines.
+    // A second water draw would compete with sea-level terrain at equal depth.
+    #ifdef TERRAIN_WATER_MAP
+    // Match the orbital surface's geographic mask at every LOD. A binary
+    // vertex mask draws triangle-shaped shorelines that change with the mesh.
+    float water = earthWaterFraction(texture2D(specMap, uv).r);
+    #ifdef TERRAIN_SURFACE_DETAIL
+    albedo = mix(detailAlbedo, albedo, water);
+    #endif
+    gl_FragColor = vec4(albedo, 1.0 - 0.5 * water);
+    #else
+    #ifdef TERRAIN_SURFACE_DETAIL
+    albedo = detailAlbedo;
+    #endif
+    gl_FragColor = vTerrainWaterMask >= 0.5
+      ? vec4(0.015, 0.04, 0.07, 0.5)
+      : vec4(albedo, 1.0);
+    #endif
     return;
     #endif
     float ndotl = dot(n, sunDir);
@@ -168,11 +219,12 @@ export function createTerrainPatchMaterial(
   options: TerrainShaderOptions,
 ): ShaderMaterial {
   return new ShaderMaterial({
-    defines: LIBRARY_RENDERER ? { LIBRARY_LIGHTING: 1 } : {},
+    defines: LIBRARY_RENDERER ? { LIBRARY_LIGHTING: 1, ...(textures.specMap ? { TERRAIN_WATER_MAP: 1 } : {}) } : {},
     vertexShader: TERRAIN_VERTEX_SHADER,
     fragmentShader: TERRAIN_FRAGMENT_SHADER,
     uniforms: {
       dayMap: { value: textures.dayMap },
+      specMap: { value: textures.specMap ?? null },
       cloudMap: { value: textures.cloudMap },
       transmittanceLut: { value: textures.transmittanceLut },
       sunDir: { value: SUN_DIR },

@@ -3,7 +3,9 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Color, DirectionalLight, NoToneMapping } from 'three';
 import { LibraryEffects } from './LibraryEffects';
 import { RenderProbe } from './RenderProbe';
+import { RenderFrameTiming } from './RenderFrameTiming';
 import { LIBRARY_RENDERER, PROBE_DPR, RENDER_PROBE } from './renderProbeConfig';
+import { renderTimings } from './renderTimings';
 import { Earth } from './Earth';
 import { Effects } from './Effects';
 import { CameraRig } from './CameraRig';
@@ -177,6 +179,7 @@ function useSunExtinctionTint(): Color {
  * the planet coexisting without z-fighting.
  */
 export function SceneRoot() {
+  const fixtureOnly = RENDER_PROBE && new URLSearchParams(window.location.search).get('fixture') === 'clouds';
   const sunTint = useSunExtinctionTint();
   const worldFrame = useMemo(() => new WorldFrame(), []);
   const terrainSourceRef = useRef<TerrainTileSource | null>(null);
@@ -209,6 +212,8 @@ export function SceneRoot() {
         camera.lookAt(0, -80, 0);
       }}
     >
+      {!fixtureOnly && renderTimings.enabled && <RenderFrameTiming />}
+      {!fixtureOnly && <>
       <WorldFrameController worldFrame={worldFrame} />
       <Suspense fallback={null}>
         {!LIBRARY_RENDERER && <Starfield />}
@@ -223,6 +228,7 @@ export function SceneRoot() {
       <FrameExposureController worldFrame={worldFrame} exposureRef={frameExposureRef} />
       <DockingCameraPass worldFrame={worldFrame} exposureRef={frameExposureRef} />
       {LIBRARY_RENDERER ? <LibraryEffects worldFrame={worldFrame} exposureRef={frameExposureRef} /> : <Effects exposureRef={frameExposureRef} />}
+      </>}
       {RENDER_PROBE && <RenderProbe worldFrame={worldFrame} />}
     </Canvas>
   );

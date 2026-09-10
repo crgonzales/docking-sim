@@ -1,5 +1,9 @@
-import type { CloudsEffect } from '@takram/three-clouds';
 import { Camera, Matrix4 } from 'three';
+
+interface CloudReprojectionTarget {
+  cloudsPass: { currentMaterial: { copyReprojectionMatrix(camera: Camera): void } };
+  shadowPass: { currentMaterial: { uniforms: { reprojectionMatrices: { value: Matrix4[] } } } };
+}
 
 /** Previous camera and shadow matrices must describe the new render origin.
  * Re-express them before the library samples history, preserving physical
@@ -10,7 +14,7 @@ export class CloudReprojectionFrame {
   private readonly anchor = [0, 0, 0];
   private ready = false;
 
-  beforeRender(clouds: CloudsEffect, anchor: readonly number[], metersPerUnit: number): void {
+  beforeRender(clouds: CloudReprojectionTarget, anchor: readonly number[], metersPerUnit: number): void {
     if (!this.ready) return;
     const dx = (anchor[0] - this.anchor[0]) / metersPerUnit;
     const dy = (anchor[1] - this.anchor[1]) / metersPerUnit;

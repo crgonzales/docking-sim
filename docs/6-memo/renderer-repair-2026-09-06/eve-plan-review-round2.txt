@@ -1,0 +1,5 @@
+- Prior finding: “`22e78a…` is an unreachable Git tree; create a durable commit/ref and separate worktree.” — **Addressed.** [Line 9](/Users/carlosgonzales/dev/docking-sim/docs/1-plans/F_0.12.0_eve-cloud-system.plan.md:9) records the verified commit/ref, while [line 150](/Users/carlosgonzales/dev/docking-sim/docs/1-plans/F_0.12.0_eve-cloud-system.plan.md:150) and [lines 172–173](/Users/carlosgonzales/dev/docking-sim/docs/1-plans/F_0.12.0_eve-cloud-system.plan.md:172) require preservation and a separate implementation worktree. Repository inspection confirms commit `ffd53b55…` resolves to tree `22e78a95…`.
+
+- No new material blockers introduced.
+
+APPROVED

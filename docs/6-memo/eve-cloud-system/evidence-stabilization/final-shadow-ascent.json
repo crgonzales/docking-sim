@@ -1,0 +1,4953 @@
+{
+  "source": "timings-clouds-1789047345468.json",
+  "sourceSha256": "02f028c17c997e20d3e7464ceac33950ac107cea2ff165bb20efc37e6e3507e7",
+  "context": {
+    "backend": "library",
+    "webgl": "webgl2",
+    "vendor": "Google Inc. (Apple)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+    "canvas": [
+      981,
+      1043
+    ],
+    "drawingBuffer": [
+      981,
+      1043
+    ],
+    "dpr": 1,
+    "contextAttributes": {
+      "alpha": true,
+      "antialias": true,
+      "depth": true,
+      "stencil": false
+    },
+    "buffer": {
+      "owner": "effect-composer",
+      "input": {
+        "size": [
+          981,
+          1043
+        ],
+        "format": 1023,
+        "type": 1016,
+        "samples": 0,
+        "colorSpace": ""
+      },
+      "output": {
+        "size": [
+          981,
+          1043
+        ],
+        "format": 1023,
+        "type": 1016,
+        "samples": 0,
+        "colorSpace": ""
+      }
+    }
+  },
+  "scope": "No recording/test runner. Ascent includes subsequent free-camera travel. Warmed ascent and first descent kept separate.",
+  "samples": [
+    {
+      "seconds": 147.7,
+      "altitudeMSL": 140,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.9,
+      "geometries": 122,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4
+    },
+    {
+      "seconds": 148.7,
+      "altitudeMSL": 140,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 122,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4623
+    },
+    {
+      "seconds": 149.7,
+      "altitudeMSL": 140,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 122,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.475
+    },
+    {
+      "seconds": 150.7,
+      "altitudeMSL": 140,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 122,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4717
+    },
+    {
+      "seconds": 151.7,
+      "altitudeMSL": 174,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 118,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4542
+    },
+    {
+      "seconds": 152.7,
+      "altitudeMSL": 236,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 118,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4279
+    },
+    {
+      "seconds": 153.7,
+      "altitudeMSL": 320,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60.1,
+      "p95ms": 17.6,
+      "geometries": 115,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.441
+    },
+    {
+      "seconds": 154.7,
+      "altitudeMSL": 432,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 59.9,
+      "p95ms": 17.8,
+      "geometries": 117,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.415
+    },
+    {
+      "seconds": 155.7,
+      "altitudeMSL": 583,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 115,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4683
+    },
+    {
+      "seconds": 156.7,
+      "altitudeMSL": 790,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 114,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4492
+    },
+    {
+      "seconds": 157.8,
+      "altitudeMSL": 1071,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 112,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4262
+    },
+    {
+      "seconds": 158.8,
+      "altitudeMSL": 1453,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 113,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4426
+    },
+    {
+      "seconds": 159.8,
+      "altitudeMSL": 1960,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 113,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4067
+    },
+    {
+      "seconds": 160.8,
+      "altitudeMSL": 2658,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 113,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4262
+    },
+    {
+      "seconds": 161.8,
+      "altitudeMSL": 3603,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60.1,
+      "p95ms": 17.7,
+      "geometries": 109,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 294,
+        "displayed": 222,
+        "desired": 225,
+        "pendingBuilds": 4,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 4,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4393
+    },
+    {
+      "seconds": 162.8,
+      "altitudeMSL": 4885,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 104,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.423
+    },
+    {
+      "seconds": 163.8,
+      "altitudeMSL": 6594,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 104,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.445
+    },
+    {
+      "seconds": 164.8,
+      "altitudeMSL": 8940,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 105,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4049
+    },
+    {
+      "seconds": 165.8,
+      "altitudeMSL": 12076,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 105,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 294,
+        "displayed": 222,
+        "desired": 225,
+        "pendingBuilds": 4,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 4,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4583
+    },
+    {
+      "seconds": 166.9,
+      "altitudeMSL": 16358,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60.1,
+      "p95ms": 17.7,
+      "geometries": 107,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.3836
+    },
+    {
+      "seconds": 167.9,
+      "altitudeMSL": 22073,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 106,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4067
+    },
+    {
+      "seconds": 168.9,
+      "altitudeMSL": 29928,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 104,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 20,
+          "pendingSlices": 8,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 89.1896,
+        "averageMs": 1.4621,
+        "maxMs": 7.2722,
+        "lastMs": 3.488
+      },
+      "terrainSelectionCpuMs": 0.4279
+    },
+    {
+      "seconds": 169.9,
+      "altitudeMSL": 40393,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.9,
+      "geometries": 106,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 21,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "volume",
+        "farWeight": 0
+      },
+      "terrain": {
+        "resident": 294,
+        "displayed": 222,
+        "desired": 225,
+        "pendingBuilds": 4,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 4,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 10.0427,
+        "averageMs": 0.1674,
+        "maxMs": 3.2188,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4167
+    },
+    {
+      "seconds": 170.9,
+      "altitudeMSL": 54760,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 110,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 22,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "transition",
+        "farWeight": 0.013242356091624975
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 96.1684,
+        "averageMs": 1.5765,
+        "maxMs": 7.1977,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.3607
+    },
+    {
+      "seconds": 171.9,
+      "altitudeMSL": 73900,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 104,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 22,
+          "pendingSlices": 10,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "transition",
+        "farWeight": 0.2701138523996092
+      },
+      "terrain": {
+        "resident": 294,
+        "displayed": 222,
+        "desired": 225,
+        "pendingBuilds": 4,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 4,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 102.5086,
+        "averageMs": 1.7085,
+        "maxMs": 9.6405,
+        "lastMs": 1.3109
+      },
+      "terrainSelectionCpuMs": 0.4083
+    },
+    {
+      "seconds": 172.9,
+      "altitudeMSL": 100185,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 106,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 24,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "transition",
+        "farWeight": 0.8049735428177149
+      },
+      "terrain": {
+        "resident": 298,
+        "displayed": 225,
+        "desired": 225,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": true
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 125.1935,
+        "averageMs": 2.0524,
+        "maxMs": 8.0968,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0.4082
+    },
+    {
+      "seconds": 173.9,
+      "altitudeMSL": 135149,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 58.9,
+      "p95ms": 20.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 25,
+          "pendingSlices": 28,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 59,
+        "totalMs": 173.6661,
+        "averageMs": 2.9435,
+        "maxMs": 15.8927,
+        "lastMs": 5.9124
+      },
+      "terrainSelectionCpuMs": 0.4114
+    },
+    {
+      "seconds": 174.9,
+      "altitudeMSL": 183253,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60.1,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 27,
+          "pendingSlices": 16,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 213.3698,
+        "averageMs": 3.4979,
+        "maxMs": 9.1055,
+        "lastMs": 2.119
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 175.9,
+      "altitudeMSL": 248396,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60.1,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 30,
+          "pendingSlices": 38,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 236.4381,
+        "averageMs": 3.876,
+        "maxMs": 9.345,
+        "lastMs": 9.345
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 176.9,
+      "altitudeMSL": 335257,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 59.9,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "ascending",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 33,
+          "pendingSlices": 14,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 240.0898,
+        "averageMs": 4.0015,
+        "maxMs": 10.3923,
+        "lastMs": 2.534
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 177.9,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 38,
+          "pendingSlices": 38,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 246.0895,
+        "averageMs": 4.1015,
+        "maxMs": 11.0045,
+        "lastMs": 8.0238
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 179,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -20,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 69.108,
+        "averageMs": 1.1329,
+        "maxMs": 9.1694,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 180,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -34.44,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 181,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -29.63,
+      "fps": 60.1,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 182,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 59.8,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 183,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60.1,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 184,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 185,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.9,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 186,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 187,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.9,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 188.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60.1,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 189.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 59.9,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 190.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 191.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 192.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 193.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.9,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 194.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 195.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 18.4,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 196.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 197.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 198.1,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 199.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60.1,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 200.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.9,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 201.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.5,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 202.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 203.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60.1,
+      "p95ms": 17.4,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 204.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 59.9,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 205.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 206.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 207.2,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 208.3,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60.1,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 209.3,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 59.9,
+      "p95ms": 17.5,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 210.3,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 211.3,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.4,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 212.3,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -26.42,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 213.3,
+      "altitudeMSL": 400000,
+      "latitude": 40.5,
+      "longitude": -75,
+      "pitch": -32.83,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 214.3,
+      "altitudeMSL": 445536,
+      "latitude": 40.861,
+      "longitude": -75.4268,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 39,
+          "pendingSlices": 14,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 87.6671,
+        "averageMs": 1.4372,
+        "maxMs": 8.6355,
+        "lastMs": 1.5908
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 215.4,
+      "altitudeMSL": 574211,
+      "latitude": 41.837,
+      "longitude": -76.5925,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.4,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 47,
+          "pendingSlices": 36,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 226.786,
+        "averageMs": 3.7178,
+        "maxMs": 8.1231,
+        "lastMs": 7.2529
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 216.4,
+      "altitudeMSL": 702886,
+      "latitude": 42.7951,
+      "longitude": -77.7542,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.8,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 54,
+          "pendingSlices": 10,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 240.0389,
+        "averageMs": 3.9351,
+        "maxMs": 9.1059,
+        "lastMs": 1.5742
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 217.4,
+      "altitudeMSL": 774640,
+      "latitude": 43.3219,
+      "longitude": -78.4005,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 65,
+          "pendingSlices": 34,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 227.7538,
+        "averageMs": 3.7959,
+        "maxMs": 8.3586,
+        "lastMs": 7.0792
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 218.4,
+      "altitudeMSL": 863380,
+      "latitude": 43.966,
+      "longitude": -79.1986,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 18.1,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 67,
+          "pendingSlices": 20,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 221.0687,
+        "averageMs": 3.6845,
+        "maxMs": 7.8635,
+        "lastMs": 3.0815
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 219.4,
+      "altitudeMSL": 992015,
+      "latitude": 44.8859,
+      "longitude": -80.3535,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [
+          "camera-cut"
+        ],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 77,
+          "pendingSlices": 42,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 214.3336,
+        "averageMs": 3.5137,
+        "maxMs": 8.3931,
+        "lastMs": 7.8377
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 220.4,
+      "altitudeMSL": 1093298,
+      "latitude": 45.599,
+      "longitude": -81.2615,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 84,
+          "pendingSlices": 16,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 236.9898,
+        "averageMs": 3.8851,
+        "maxMs": 7.6466,
+        "lastMs": 1.9161
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 221.4,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 59.8,
+      "p95ms": 17.9,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 92,
+          "pendingSlices": 40,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 221.9734,
+        "averageMs": 3.6996,
+        "maxMs": 8.4735,
+        "lastMs": 6.9939
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 222.4,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60.1,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 68.9004,
+        "averageMs": 1.1295,
+        "maxMs": 7.2946,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 223.4,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 224.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60.1,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 225.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.7,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 226.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.5,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 227.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.5,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 228.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 20.1,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 229.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 230.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 60,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    },
+    {
+      "seconds": 231.5,
+      "altitudeMSL": 1152255,
+      "latitude": 46.0096,
+      "longitude": -81.7896,
+      "pitch": -39.25,
+      "fps": 60,
+      "p95ms": 17.6,
+      "geometries": 18,
+      "textures": 34,
+      "state": "ready",
+      "run": "idle",
+      "error": "",
+      "shadows": "on",
+      "cloudOverlay": true,
+      "eve": {
+        "backend": "eve",
+        "state": "ready",
+        "error": "",
+        "assetBytes": 2618320,
+        "viewBytes": 21490956,
+        "historyReset": [],
+        "light": {
+          "state": "ready",
+          "format": "R16F",
+          "bytes": 3145728,
+          "generation": 93,
+          "pendingSlices": 0,
+          "error": ""
+        },
+        "columns": {
+          "state": "ready",
+          "bytes": 22369624,
+          "completedRows": 1024,
+          "error": ""
+        },
+        "referenceWeather": false,
+        "representation": "scaled",
+        "farWeight": 1
+      },
+      "terrain": {
+        "resident": 0,
+        "displayed": 0,
+        "desired": 0,
+        "pendingBuilds": 0,
+        "pendingWorkerQueue": 0,
+        "activeWorkerBuilds": 0,
+        "coverageReady": false
+      },
+      "gpuLightMs": {
+        "count": 61,
+        "totalMs": 0,
+        "averageMs": 0,
+        "maxMs": 0,
+        "lastMs": 0
+      },
+      "terrainSelectionCpuMs": 0
+    }
+  ],
+  "summary": {
+    "durationSeconds": 83.8,
+    "fpsMedian": 60.0,
+    "fpsMin": 58.9,
+    "intervalP95MsMedian": 17.7,
+    "intervalP95MsMax": 20.8,
+    "maxLightUpdateGpuMs": 15.8927,
+    "textureRange": [
+      34,
+      34
+    ],
+    "maxResident": 298,
+    "rendererErrors": []
+  }
+}

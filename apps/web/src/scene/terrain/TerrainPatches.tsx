@@ -21,6 +21,8 @@ import {
   TERRAIN_WORKER_BUILD_CONCURRENCY,
   terrainFadeFromAltitudeM,
 } from '../sky/skyConfig';
+import { LIBRARY_RENDERER, PROBE_PROFILE } from '../renderProbeConfig';
+import { createTerrainSurfaceNoise, createTerrainSurfaceUniforms, type TerrainSurfaceNoiseResource } from './terrainSurface';
 import {
   nodeAngularRadiusRadians,
   nodeCenterDirection,
@@ -60,8 +62,10 @@ import {
   swapCompleteSiblings,
   terrainResidencyKeys,
   isTerrainCoverageReady,
+  indexDesiredTerrain,
 } from './terrainNodeSet';
 import { buildWaterPatchGeometry, type WaterPatchGeometry } from './terrainWater';
+import { renderTimings } from '../renderTimings';
 import type { WorldFrame, WorldPositionF64 } from '../worldFrame';
 
 const BASE_MANIFEST_URL = '/assets/terrain/manifest.json';
@@ -102,6 +106,7 @@ export interface TerrainPatchesProps {
   readonly terrainSourceRef: { current: TerrainTileSource | null };
   readonly earthCenterF64: WorldPositionF64;
   readonly dayMap: Texture;
+  readonly specMap: Texture;
   readonly cloudMap: Texture;
   readonly transmittanceLut: Texture;
   readonly mainDeckRotation: { current: number };
@@ -123,10 +128,11 @@ function subtract(a: Vec3, b: Vec3): Vec3 {
   return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }
 
-function isDescendantOrSelf(candidate: TerrainNodeAddress, ancestor: TerrainNodeAddress): boolean {
-  if (candidate.face !== ancestor.face || candidate.level < ancestor.level) return false;
-  const shift = candidate.level - ancestor.level;
-  return (candidate.x >> shift) === ancestor.x && (candidate.y >> shift) === ancestor.y;
+function sameNodes(a: readonly TerrainNodeAddress[], b: readonly TerrainNodeAddress[]): boolean {
+  return a.length === b.length && a.every((node, i) => {
+    const other = b[i]!;
+    return node.face === other.face && node.level === other.level && node.x === other.x && node.y === other.y;
+  });
 }
 
 function childrenOf(address: TerrainNodeAddress): readonly TerrainNodeAddress[] {
@@ -163,15 +169,31 @@ async function loadManifest(url: string): Promise<TerrainTileManifest> {
   return response.json() as Promise<TerrainTileManifest>;
 }
 
-function meshGeometry(result: PatchBuildResult): BufferGeometry {
+export function createTerrainPatchGeometry(
+  result: PatchBuildResult,
+  water: WaterPatchGeometry,
+  libraryRenderer = LIBRARY_RENDERER,
+): BufferGeometry {
   const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(new Float32Array(result.positions), 3));
-  geometry.setAttribute('normal', new BufferAttribute(new Float32Array(result.normals), 3));
+  let positions = new Float32Array(result.positions);
+  if (libraryRenderer) {
+    // Share one continuous surface at mixed/negative-height shores. Keep the
+    // original skirt bottoms: water's collapsed skirts cannot close LOD cracks.
+    positions = new Float32Array(water.positions.slice(0));
+    positions.set(new Float32Array(result.positions).subarray(result.baseVertexCount * 3), result.baseVertexCount * 3);
+    // Distinct from waterMask: the normal pass must retain the entire surface,
+    // including dry land, rather than apply its water-only coverage discard.
+    geometry.setAttribute('terrainWaterMask', new BufferAttribute(new Float32Array(water.waterMask), 1));
+  }
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new BufferAttribute(new Float32Array(libraryRenderer ? water.normals : result.normals), 3));
   geometry.setAttribute('uv', new BufferAttribute(new Float32Array(result.uvs), 2));
   geometry.setIndex(new BufferAttribute(new Uint32Array(result.indices), 1));
   // Worker positions are relative to the patch centre, so the local sphere
   // is centred at zero and remains valid while RTC placement changes.
-  geometry.boundingSphere = new Sphere(new Vector3(0, 0, 0), result.boundingSphereRadiusM);
+  geometry.boundingSphere = new Sphere(new Vector3(0, 0, 0), libraryRenderer
+    ? Math.max(result.boundingSphereRadiusM, water.boundingSphereRadiusM)
+    : result.boundingSphereRadiusM);
   return geometry;
 }
 
@@ -197,6 +219,7 @@ export function TerrainPatches({
   terrainSourceRef,
   earthCenterF64,
   dayMap,
+  specMap,
   cloudMap,
   transmittanceLut,
   mainDeckRotation,
@@ -221,6 +244,7 @@ export function TerrainPatches({
   const desiredResidencyRef = useRef(terrainResidencyKeys(rootTerrainNodes()));
   const dirtyHeroRef = useRef(new Set<string>());
   const waterTimeRef = useRef(0);
+  const surfaceNoiseRef = useRef<TerrainSurfaceNoiseResource | null>(null);
   // Hero DEM tiles are a small, address-independent asset cache: unlike
   // sourceRef's per-address tile cache, nothing here needs clearing when
   // terrain fades out and re-engages later.
@@ -232,6 +256,9 @@ export function TerrainPatches({
   const recordsRef = useRef(new Map<string, PatchRecord>());
   const displayedRef = useRef<readonly TerrainNodeAddress[]>([]);
   const desiredRef = useRef<readonly TerrainNodeAddress[]>([]);
+  const desiredIndexRef = useRef(indexDesiredTerrain([]));
+  const selectionInputsRef = useRef<readonly number[]>([]);
+  const reconciliationDirtyRef = useRef(true);
 
   const disposeRecord = (key: string): void => {
     diagRef.current.disposed += 1;
@@ -246,6 +273,7 @@ export function TerrainPatches({
       record.waterMesh.material.dispose();
     }
     recordsRef.current.delete(key);
+    reconciliationDirtyRef.current = true;
     dirtyHeroRef.current.delete(key);
   };
 
@@ -284,14 +312,24 @@ export function TerrainPatches({
   };
 
   const reconcileDisplayed = (): void => {
+    if (!reconciliationDirtyRef.current) return;
+    reconciliationDirtyRef.current = false;
+    const startedAt = renderTimings.start('terrain.reconciliation');
     const desired = desiredRef.current;
     const ready = readyKeys();
-    let next = mergeCompleteSiblings(displayedRef.current, desired, ready);
-    next = swapCompleteSiblings(next, desired, ready);
-    const roots = rootTerrainNodes();
-    if (next.length === 0 && roots.every((root) => ready.has(nodeAddressKey(root)))) next = roots;
-    displayedRef.current = next;
-    retireUnused();
+    try {
+      let next = mergeCompleteSiblings(displayedRef.current, desired, ready, desiredIndexRef.current);
+      next = swapCompleteSiblings(next, desired, ready, desiredIndexRef.current);
+      const roots = rootTerrainNodes();
+      if (next.length === 0 && roots.every((root) => ready.has(nodeAddressKey(root)))) next = roots;
+      // Keep advancing on subsequent frames when a jump requires several
+      // coarsening/splitting levels, even if no new worker result arrives.
+      if (!sameNodes(next, displayedRef.current)) reconciliationDirtyRef.current = true;
+      displayedRef.current = next;
+      retireUnused();
+    } finally {
+      renderTimings.end('terrain.reconciliation', startedAt);
+    }
   };
 
   const retireUnused = (): void => {
@@ -313,9 +351,17 @@ export function TerrainPatches({
     if (heroInputKey !== gatherHeroTiles(result.address).map((tile) => tile.regionId).join('|')) return;
     if (!recordsRef.current.has(key) && recordsRef.current.size >= TERRAIN_MAX_LIVE_PATCHES) return;
     diagRef.current.built += 1;
-    const geometry = meshGeometry(result);
+    const geometryStartedAt = renderTimings.start('terrain.geometryPreparation');
+    let geometry: BufferGeometry;
+    let waterData: WaterPatchGeometry;
+    try {
+      waterData = buildWaterPatchGeometry(result, radius);
+      geometry = createTerrainPatchGeometry(result, waterData);
+    } finally {
+      renderTimings.end('terrain.geometryPreparation', geometryStartedAt);
+    }
     const material = createTerrainPatchMaterial(
-      { dayMap, cloudMap, transmittanceLut } satisfies TerrainShaderTextures,
+      { dayMap, specMap, cloudMap, transmittanceLut } satisfies TerrainShaderTextures,
       {
         planetCenter: worldFrame.toRender(earthCenterF64),
         surfaceRadius: radius,
@@ -323,27 +369,39 @@ export function TerrainPatches({
       },
     );
     const mesh = new Mesh(geometry, material);
+    if (LIBRARY_RENDERER) {
+      surfaceNoiseRef.current ??= createTerrainSurfaceNoise();
+      Object.assign(material.uniforms, createTerrainSurfaceUniforms(surfaceNoiseRef.current, radius, {
+        enabled: new URLSearchParams(location.search).get('terrainDetail') !== 'off',
+        patchCenterM: result.patchCenterF64,
+      }));
+      material.uniforms.terrainSurfaceMetersPerUnit = { value: SKY_CONFIG.renderScaleMPerUnit };
+      material.defines.TERRAIN_SURFACE_DETAIL = 1;
+    }
     mesh.frustumCulled = true;
     mesh.renderOrder = 0.5;
     groupRef.current?.add(mesh);
-    const waterData = buildWaterPatchGeometry(result, radius);
     let waterMesh: Mesh<BufferGeometry, ShaderMaterial> | null = null;
-    if (waterData.hasWater) {
+    // Library terrain already emits opaque land/water metadata on one surface.
+    // Keep the separate animated, transparent water overlay for legacy only.
+    if (waterData.hasWater && !LIBRARY_RENDERER) {
+      const waterGeometryStartedAt = renderTimings.start('terrain.geometryPreparation');
       const waterGeometry = waterMeshGeometry(waterData);
+      renderTimings.end('terrain.geometryPreparation', waterGeometryStartedAt);
       const waterMaterial = createWaterMaterial({
         planetCenter: worldFrame.toRender(earthCenterF64),
         surfaceRadius: radius,
         atmosphereRadius: radius * SKY_DERIVED.atmosphereRadiusMultiplier,
       });
       waterMesh = new Mesh(waterGeometry, waterMaterial);
-      waterMesh.visible = false; // ISOLATION: built but never rendered
+      waterMesh.visible = false; // Placed and made visible with its terrain patch.
       waterMesh.frustumCulled = true;
       waterMesh.renderOrder = 0.6;
       groupRef.current?.add(waterMesh);
     }
     if (recordsRef.current.has(key)) disposeRecord(key);
     recordsRef.current.set(key, { result, mesh, waterMesh, heroInputKey });
-    reconcileDisplayed();
+    reconciliationDirtyRef.current = true;
   };
 
   const gatherTiles = (address: TerrainNodeAddress): readonly PatchBuildRequest['tiles'][number][] | null => {
@@ -467,6 +525,7 @@ export function TerrainPatches({
       type: 'buildPatch', address, tiles, codec: source.manifest.codec,
       heroRegions: SKY_CONFIG.terrain.heroRegions.map((region): PatchHeroRegionConfig => ({ ...region })),
       heroTiles, planetRadiusM: EARTH_RADIUS_M,
+      ...(PROBE_PROFILE ? { profile: true } : {}),
     };
     void pool.build(request)
       .then((result) => createPatch(result, epoch, heroInputKey))
@@ -540,6 +599,7 @@ export function TerrainPatches({
 
     if (fade <= 0 || altitudeM > TERRAIN_ENGAGEMENT_ALTITUDE_M) {
       setCoverageReady(false);
+      renderTimings.setTerrainState(0, 0, 0, 0, 0, 0, false);
       if (poolRef.current !== null || recordsRef.current.size > 0 || initializationRef.current !== null) {
         epochRef.current += 1;
         poolRef.current?.dispose();
@@ -550,27 +610,42 @@ export function TerrainPatches({
         disposeAll();
       }
       desiredRef.current = [];
+      desiredIndexRef.current = indexDesiredTerrain([]);
+      selectionInputsRef.current = [];
+      reconciliationDirtyRef.current = true;
       return;
     }
 
     const projectionScalePx = Math.abs(camera.projectionMatrix.elements[5]) * size.height * 0.5;
-    desiredRef.current = selectTerrainNodes(cameraFromEarth, {
-      planetRadiusM: radius,
-      projectionScalePx,
-      splitThresholdPx: SKY_CONFIG.terrain.screenSpaceErrorPx,
-      maxLevel: TERRAIN_MAX_LEVEL,
-      maxLivePatches: TERRAIN_MAX_LIVE_PATCHES,
-      horizonCulling: true,
-    });
-    desiredResidencyRef.current = terrainResidencyKeys(desiredRef.current);
-    poolRef.current?.cancelQueued((request) => !desiredResidencyRef.current.has(nodeAddressKey(request.address)));
+    const inputs = [...cameraFromEarth, radius, projectionScalePx, SKY_CONFIG.terrain.screenSpaceErrorPx, TERRAIN_MAX_LEVEL, TERRAIN_MAX_LIVE_PATCHES];
+    if (inputs.some((value, i) => value !== selectionInputsRef.current[i])) {
+      const selectionStartedAt = renderTimings.start('terrain.selection');
+      try {
+        const desired = selectTerrainNodes(cameraFromEarth, {
+          planetRadiusM: radius,
+          projectionScalePx,
+          splitThresholdPx: SKY_CONFIG.terrain.screenSpaceErrorPx,
+          maxLevel: TERRAIN_MAX_LEVEL,
+          maxLivePatches: TERRAIN_MAX_LIVE_PATCHES,
+          horizonCulling: true,
+        });
+        if (!sameNodes(desired, desiredRef.current)) {
+          desiredRef.current = desired;
+          desiredIndexRef.current = indexDesiredTerrain(desired);
+          desiredResidencyRef.current = terrainResidencyKeys(desired);
+          reconciliationDirtyRef.current = true;
+          poolRef.current?.cancelQueued((request) => !desiredResidencyRef.current.has(nodeAddressKey(request.address)));
+        }
+        selectionInputsRef.current = inputs;
+      } finally {
+        renderTimings.end('terrain.selection', selectionStartedAt);
+      }
+    }
     reconcileDisplayed();
     startTerrain();
     for (const root of rootTerrainNodes()) ensurePatch(root, epochRef.current);
     for (const node of displayedRef.current) {
-      const wantsDescendant = desiredRef.current.some((candidate) => candidate.level > node.level
-        && isDescendantOrSelf(candidate, node));
-      if (wantsDescendant) requestChildren(node, epochRef.current);
+      if (desiredIndexRef.current.splits.has(nodeAddressKey(node))) requestChildren(node, epochRef.current);
     }
     for (const key of dirtyHeroRef.current) {
       const record = recordsRef.current.get(key);
@@ -594,6 +669,7 @@ export function TerrainPatches({
       record.mesh.visible = displayedKeys.has(key)
         && (opaque || isTerrainNodeHorizonVisible(record.result.address, cameraFromEarth, radius));
       record.mesh.material.uniforms.planetCenter!.value.fromArray(renderEarthCenter);
+      record.mesh.material.uniforms.terrainSurfaceCameraPositionM?.value.fromArray(cameraFromEarth);
       record.mesh.material.uniforms.terrainOpacity!.value = opaque ? 1 : fade;
       record.mesh.material.uniforms.cloudRotationOffset!.value = mainDeckRotation.current;
       if (record.waterMesh !== null) {
@@ -606,7 +682,17 @@ export function TerrainPatches({
     }
     // Publish after placement and visibility, never from an async worker
     // callback while freshly created meshes are still at their default pose.
-    setCoverageReady(isTerrainCoverageReady(displayedRef.current, readyKeys()));
+    const coverageReady = isTerrainCoverageReady(displayedRef.current, readyKeys());
+    setCoverageReady(coverageReady);
+    renderTimings.setTerrainState(
+      recordsRef.current.size,
+      displayedRef.current.length,
+      desiredRef.current.length,
+      buildRequestsRef.current.size,
+      poolRef.current?.queuedCount ?? 0,
+      poolRef.current?.activeBuildCount ?? 0,
+      coverageReady,
+    );
   });
 
   useEffect(() => {
@@ -619,6 +705,8 @@ export function TerrainPatches({
       sourceRef.current?.clear();
       terrainSourceRef.current = null;
       disposeAll();
+      surfaceNoiseRef.current?.dispose();
+      surfaceNoiseRef.current = null;
     };
   }, []);
 
