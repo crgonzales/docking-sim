@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { DirectionalLight, Mesh } from 'three';
+import { DirectionalLight, HemisphereLight, LightProbe, Mesh } from 'three';
 import { libraryStatus } from '../scene/LibraryEffects';
 import { renderTimings } from '../scene/renderTimings';
 import { SUN_DIR } from '../scene/sun';
@@ -33,11 +33,18 @@ export function FlightEvidenceCapture({ session, environment, fixtureName, chara
     const characterPose = character?.camera;
     const name = `flight-${fixtureName}-${Date.now()}`;
     const localLights: unknown[] = [];
+    const ambientLights: unknown[] = [];
     let shadowCasters = 0;
     scene.traverseVisible((object) => {
       if (object instanceof Mesh && object.castShadow) shadowCasters++;
+      if (object instanceof LightProbe) ambientLights.push({
+        type: 'probe', intensity: object.intensity, coefficients: object.sh.coefficients.map(value => value.toArray()),
+      });
+      if (object instanceof HemisphereLight) ambientLights.push({
+        type: 'hemisphere', intensity: object.intensity, sky: object.color.toArray(), ground: object.groundColor.toArray(),
+      });
       if (object instanceof DirectionalLight) localLights.push({
-        intensity: object.intensity, position: object.position.toArray(),
+        intensity: object.intensity, color: object.color.toArray(), position: object.position.toArray(),
         target: object.target.position.toArray(), castShadow: object.castShadow,
         mapReady: object.shadow.map !== null, mapSize: object.shadow.mapSize.toArray(),
       });
@@ -46,7 +53,12 @@ export function FlightEvidenceCapture({ session, environment, fixtureName, chara
       url: window.location.href, fixture: fixtureName, renderer: 'library', cloudSystem: 'eve',
       quality, dpr: gl.getPixelRatio(), drawingBuffer: [gl.domElement.width, gl.domElement.height], paused: character?.paused ?? session.paused,
       timings: renderTimings.snapshot(),
-      localLighting: { shadowsEnabled: gl.shadowMap.enabled, shadowCasters, lights: localLights },
+      rendererResources: {
+        ...gl.info.memory, programs: gl.info.programs?.length ?? 0,
+        maxTextureSize: gl.capabilities.maxTextureSize,
+        maxTextureUnits: gl.capabilities.maxTextures,
+      },
+      localLighting: { shadowsEnabled: gl.shadowMap.enabled, shadowCasters, lights: localLights, ambientLights },
       physicalState: structuredClone(session.state), controls: structuredClone(session.controls),
       environment: structuredClone(session.environment),
       environmentClock: environment
@@ -71,6 +83,7 @@ export function FlightEvidenceCapture({ session, environment, fixtureName, chara
         state: libraryStatus.state, error: libraryStatus.error,
         shadowRange: structuredClone(libraryStatus.shadowRange), shadowTexelM: [...libraryStatus.shadowTexelM],
         lightingSelection: [...libraryStatus.lightingSelection], eve: structuredClone(libraryStatus.eve),
+        graphics: structuredClone(libraryStatus.graphics),
       },
     };
     void fetch('/__render-evidence', {

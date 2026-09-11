@@ -5,7 +5,6 @@ import {
   BufferGeometry,
   DoubleSide,
   Float32BufferAttribute,
-  Material,
   Matrix4,
   Mesh,
   MeshStandardMaterial,
@@ -14,7 +13,8 @@ import {
   type Group,
 } from 'three';
 import type { FlightSession } from './flightSession';
-import { isExcludedHornetPart } from './hornetPresentation';
+import type { FlightCloudLightingBridge } from '../scene/flightCloudLighting';
+import { cloneHornet, resolveHornetAnisotropy, type ClonedHornet } from './hornetMaterials';
 
 const HORNET_MODEL_URL = '/assets/models/f18/hornet-source.glb';
 
@@ -46,9 +46,24 @@ function Panel({ points, color = '#929fa9' }: { points: number[][]; color?: stri
   return <mesh geometry={geometry} castShadow receiveShadow><meshStandardMaterial color={color} side={DoubleSide} metalness={0.25} roughness={0.6} /></mesh>;
 }
 
-const ProceduralHornetModel = memo(function ProceduralHornetModel({ session, parked }: { session: FlightSession; parked: boolean }) {
+const ProceduralHornetModel = memo(function ProceduralHornetModel({ session, parked, cloudLighting }: {
+  session: FlightSession; parked: boolean; cloudLighting?: FlightCloudLightingBridge;
+}) {
+  const root = useRef<Group>(null);
   const tail = useRef<Group>(null);
   const leftAileron = useRef<Group>(null), rightAileron = useRef<Group>(null);
+  useLayoutEffect(() => {
+    if (!cloudLighting || !root.current) return undefined;
+    const releases: (() => void)[] = [];
+    root.current.traverse((object) => {
+      if (!(object instanceof Mesh)) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => {
+        if (material instanceof MeshStandardMaterial) releases.push(cloudLighting.registerMaterial(material));
+      });
+    });
+    return () => releases.forEach((release) => release());
+  }, [cloudLighting]);
   useFrame(() => {
     if (tail.current) tail.current.rotation.y = -0.25 * session.controls.pitch - 0.12 * session.controls.trim;
     if (leftAileron.current) leftAileron.current.rotation.y = 0.25 * session.controls.roll;
@@ -65,7 +80,7 @@ const ProceduralHornetModel = memo(function ProceduralHornetModel({ session, par
     const g = new BufferGeometry(); g.setAttribute('position', new Float32BufferAttribute(vertices, 3)); g.setIndex(indices); g.computeVertexNormals(); return g;
   }, []);
   useEffect(() => () => body.dispose(), [body]);
-  return <group>
+  return <group ref={root}>
     {parked && [[-1.5, -1.5], [-1.5, 1.5], [5.5, 0]].map(([x, y]) => <group key={`${x}/${y}`}>
       <mesh position={[x, y, 1.4]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[0.08, 0.08, 1.2, 8]} /><meshStandardMaterial color="#aab4bc" />
@@ -108,44 +123,6 @@ const ProceduralHornetModel = memo(function ProceduralHornetModel({ session, par
   </group>;
 });
 
-interface ClonedHornet {
-  readonly model: Group;
-  readonly materials: readonly Material[];
-}
-
-function cloneHornet(scene: Group, parked: boolean): ClonedHornet {
-  const model = scene.clone(true) as Group;
-  const materials: Material[] = [];
-  model.traverse((object) => {
-    if (isExcludedHornetPart(object.name, parked)) {
-      object.visible = false;
-      return;
-    }
-    if (!(object instanceof Mesh)) return;
-    const canopyGlass = /canopy_glass|windshield|windshied/i.test(object.name);
-    const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
-    const clonedMaterials = sourceMaterials.map((sourceMaterial) => {
-      const material = sourceMaterial.clone();
-      materials.push(material);
-      if (material instanceof MeshStandardMaterial) {
-        // Keep the painted hull readable under the flight scene's directional
-        // light; the source's textures and canopy alpha remain unchanged.
-        material.metalness = Math.min(material.metalness, 0.35);
-        material.roughness = Math.max(material.roughness, 0.45);
-        if (canopyGlass) material.depthWrite = false;
-      }
-      return material;
-    });
-    object.material = Array.isArray(object.material) ? clonedMaterials : clonedMaterials[0]!;
-    // Three's depth shadow material does not reproduce blended glass opacity.
-    // Keep the opaque canopy frame, hull and deployed gear as casters; a mixed
-    // opaque/transparent mesh conservatively skips casting without splitting it.
-    object.castShadow = !canopyGlass && clonedMaterials.every((material) => !material.transparent && material.opacity >= 1);
-    object.receiveShadow = true;
-  });
-  return { model, materials };
-}
-
 class HornetModelErrorBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
@@ -153,27 +130,42 @@ class HornetModelErrorBoundary extends Component<{ fallback: ReactNode; children
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-const GltfHornetModel = memo(function GltfHornetModel({ parked }: { parked: boolean }) {
+const GltfHornetModel = memo(function GltfHornetModel({ parked, anisotropy, cloudLighting }: {
+  parked: boolean; anisotropy: number; cloudLighting?: FlightCloudLightingBridge;
+}) {
   const { scene } = useGLTF(HORNET_MODEL_URL);
   const root = useRef<Group>(null);
+  const owned = useRef<ClonedHornet | null>(null);
+  const gl = useThree((state) => state.gl);
   const invalidate = useThree((state) => state.invalidate);
+  const resolvedAnisotropy = resolveHornetAnisotropy(anisotropy, gl.capabilities.getMaxAnisotropy());
   const transform = useMemo(() => new Matrix4().compose(
     BODY_PIVOT,
     SOURCE_TO_BODY_ROTATION,
     new Vector3(HORNET_SCALE, HORNET_SCALE, HORNET_SCALE),
   ), []);
-  // Allocate owned materials in committed setup, including StrictMode replay.
+  // Allocate owned materials/textures in committed setup, including StrictMode replay.
   // Rebasing/daylight do not clone or dispose them; cached source assets survive.
   useLayoutEffect(() => {
-    const cloned = cloneHornet(scene as Group, parked);
+    const cloned = cloneHornet(scene as Group, parked, cloudLighting);
+    owned.current = cloned;
     const parent = root.current!;
     parent.add(cloned.model);
     invalidate();
     return () => {
       parent.remove(cloned.model);
-      cloned.materials.forEach((material) => material.dispose());
+      owned.current = null;
+      cloned.dispose();
     };
-  }, [scene, parked, invalidate]);
+  }, [cloudLighting, scene, parked, invalidate]);
+  useLayoutEffect(() => {
+    owned.current?.textures.forEach((texture) => {
+      if (texture.anisotropy === resolvedAnisotropy) return;
+      texture.anisotropy = resolvedAnisotropy;
+      texture.needsUpdate = true;
+    });
+    invalidate();
+  }, [scene, parked, resolvedAnisotropy, invalidate]);
   return <group ref={root} matrix={transform} matrixAutoUpdate={false} dispose={null} />;
 });
 
@@ -181,12 +173,14 @@ const GltfHornetModel = memo(function GltfHornetModel({ parked }: { parked: bool
 // FLIGHT unmount/reentry. Each mounted adapter still receives its own clone.
 useGLTF.preload(HORNET_MODEL_URL);
 
-export const HornetModel = memo(function HornetModel({ session, parked = false }: { session: FlightSession; parked?: boolean }) {
-  const fallback = <ProceduralHornetModel session={session} parked={parked} />;
+export const HornetModel = memo(function HornetModel({ session, parked = false, anisotropy = 8, cloudLighting }: {
+  session: FlightSession; parked?: boolean; anisotropy?: number; cloudLighting?: FlightCloudLightingBridge;
+}) {
+  const fallback = <ProceduralHornetModel session={session} parked={parked} cloudLighting={cloudLighting} />;
   return (
     <HornetModelErrorBoundary fallback={fallback}>
       <Suspense fallback={fallback}>
-        <GltfHornetModel parked={parked} />
+        <GltfHornetModel parked={parked} anisotropy={anisotropy} cloudLighting={cloudLighting} />
       </Suspense>
     </HornetModelErrorBoundary>
   );

@@ -128,7 +128,8 @@ export async function verifyThresholdedCloudLightVolume(
   // given cosine, independently of the ray's azimuth or the sampling shader.
   const ambientPaths = [1 / 8, 3 / 8, 5 / 8, 7 / 8].map(u =>
     pathLength((radius + base) * Math.sqrt(1 - u)));
-  const ambient = 0.5 + ambientPaths.reduce((sum, length) => sum + Math.exp(-extinction * length), 0) / 8;
+  // Conservative isotropic two-flux solution: R+T=1, T=1/(1+tau/2).
+  const ambient = 0.5 + ambientPaths.reduce((sum, length) => sum + 1 / (1 + 0.5 * extinction * length), 0) / 8;
   const boundaryMargin = Math.min(...[-0.25, 0.25].flatMap(dx => [-0.25, 0.25].map(dy =>
     Math.abs(position(dx, dy)[2] - center[2]))));
   if (boundaryMargin <= Math.max(...ambientPaths)) throw new Error('Threshold fixture rays cross the spatial boundary');

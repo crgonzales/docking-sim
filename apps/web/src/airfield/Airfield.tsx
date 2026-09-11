@@ -5,12 +5,14 @@ import type { WorldFrame } from '../scene/worldFrame';
 import { AIRFIELD_BASIS, AIRFIELD_DATUM_WORLD } from './airfieldSite';
 import { AIRFIELD_BOXES, type AirfieldBox, type AirfieldMaterialName } from './airfieldGeometry';
 import { applyAirfieldSurface } from './airfieldSurface';
+import { createAirfieldSurfaceTextures, type AirfieldSurfaceTextures } from './airfieldSurfaceTextures';
+import type { FlightCloudLightingBridge } from '../scene/flightCloudLighting';
 
 const MATERIAL_OPTIONS: Record<AirfieldMaterialName, ConstructorParameters<typeof MeshStandardMaterial>[0]> = {
   infield: { color: '#536047', roughness: 0.98, metalness: 0 },
   foundation: { color: '#776c5b', roughness: 0.92, metalness: 0.02 },
-  pavement: { color: '#3f4647', roughness: 0.94, metalness: 0.02 },
-  shoulder: { color: '#5b6260', roughness: 0.96, metalness: 0.01 },
+  pavement: { color: '#454b4c', roughness: 0.92, metalness: 0 },
+  shoulder: { color: '#5b6260', roughness: 0.96, metalness: 0 },
   building: { color: '#9a9b94', roughness: 0.78, metalness: 0.08 },
   roof: { color: '#737b78', roughness: 0.86, metalness: 0.08 },
   glass: { color: '#142d35', roughness: 0.22, metalness: 0.3 },
@@ -26,7 +28,7 @@ const MATERIAL_OPTIONS: Record<AirfieldMaterialName, ConstructorParameters<typeo
   },
 };
 
-function createBoxBatch() {
+function createBoxBatch(cloudLighting?: FlightCloudLightingBridge) {
   const grouped = new Map<AirfieldMaterialName, AirfieldBox[]>();
   for (const spec of AIRFIELD_BOXES) {
     const list = grouped.get(spec.material);
@@ -35,13 +37,16 @@ function createBoxBatch() {
   }
   const geometry = new BoxGeometry(1, 1, 1);
   const group = new Group();
+  const surfaceTextures = createAirfieldSurfaceTextures();
   const materials: MeshStandardMaterial[] = [];
   let edgeLightMaterial: MeshStandardMaterial | undefined;
   const meshes: InstancedMesh[] = [];
+  const cloudReleases: (() => void)[] = [];
   const dummy = new Object3D();
   for (const [name, items] of grouped) {
     const material = new MeshStandardMaterial(MATERIAL_OPTIONS[name]);
-    applyAirfieldSurface(material, name);
+    applyAirfieldSurface(material, name, surfaceTextures);
+    if (cloudLighting) cloudReleases.push(cloudLighting.registerMaterial(material));
     if (name === 'edgeLight') edgeLightMaterial = material;
     const mesh = new InstancedMesh(geometry, material, items.length);
     // The parent owns the one local directional shadow map. Flat deck/paint
@@ -66,11 +71,14 @@ function createBoxBatch() {
   return {
     group,
     edgeLightMaterial,
+    surfaceTextures,
     dispose() {
       group.removeFromParent();
       meshes.forEach((mesh) => mesh.dispose());
       geometry.dispose();
+      cloudReleases.forEach((release) => release());
       materials.forEach((material) => material.dispose());
+      surfaceTextures.dispose();
       group.clear();
     },
   };
@@ -86,6 +94,10 @@ export interface AirfieldProps {
   readonly worldFrame: WorldFrame;
   /** 0 = night, 1 = day; absent/nonfinite keeps the legacy 2.2 intensity. */
   readonly daylightRef?: RefObject<number>;
+  /** Ground texture filtering, clamped to hardware support. Defaults to 8. */
+  readonly anisotropy?: number;
+  /** Stable FLIGHT-owned cloud-lighting hook for PBR receivers. */
+  readonly cloudLighting?: FlightCloudLightingBridge;
 }
 
 function edgeLightIntensity(daylight: number | null | undefined): number {
@@ -95,25 +107,34 @@ function edgeLightIntensity(daylight: number | null | undefined): number {
 }
 
 /** One static instanced base, repositioned after the flight camera's -2 rebase. */
-export function Airfield({ worldFrame, daylightRef }: AirfieldProps) {
+export function Airfield({ worldFrame, daylightRef, anisotropy = 8, cloudLighting }: AirfieldProps) {
   const root = useRef<Group>(null);
   const edgeLight = useRef<MeshStandardMaterial>();
+  const surfaceTextures = useRef<AirfieldSurfaceTextures>();
   const invalidate = useThree((state) => state.invalidate);
+  const maximumAnisotropy = useThree((state) => state.gl.capabilities.getMaxAnisotropy());
   const initialPosition = useMemo(() => worldFrame.toRender(AIRFIELD_DATUM_WORLD), [worldFrame]);
   const metersToRender = useMemo(() => worldFrame.relativeToRender([1, 0, 0], [0, 0, 0])[0], [worldFrame]);
 
   // Allocate inside setup: StrictMode's setup/cleanup/setup gets fresh resources,
   // and an abandoned React render allocates no GPU objects.
   useLayoutEffect(() => {
-    const batch = createBoxBatch();
+    const batch = createBoxBatch(cloudLighting);
     edgeLight.current = batch.edgeLightMaterial;
+    surfaceTextures.current = batch.surfaceTextures;
     root.current!.add(batch.group);
     invalidate();
     return () => {
       edgeLight.current = undefined;
+      surfaceTextures.current = undefined;
       batch.dispose();
     };
-  }, [invalidate]);
+  }, [cloudLighting, invalidate]);
+
+  useLayoutEffect(() => {
+    surfaceTextures.current?.setAnisotropy(anisotropy, maximumAnisotropy);
+    invalidate();
+  }, [anisotropy, maximumAnisotropy, invalidate]);
 
   useLayoutEffect(() => {
     if (edgeLight.current) edgeLight.current.emissiveIntensity = edgeLightIntensity(daylightRef?.current);

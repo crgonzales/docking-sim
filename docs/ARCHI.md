@@ -63,8 +63,8 @@ These coefficients are not a validated F/A-18 dataset.
 pause/reset/blur handling, aircraft visuals, HUD and NED→world adapter.
 It reuses Earth/WorldFrame through explicit renderer options without changing
 the renderer internals: FLIGHT owns one camera/floating origin and one
-`LibraryEffects` composer, with medium volumetric weather, exposure 2 and DPR 1 by
-default. Existing `quality`, `dpr`, `exposure` and cloud diagnostic query
+`LibraryEffects` composer, with medium volumetric weather, exposure 2 and Balanced
+graphics by default (DPR 1). Existing `quality`, `dpr`, `exposure` and cloud diagnostic query
 overrides remain available. Flat local physics are mapped onto a spherical
 equatorial ocean chart for presentation; 50 km radius, 20 km ceiling and M
 0.95 boundaries stop the run. Sea contact is a terminal latch, not a
@@ -163,6 +163,13 @@ integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
 ### Flight environment time and weather
 
 - `flight/FlightEnvironmentClock` owns render-side time separately from aircraft/walking fixed steps. Default is 10:00 reference local solar time at 1x; explicit seeks/reset are discontinuities, while continuous time never wraps at midnight. Pause/focus loss freezes daylight/weather even during the 96-frame paused render warmup. UI notifications are bounded to ~10 Hz.
-- Optional environment state reaches Earth and LibraryEffects; ordinary SceneRoot and the original cloud-base fixture retain static defaults. One normalized equinox sun drives sky, terrain/ocean and local PBR. `FlightLighting` borrows the composer-owned transmittance LUT for sunlight color, plus one 1024 local shadow map updated only for the color render. Filtered airfield detail stays in surveyed site coordinates and never changes collision height.
+- Optional environment state reaches Earth and LibraryEffects; ordinary SceneRoot and the original cloud-base fixture retain static defaults. One normalized equinox sun drives sky, terrain/ocean and local PBR. `FlightLighting` borrows the composer-owned transmittance/irradiance LUTs for solar color and an orthonormal ECEF sky probe; dynamic sunlight has no duplicate intensity gain. One local shadow map updates only for the color render. Filtered airfield detail stays in surveyed site coordinates and never changes collision height.
+
+### Flight visual quality
+
+- `flightGraphics` resolves query → guarded storage → Balanced; High is opt-in. Both cap scene allocation at 2.5M pixels and keep the medium cloud view at its existing 1.5M ceiling. Balanced requests DPR1, medium SMAA, 1024 shadows and 8x anisotropy; High requests DPR1.5, high SMAA, 2048 shadows and 16x anisotropy, hardware bounded. Paused switching preserves pose/time and the cloud owner. The frozen cloud-base fixture ignores stored preferences; a valid graphics query or deliberate paused panel choice opts into the new presets.
+- Canvas and composer remain single-sampled so color/depth/normal/mask coverage matches. SMAA runs in a separate final pass after atmosphere and tone mapping. `libraryComposerDepth` isolates cloned depth texture Sources before first GPU use, avoiding Three r170/postprocessing attachment aliasing; DPR changes resize the composer even when CSS size is unchanged.
+- `flightCloudLighting` composes with owned Hornet/airfield StandardMaterial hooks. Physical ECEF receivers use the canonical cloud cache/transport to attenuate directional sunlight and diffuse sky before the BRDF; point lights and emission remain intact. Shared diffuse cloud transmission includes a bounded two-flux scattering approximation along existing quadrature paths; direct shadows retain Beer extinction. PBR stays excluded from aerial relighting but still receives atmosphere and cloud overlay. Compiled uniform maps adopt borrowed identities in place, and clear before cloud resources are disposed.
+- Aircraft material/map handles are owned clones; shared GLTF geometry, images, normals and source material data remain unchanged. Painted hull/glass roughness is explicit. Airfield detail uses six shared 256² mipmapped textures (~2 MiB), centimetre-scale pavement aggregate, filtered normal/roughness and surveyed concrete masks/joints. The same 11 instanced batches and collision geometry remain.
 - `cloudMotion.ts` rotates physical ECEF about north +Z at 15 m/s equatorial wind; maps and both noise domains sample the inverse canonical transform. Seeded fronts are continuous 3D fields restricted to the sphere. The orbital atlas stays canonical; physical light-volume snapshots refresh every 2 seconds and validate against live time/sun. Only cloud-front reprojection includes media motion; scene depth stays camera-only, and stationary history reuse is disabled while media moves.
 - User-facing naming is volumetric weather. Legacy `eve` URLs/shader identifiers remain compatible, with existing third-party attribution retained. Weather is procedural advection, not precipitation or a meteorological solver. See `docs/6-memo/f18-integration/ground-weather-validation.md` for measured evidence and remaining visual limits.

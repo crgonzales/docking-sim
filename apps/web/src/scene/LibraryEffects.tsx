@@ -7,6 +7,7 @@ import { configureCloudFootprint, configureCloudNoiseMipmaps } from './libraryCl
 import { CloudReprojectionFrame } from './libraryCloudReprojection';
 import { StableLightingMaskPass } from './libraryLightingMask';
 import { SurfaceNormalPass } from './librarySurfaceNormalPass';
+import { isolateComposerDepthStorage } from './libraryComposerDepth';
 import { configureCloudShadowStorage } from './libraryCloudShadowStorage';
 import { configureCloudShadowRange, type CloudShadowRange } from './libraryCloudShadowRange';
 import { configureGlobalWeatherTexture, useGlobalCloudWeather } from './libraryCloudWeather';
@@ -17,8 +18,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { LightingMaskPass, PrecomputedTexturesLoader } from '@takram/three-atmosphere';
 import { CloudsEffect } from '@takram/three-clouds';
 import { DataTextureLoader, Ellipsoid, parseUint8Array, STBNLoader } from '@takram/three-geospatial';
-import { EffectComposer, EffectPass, RenderPass, ToneMappingEffect, ToneMappingMode } from 'postprocessing';
-import { Data3DTexture, HalfFloatType, LinearFilter, LinearMipmapLinearFilter, Mesh, NoColorSpace, PerspectiveCamera, RedFormat, RepeatWrapping, ShaderMaterial, Texture, TextureLoader, Vector3 } from 'three';
+import { EffectComposer, EffectPass, RenderPass, SMAAEffect, SMAAPreset, ToneMappingEffect, ToneMappingMode } from 'postprocessing';
+import { Data3DTexture, HalfFloatType, LinearFilter, LinearMipmapLinearFilter, Mesh, ShaderMaterial, NoColorSpace, PerspectiveCamera, RedFormat, RepeatWrapping, Texture, TextureLoader, Vector3 } from 'three';
 import { EARTH_RADIUS_M, SKY_CONFIG } from './sky/skyConfig';
 import { SUN_DIR } from './sun';
 import { WorldFrame } from './worldFrame';
@@ -27,8 +28,23 @@ import { installComposerPassTimings, renderTimings } from './renderTimings';
 import { PROBE_CLOUDS, PROBE_DPR, PROBE_EXPOSURE, PROBE_QUALITY, PROBE_WEATHER, PROBE_WEATHER_STRUCTURE } from './renderProbeConfig';
 import type { CloudLightQuality } from './clouds/cloudLightVolumeLayout';
 import type { FlightEnvironmentSource } from '../flight/flightEnvironment';
+import type { FlightCloudLightingBridge } from './flightCloudLighting';
 
-export const libraryStatus = { state: 'loading', error: '', shadowRange: null as CloudShadowRange | null, shadowTexelM: [] as number[], lightingSelection: [0, 0, 0], eve: null as EveCloudSystem['status'] | null };
+export const libraryStatus = {
+  state: 'loading', error: '', shadowRange: null as CloudShadowRange | null, shadowTexelM: [] as number[],
+  lightingSelection: [0, 0, 0], eve: null as EveCloudSystem['status'] | null,
+  graphics: {
+    preset: null as 'balanced' | 'high' | null,
+    quality: null as CloudLightQuality | null,
+    requestedDpr: null as number | null,
+    effectiveDpr: null as number | null,
+    drawingBuffer: [0, 0] as [number, number],
+    scenePixels: 0,
+    maxTextureSize: null as number | null,
+    smaa: { enabled: false, preset: null as 'medium' | 'high' | null },
+    passes: [] as { name: string; enabled: boolean; swap: boolean; screen: boolean }[],
+  },
+};
 const ROOT = '/vendor/takram';
 function publishComposerBufferContext(composer: EffectComposer): void {
   const targetContext = (target: typeof composer.inputBuffer) => ({
@@ -55,19 +71,32 @@ export interface LibraryEffectsProps {
   readonly exposure?: number;
   /** Used for render diagnostics; the Canvas remains the DPR owner. */
   readonly dpr?: number;
+  /** Optional FLIGHT graphics label for evidence; omitted for SceneRoot. */
+  readonly graphicsPreset?: 'balanced' | 'high';
+  /** Explicit final SMAA configuration; omitted preserves SceneRoot identity defaults. */
+  readonly smaa?: { readonly enabled?: boolean; readonly preset: 'medium' | 'high' };
   /** Optional FLIGHT-owned daylight state; omitted preserves static SceneRoot lighting. */
   readonly environment?: FlightEnvironmentSource;
   /** Borrowed LUT for local PBR sunlight; this composer retains ownership. */
   readonly sunTransmittanceRef?: { current: Texture | null };
+  /** Borrowed LUT for the FlightLighting sky probe; this composer retains ownership. */
+  readonly skyIrradianceRef?: { current: Texture | null };
+  /** Stable FlightScene-owned local PBR cloud hook. */
+  readonly cloudLighting?: FlightCloudLightingBridge;
 }
 
-export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, exposure, dpr, environment, sunTransmittanceRef }: LibraryEffectsProps) {
-  const { gl, scene, camera, size, invalidate } = useThree();
+export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, exposure, dpr, graphicsPreset, smaa, environment, sunTransmittanceRef, skyIrradianceRef, cloudLighting }: LibraryEffectsProps) {
+  const { gl, scene, camera, size, viewport, invalidate } = useThree();
   const query = new URLSearchParams(window.location.search);
   const selectedCloudSystem = cloudSystem ?? (query.get('cloudSystem') === 'eve' ? 'eve' : 'legacy');
   const selectedQuality = quality ?? PROBE_QUALITY;
   const selectedExposure = exposure ?? PROBE_EXPOSURE;
   const selectedDpr = dpr ?? PROBE_DPR;
+  const selectedSmaaPreset = smaa?.enabled === false || ((import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV && query.get('sceneAA') === 'off')
+    ? null : smaa?.preset ?? null;
+  const hasSmaa = selectedSmaaPreset !== null;
+  const selectedSmaaPresetRef = useRef(selectedSmaaPreset);
+  selectedSmaaPresetRef.current = selectedSmaaPreset;
   const latestSize = useRef(size);
   const cloudFrame = useRef(new CloudReprojectionFrame());
   const cameraECEF = useRef(new Vector3());
@@ -75,9 +104,10 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
   const sunECEF = useRef(new Vector3());
   const environmentDiscontinuity = useRef(environment?.state.discontinuityRevision ?? 0);
   latestSize.current = size;
-  const live = useRef<{ composer: EffectComposer; aerial: ShadowDiagnosticAerialEffect; clouds?: CloudsEffect; eve?: EveCloudSystem; mask: LightingMaskPass; originalShadow?: { maxFar: number | null; splitLambda: number }; firstUsePending: boolean }>();
+  const live = useRef<{ composer: EffectComposer; aerial: ShadowDiagnosticAerialEffect; clouds?: CloudsEffect; eve?: EveCloudSystem; mask: LightingMaskPass; smaa?: SMAAEffect; smaaPass?: EffectPass; originalShadow?: { maxFar: number | null; splitLambda: number }; firstUsePending: boolean }>();
   useEffect(() => {
     let disposed = false;
+    cloudLighting?.clearBindings();
     cloudFrame.current = new CloudReprojectionFrame();
     libraryStatus.state = 'loading'; libraryStatus.error = '';
     const owned = new Set<Texture>();
@@ -155,12 +185,21 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
     const atmosphereToneMappingPass = new EffectPass(camera, ...(stage === 'albedo' ? [] : [aerial]),
       new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }));
     composer.addPass(atmosphereToneMappingPass);
+    // Keep SMAA in a separate final pass so its edge detector receives the
+    // already-tonemapped image rather than the atmosphere pass's HDR input.
+    const smaaEffect = selectedSmaaPresetRef.current === null ? undefined : new SMAAEffect({
+      preset: selectedSmaaPresetRef.current === 'high' ? SMAAPreset.HIGH : SMAAPreset.MEDIUM,
+    });
+    const smaaPass = smaaEffect ? new EffectPass(camera, smaaEffect) : undefined;
+    if (smaaPass) composer.addPass(smaaPass);
+    isolateComposerDepthStorage(composer);
     const passTimingCleanup = installComposerPassTimings(composer, renderTimings, [
       [renderPass, 'composer.pass.renderScene'],
       [normals, 'composer.pass.surfaceNormals'],
       [mask, 'composer.pass.lightingMask'],
       ...(cloudPass ? [[cloudPass, 'composer.pass.clouds'] as const] : []),
       [atmosphereToneMappingPass, 'composer.pass.atmosphereToneMapping'],
+      ...(smaaPass ? [[smaaPass, 'composer.pass.finalSmaa'] as const] : []),
     ]);
     renderTimings.end('composer.setup', composerSetupStartedAt);
     publishComposerBufferContext(composer);
@@ -191,6 +230,7 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
         try {
           Object.assign(aerial, luts); aerial.stbnTexture = blueNoise as Data3DTexture;
           if (sunTransmittanceRef) sunTransmittanceRef.current = luts.transmittanceTexture;
+          if (skyIrradianceRef) skyIrradianceRef.current = luts.irradianceTexture;
           if (eve) { Object.assign(eve.effect, luts); eve.effect.stbnTexture = blueNoise as Data3DTexture; }
           if (clouds) {
             Object.assign(clouds, luts);
@@ -199,30 +239,63 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
             clouds.turbulenceTexture = turbulence as Awaited<ReturnType<typeof noise2D>>;
             clouds.shapeTexture = shape as Data3DTexture; clouds.shapeDetailTexture = detail as Data3DTexture;
           }
+          if (cloudLighting && eve) {
+            // Eve.load() and the atmosphere LUT promise have both settled.
+            // Borrow the exact live Uniform instances; the bridge owns no
+            // cloud texture or lighting-cache resource.
+            cloudLighting.setBindings(eve.lightingUniforms);
+            cloudLighting.setEnabled(true);
+          }
         } finally {
           renderTimings.end('cloud.assetsAssignmentCpuWall', assetAssignmentStartedAt);
         }
-        composer.setSize(latestSize.current.width, latestSize.current.height);
+        smaaEffect?.applyPreset(selectedSmaaPresetRef.current === 'high' ? SMAAPreset.HIGH : SMAAPreset.MEDIUM);
+        composer.setSize(latestSize.current.width, latestSize.current.height, false);
         publishComposerBufferContext(composer);
-        live.current = { composer, aerial, clouds, eve, mask, originalShadow: clouds ? { maxFar: clouds.shadow.maxFar, splitLambda: clouds.shadow.splitLambda } : undefined, firstUsePending: true };
+        live.current = { composer, aerial, clouds, eve, mask, smaa: smaaEffect, smaaPass, originalShadow: clouds ? { maxFar: clouds.shadow.maxFar, splitLambda: clouds.shadow.splitLambda } : undefined, firstUsePending: true };
         libraryStatus.state = 'ready';
         invalidate(); // A paused flight renders on demand; show completed asset loading too.
       }).catch(error => { if (!disposed) { libraryStatus.state = 'failed'; libraryStatus.error = String(error); console.error(error); } });
-    return () => { disposed = true; if (sunTransmittanceRef) sunTransmittanceRef.current = null; gl.domElement.removeEventListener('webglcontextlost', invalidateEve); gl.domElement.removeEventListener('webglcontextrestored', invalidateEve); eve?.dispose(); live.current = undefined; passTimingCleanup(); renderTimings.detachRenderer(gl); composer.dispose(); owned.forEach(texture => texture.dispose()); owned.clear(); };
-  }, [gl, scene, camera, worldFrame, selectedCloudSystem, selectedQuality, invalidate, environment, sunTransmittanceRef]);
+    return () => { disposed = true; if (sunTransmittanceRef) sunTransmittanceRef.current = null; if (skyIrradianceRef) skyIrradianceRef.current = null; cloudLighting?.clearBindings(); gl.domElement.removeEventListener('webglcontextlost', invalidateEve); gl.domElement.removeEventListener('webglcontextrestored', invalidateEve); eve?.dispose(); live.current = undefined; passTimingCleanup(); renderTimings.detachRenderer(gl); composer.dispose(); owned.forEach(texture => texture.dispose()); owned.clear(); };
+  }, [gl, scene, camera, worldFrame, selectedCloudSystem, selectedQuality, hasSmaa, invalidate, environment, sunTransmittanceRef, skyIrradianceRef, cloudLighting]);
+  useEffect(() => {
+    const value = live.current;
+    if (!value) return;
+    if (selectedSmaaPreset === null) {
+      if (value.smaaPass) value.smaaPass.enabled = false;
+    } else if (value.smaa) {
+      value.smaa.applyPreset(selectedSmaaPreset === 'high' ? SMAAPreset.HIGH : SMAAPreset.MEDIUM);
+      if (value.smaaPass) value.smaaPass.enabled = true;
+    }
+    invalidate();
+  }, [invalidate, selectedSmaaPreset]);
   useEffect(() => {
     const composer = live.current?.composer;
     if (composer === undefined) return;
-    composer.setSize(size.width, size.height);
+    composer.setSize(size.width, size.height, false);
     publishComposerBufferContext(composer);
-  }, [size]);
+  }, [size.height, size.width, viewport.dpr]);
   useFrame((_, delta) => {
     exposureRef.current = selectedExposure;
     gl.toneMappingExposure = selectedExposure;
-    renderTimings.updateRendererContext(gl, 'library', selectedDpr);
+    const effectiveDpr = gl.getPixelRatio();
+    renderTimings.updateRendererContext(gl, 'library', effectiveDpr);
     renderTimings.beginFrame();
+    libraryStatus.graphics = {
+      preset: graphicsPreset ?? null,
+      quality: selectedQuality,
+      requestedDpr: selectedDpr,
+      effectiveDpr,
+      drawingBuffer: [gl.domElement.width, gl.domElement.height] as [number, number],
+      scenePixels: gl.domElement.width * gl.domElement.height,
+      maxTextureSize: gl.capabilities.maxTextureSize,
+      smaa: { enabled: selectedSmaaPreset !== null, preset: selectedSmaaPreset },
+      passes: live.current?.composer.passes.map(pass => ({ name: pass.name, enabled: pass.enabled,
+        swap: pass.needsSwap, screen: pass.renderToScreen })) ?? [],
+    };
     const value = live.current;
     if (!value) { gl.render(scene, camera); return; }
+    cloudLighting?.setEnabled(value.eve !== undefined && cloudShadowProbe.mode !== 'off');
     value.aerial.shadowStrength.value = cloudShadowProbe.mode === 'off' ? 0 : 1;
     value.aerial.shadowDiagnostic.value = ({ mask: 1, lighting: 2, normals: 3 } as Record<string, number>)[cloudShadowProbe.mode] ?? 0;
     value.aerial.cloudOverlay.value = cloudShadowProbe.overlay ? 1 : 0;

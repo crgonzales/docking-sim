@@ -13,6 +13,9 @@ import { runCloudPresentationConformance } from './CloudPresentationFixture';
 import { runCloudColumnConformance } from './CloudColumnFixture';
 import { runCloudDistantConformance } from './CloudDistantFixture';
 import { runTerrainSurfaceConformance } from '../terrain/TerrainSurfaceFixture';
+import { runComposerDepthConformance } from '../ComposerDepthFixture';
+import { runFlightCloudLightingConformance } from '../FlightCloudLightingFixture';
+import { runCloudDiffuseTransportConformance } from './CloudDiffuseTransportFixture';
 import { verifyCloudAerialTransport } from './CloudAerialFixture';
 import { verifyOceanShadowReceiver } from './CloudOceanReceiverFixture';
 import { verifyWaterReflectionContinuity } from './WaterReflectionFixture';
@@ -146,6 +149,9 @@ export async function runCloudConformance(renderer: WebGLRenderer): Promise<Clou
     cases.push({ name, measured, expected, maxError, passed: finite && maxError <= tolerance });
   };
   try {
+    cases.push(...runComposerDepthConformance(renderer, resources, tolerance));
+    cases.push(...runFlightCloudLightingConformance(renderer, resources, tolerance));
+    cases.push(...runCloudDiffuseTransportConformance(renderer, resources, tolerance));
     cameraMaterial.temporalUpscale = false;
     cameraMaterial.depthPacking = BasicDepthPacking;
     cameraMaterial.shadowLength = cameraMaterial.haze = cameraMaterial.shapeDetail = cameraMaterial.turbulence = false;

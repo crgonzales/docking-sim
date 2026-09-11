@@ -103,6 +103,9 @@ export async function verifyOceanShadowReceiver(
     aerial.lightingMask = { map: resources.zero2D, channel: 'r' };
     resources.renderTerrain(3008, [0.2, 0.3, 0.4], 0.5);
     resources.draw(() => pass.render(renderer, resources.depth, target, 0, false));
-    record('unmasked-alpha-is-not-ocean', (await resources.readCenter(target)).slice(0, 3), [1, 0.25, 0]);
+    // Masked local PBR bypasses both cloud queries; alpha still must not be
+    // interpreted as the opaque-ocean marker. Atmosphere composition is separate.
+    record('unmasked-pbr-skips-lighting-and-ocean-classification',
+      (await resources.readCenter(target)).slice(0, 3), [1, 1, 0]);
   } finally { pass.dispose(); aerial.dispose(); target.dispose(); cache.dispose(); }
 }

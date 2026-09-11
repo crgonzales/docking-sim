@@ -67,6 +67,11 @@ vec3 readNormal(`);
   #else // HAS_SHADOW
   float sunTransmittance = 1.0;
   #endif // HAS_SHADOW`, `  float sunTransmittance = 1.0;
+  #ifdef HAS_LIGHTING_MASK
+  float eveLightingMask = texture(lightingMaskBuffer, uv).LIGHTING_MASK_CHANNEL_;
+  #else
+  float eveLightingMask = 1.0;
+  #endif
   // Ocean vertices can round just below the light volume's geoid boundary.
   // Keep the physical position for atmosphere/depth/BRDF, and lift only the
   // shared opaque-water shadow receiver by a small precision guard.
@@ -78,7 +83,7 @@ vec3 readNormal(`);
   }
   float eveSurfaceSkyVisibility = 1.0;
   float eveSurfaceShadowStrength = clamp(cloudSurfaceShadowStrength, 0.0, 1.0);
-  if (!degenerateNormal && eveSurfaceShadowStrength > 0.0) {
+  if (!degenerateNormal && eveSurfaceShadowStrength > 0.0 && eveLightingMask > 0.0) {
     sunTransmittance = eveSunTransmittance(eveShadowReceiverECEFM, 0.0, eveSurfaceFootprintM);
     #ifdef SKY_LIGHT
     eveSurfaceSkyVisibility = eveSkyVisibility(eveShadowReceiverECEFM, eveSurfaceFootprintM);
@@ -111,6 +116,17 @@ vec3 readNormal(`);
   source = once(source,
     'getSunSkyIrradiance(positionECEF, normalECEF, inputColor.rgb, sunTransmittance, waterViewDirection, waterFraction)',
     'getSunSkyIrradiance(positionECEF, normalECEF, inputColor.rgb, sunTransmittance, eveSurfaceSkyVisibility, waterViewDirection, waterFraction)');
+  source = once(source, `  if (!degenerateNormal) {
+    radiance = getSunSkyIrradiance(positionECEF, normalECEF, inputColor.rgb, sunTransmittance, eveSurfaceSkyVisibility, waterViewDirection, waterFraction);
+  } else {
+    radiance = inputColor.rgb;
+  }`, `  if (!degenerateNormal && eveLightingMask > 0.0) {
+    radiance = getSunSkyIrradiance(positionECEF, normalECEF, inputColor.rgb, sunTransmittance, eveSurfaceSkyVisibility, waterViewDirection, waterFraction);
+  } else {
+    // Local PBR receivers already applied cloud direct/sky visibility. Keep
+    // their atmospheric transmittance and inscatter below.
+    radiance = inputColor.rgb;
+  }`);
 
   // The mirror-sky approximation shares the surface ambient visibility. Its
   // roughness blend already receives attenuated hemispherical sky irradiance,
