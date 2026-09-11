@@ -152,3 +152,10 @@ integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
   registration, and CPU/GPU transfer-function pinning; glTF port normalization
   (implemented: `skyConfig.test.ts`, `atmosphereMath.test.ts`,
   `cloudPlacement.test.ts`, `EarthMath.test.ts`, `modelNormalization.test.ts`)
+
+### Airfield and on-foot flight start
+
+- Ordinary `?mode=flight` starts on foot beside a parked, gear-down Hornet. `start=airborne` or `character=0` retains legacy airborne flight; `character=1&start=airborne` retains character-owned airborne mode. The DEV cloud-base fixture takes precedence.
+- `character/CharacterSession` coordinates exclusive ON_FOOT/VEHICLE input and camera ownership; walking uses a 100 Hz fixed step, clears held input on pause/blur/transition, and supports nearby boarding/guarded exits. Parked aircraft physics stays frozen even after boarding. `FlightSession.park()` cancels exercises and reconciles private throttle/trim.
+- `airfield/airfieldSite.ts` owns the surveyed 105 m tangent plane near 7°N/0.02°E, runway/apron/pad definitions and building/perimeter collision footprints. Ground support intersects the existing flight-chart radial direction with that same plane; async terrain streaming cannot displace it. `airfieldGeometry.ts` partitions coplanar deck cells; `Airfield.tsx` batches static geometry into 11 instanced material groups, updating after camera rebasing and disposing resources on unmount.
+- One Earth/EVE composer and shared terrain source remain in FlightMode; first-person uses 1.7 m eyes and an 80° vertical field of view. Base UI hides inactive flight controls and exercise resets, and DEV evidence records the active character/camera. Airborne 50 km / 20 km / M 0.95 limits remain unchanged; no runway contact/ground-roll solver, building interiors or aircraft body collision.

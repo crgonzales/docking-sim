@@ -42,6 +42,16 @@ export class FlightSession {
     this.releasePhysicalOwnership();
     this.accumulator = 0;
   }
+  /** Freeze the aircraft for parked presentation and reconcile all manual state. */
+  park(): void {
+    this.cancelExercise();
+    this.keys.clear();
+    this.pointers.clear();
+    this.manualControls = { ...this.manualControls, pitch: 0, roll: 0, yaw: 0, throttle: 0, trim: 0 };
+    this.controls = { ...this.controls, pitch: 0, roll: 0, yaw: 0, throttle: 0, trim: 0 };
+    this.paused = true;
+    this.accumulator = 0;
+  }
   togglePause(): void { this.paused = !this.paused; this.releaseControls(); }
   loseFocus(): void { this.paused = true; this.releaseControls(); }
   reset(): void {

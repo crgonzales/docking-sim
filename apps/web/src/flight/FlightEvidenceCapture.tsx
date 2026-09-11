@@ -2,17 +2,19 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { libraryStatus } from '../scene/LibraryEffects';
 import { renderTimings } from '../scene/renderTimings';
+import type { CharacterSession } from '../character/characterSession';
 import type { FlightSession } from './flightSession';
 
 interface FlightEvidenceCaptureProps {
   session: FlightSession;
   fixtureName: string;
+  character?: CharacterSession;
   request: number;
   quality: 'low' | 'medium';
   onSaved: (message: string) => void;
 }
 
-export function FlightEvidenceCapture({ session, fixtureName, request, quality, onSaved }: FlightEvidenceCaptureProps) {
+export function FlightEvidenceCapture({ session, fixtureName, character, request, quality, onSaved }: FlightEvidenceCaptureProps) {
   const invalidate = useThree((state) => state.invalidate);
   const pending = useRef(false);
   useEffect(() => {
@@ -24,14 +26,24 @@ export function FlightEvidenceCapture({ session, fixtureName, request, quality, 
     if (!pending.current) return;
     pending.current = false;
     const instruments = session.instruments();
+    const characterPose = character?.camera;
     const name = `flight-${fixtureName}-${Date.now()}`;
     const context = {
       url: window.location.href, fixture: fixtureName, renderer: 'library', cloudSystem: 'eve',
-      quality, dpr: gl.getPixelRatio(), drawingBuffer: [gl.domElement.width, gl.domElement.height], paused: session.paused,
+      quality, dpr: gl.getPixelRatio(), drawingBuffer: [gl.domElement.width, gl.domElement.height], paused: character?.paused ?? session.paused,
       timings: renderTimings.snapshot(),
       physicalState: structuredClone(session.state), controls: structuredClone(session.controls),
       environment: structuredClone(session.environment),
-      camera: { mode: session.camera, position: camera.position.toArray(), quaternion: camera.quaternion.toArray(), projectionMatrix: camera.projectionMatrix.elements.slice() },
+      camera: { mode: character?.mode === 'ON_FOOT' ? 'ON_FOOT' : session.camera, position: camera.position.toArray(), quaternion: camera.quaternion.toArray(), projectionMatrix: camera.projectionMatrix.elements.slice() },
+      character: character ? {
+        state: structuredClone(character.state),
+        parked: character.parked,
+        cameraPose: characterPose ? {
+          eyeWorld: [...characterPose.eyeWorld],
+          forwardWorld: [...characterPose.forwardWorld],
+          upWorld: [...characterPose.upWorld],
+        } : null,
+      } : undefined,
       stateMetadata: {
         time_s: session.state.time_s, altitude_m: instruments.altitude_m,
         bank_deg: instruments.bank_rad * 180 / Math.PI, pitch_deg: instruments.pitch_rad * 180 / Math.PI,

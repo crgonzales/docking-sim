@@ -14,6 +14,7 @@ import {
   type Group,
 } from 'three';
 import type { FlightSession } from './flightSession';
+import { isExcludedHornetPart } from './hornetPresentation';
 
 const HORNET_MODEL_URL = '/assets/models/f18/hornet-source.glb';
 
@@ -45,7 +46,7 @@ function Panel({ points, color = '#929fa9' }: { points: number[][]; color?: stri
   return <mesh geometry={geometry}><meshStandardMaterial color={color} side={DoubleSide} metalness={0.25} roughness={0.6} /></mesh>;
 }
 
-const ProceduralHornetModel = memo(function ProceduralHornetModel({ session }: { session: FlightSession }) {
+const ProceduralHornetModel = memo(function ProceduralHornetModel({ session, parked }: { session: FlightSession; parked: boolean }) {
   const tail = useRef<Group>(null);
   const leftAileron = useRef<Group>(null), rightAileron = useRef<Group>(null);
   useFrame(() => {
@@ -65,6 +66,14 @@ const ProceduralHornetModel = memo(function ProceduralHornetModel({ session }: {
   }, []);
   useEffect(() => () => body.dispose(), [body]);
   return <group>
+    {parked && [[-1.5, -1.5], [-1.5, 1.5], [5.5, 0]].map(([x, y]) => <group key={`${x}/${y}`}>
+      <mesh position={[x, y, 1.4]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 1.2, 8]} /><meshStandardMaterial color="#aab4bc" />
+      </mesh>
+      <mesh position={[x, y, 2]}>
+        <cylinderGeometry args={[0.4, 0.4, 0.22, 12]} /><meshStandardMaterial color="#20272c" />
+      </mesh>
+    </group>)}
     <mesh geometry={body}><meshStandardMaterial color="#aab4bc" metalness={0.35} roughness={0.57} side={DoubleSide} /></mesh>
     <mesh position={[4.2, 0, -0.74]} scale={[2.2, 0.65, 0.74]}>
       <sphereGeometry args={[1, 24, 12]} /><meshStandardMaterial color="#193943" metalness={0.7} roughness={0.18} />
@@ -99,22 +108,16 @@ const ProceduralHornetModel = memo(function ProceduralHornetModel({ session }: {
   </group>;
 });
 
-function isExcludedForAirborneFlight(name: string): boolean {
-  return /_door/i.test(name)
-    || /^pyl_/i.test(name)
-    || /^(gear_l|gear_r|nose_gear|nose_gear2|hook|tank|tank_pyl)$/i.test(name);
-}
-
 interface ClonedHornet {
   readonly model: Group;
   readonly materials: readonly Material[];
 }
 
-function cloneHornet(scene: Group): ClonedHornet {
+function cloneHornet(scene: Group, parked: boolean): ClonedHornet {
   const model = scene.clone(true) as Group;
   const materials: Material[] = [];
   model.traverse((object) => {
-    if (isExcludedForAirborneFlight(object.name)) {
+    if (isExcludedHornetPart(object.name, parked)) {
       object.visible = false;
       return;
     }
@@ -144,9 +147,9 @@ class HornetModelErrorBoundary extends Component<{ fallback: ReactNode; children
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-const GltfHornetModel = memo(function GltfHornetModel() {
+const GltfHornetModel = memo(function GltfHornetModel({ parked }: { parked: boolean }) {
   const { scene } = useGLTF(HORNET_MODEL_URL);
-  const cloned = useMemo(() => cloneHornet(scene as Group), [scene]);
+  const cloned = useMemo(() => cloneHornet(scene as Group, parked), [scene, parked]);
   const transform = useMemo(() => new Matrix4().compose(
     BODY_PIVOT,
     SOURCE_TO_BODY_ROTATION,
@@ -160,12 +163,12 @@ const GltfHornetModel = memo(function GltfHornetModel() {
 // FLIGHT unmount/reentry. Each mounted adapter still receives its own clone.
 useGLTF.preload(HORNET_MODEL_URL);
 
-export const HornetModel = memo(function HornetModel({ session }: { session: FlightSession }) {
-  const fallback = <ProceduralHornetModel session={session} />;
+export const HornetModel = memo(function HornetModel({ session, parked = false }: { session: FlightSession; parked?: boolean }) {
+  const fallback = <ProceduralHornetModel session={session} parked={parked} />;
   return (
     <HornetModelErrorBoundary fallback={fallback}>
       <Suspense fallback={fallback}>
-        <GltfHornetModel />
+        <GltfHornetModel parked={parked} />
       </Suspense>
     </HornetModelErrorBoundary>
   );
