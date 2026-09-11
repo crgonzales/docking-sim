@@ -7,6 +7,7 @@ import { CloudLightVolume } from './CloudLightVolume';
 import { CloudColumnAtlas } from './CloudColumnAtlas';
 import { createCloudLightVolumeLayout, type CloudLightBuildInputs, type CloudLightQuality } from './cloudLightVolumeLayout';
 import { CloudTemporalState, type CloudTemporalFrame } from './CloudTemporalState';
+import { CLOUD_STATIONARY_DEPTH_UNCERTAINTY_M, CLOUD_VIEW_SAMPLING } from './cloudViewSampling';
 import { createWeatherBindingUniforms, createWeatherSnapshot } from './cloudWeather';
 import { createWeatherMotionState, IDENTITY_WEATHER_MOTION, type WeatherMotionState } from './cloudMotion';
 import { CLOUD_WEATHER_GPU_BYTES, loadCloudWeatherAssets } from './cloudWeatherAssets';
@@ -98,14 +99,13 @@ export class EveCloudSystem {
     const bounds = this.weather.bounds;
     effect.cloudLayers.set([{ altitude: bounds.minAltitudeM,
       height: bounds.maxAltitudeM - bounds.minAltitudeM, shadow: true }]);
-    Object.assign(effect.clouds, { maxIterationCount: quality === 'low' ? 128 : 192,
-      minStepSize: 80, maxStepSize: 800, perspectiveStepScale: 1.04,
+    Object.assign(effect.clouds, CLOUD_VIEW_SAMPLING[quality], {
       minExtinction: 1e-7, minTransmittance: 0.005,
       maxIterationCountToSun: 4, minSecondaryStepSize: 1200,
       maxIterationCountToGround: 0 });
-    // A stationary stochastic ray can move its representative depth by one
-    // authored step. Moving cameras retain the resolve's strict depth guard.
-    effect.cloudsPass.resolveMaterial.uniforms.stationaryDepthAbsoluteThresholdM.value = effect.clouds.maxStepSize;
+    // Budget-limited grazing rays can outgrow the preferred step size. Retain
+    // their existing stationary allowance and the strict moving-camera guard.
+    effect.cloudsPass.resolveMaterial.uniforms.stationaryDepthAbsoluteThresholdM.value = CLOUD_STATIONARY_DEPTH_UNCERTAINTY_M;
   }
 
   /** Update live sun bindings without reconstructing weather resources. */
