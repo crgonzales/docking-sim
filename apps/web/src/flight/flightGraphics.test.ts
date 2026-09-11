@@ -30,6 +30,7 @@ describe('flight graphics selection', () => {
     expect(legacy.source).toBe('legacy-fixture');
     expect(legacy.smaa.enabled).toBe(false);
     expect(legacy.dpr).toBe(1);
+    expect(legacy.shadowMapSize).toBe(1024);
     expect(resolveFlightGraphics('graphics=high', { fixture: true, storage }).smaa.enabled).toBe(true);
     expect(resolveFlightGraphics('', { fixture: true, selectedPreset: 'balanced', storage }).smaa.enabled).toBe(true);
   });

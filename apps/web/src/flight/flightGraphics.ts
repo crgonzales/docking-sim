@@ -84,7 +84,7 @@ const PRESET_VALUES: Readonly<Record<FlightGraphicsPreset, {
     quality: 'medium',
     exposure: 2,
     smaa: { enabled: true, preset: 'medium' },
-    shadowMapSize: 1024,
+    shadowMapSize: 2048,
     requestedAnisotropy: 8,
     scenePixelCap: FLIGHT_HIGH_SCENE_PIXEL_CAP,
   },
@@ -93,7 +93,9 @@ const PRESET_VALUES: Readonly<Record<FlightGraphicsPreset, {
     quality: 'medium',
     exposure: 2,
     smaa: { enabled: true, preset: 'high' },
-    shadowMapSize: 2048,
+    // The camera-following 110 m footprint must also cover chase view. More
+    // texels remove close-up shadow steps without clipping that coverage.
+    shadowMapSize: 4096,
     requestedAnisotropy: 16,
     scenePixelCap: FLIGHT_HIGH_SCENE_PIXEL_CAP,
   },
@@ -207,7 +209,7 @@ export function resolveFlightGraphics(
       enabled: legacyFixture ? false : base.smaa.enabled,
       preset: base.smaa.preset,
     },
-    shadowMapSize: Math.min(base.shadowMapSize, maxTextureSize),
+    shadowMapSize: Math.min(legacyFixture ? 1024 : base.shadowMapSize, maxTextureSize),
     anisotropy: Math.min(requestedAnisotropy, maxAnisotropy),
     requestedAnisotropy,
     maxTextureSize,

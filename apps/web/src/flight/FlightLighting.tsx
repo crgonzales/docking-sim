@@ -11,6 +11,7 @@ import { disposeFlightShadowMap, updateFlightSkyProbe } from './flightLocalLight
 
 const METERS = 1 / SKY_CONFIG.renderScaleMPerUnit;
 const GROUND_BOUNCE_ALBEDO = 0.08;
+const SHADOW_HALF_EXTENT_M = 55;
 const smooth = (lo: number, hi: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - lo) / (hi - lo)));
   return t * t * (3 - 2 * t);
@@ -44,9 +45,13 @@ export function FlightLighting({ worldFrame, environment, localShadows, daylight
   }, [scratch]);
   const resolvedShadowMapSize = Math.max(1, Math.min(gl.capabilities.maxTextureSize,
     Math.floor(Number.isFinite(shadowMapSize) && shadowMapSize > 0 ? shadowMapSize : 1024)));
+  // Match the PCF footprint instead of using a fixed offset at every resolution.
+  // Bound it in metres so hardware-clamped maps cannot detach shadows far away.
+  const normalBiasM = Math.min(0.1, 0.8 * 2 * SHADOW_HALF_EXTENT_M / resolvedShadowMapSize);
   useLayoutEffect(() => {
     const shadow = sun.current!.shadow;
     shadow.mapSize.setScalar(resolvedShadowMapSize);
+    shadow.camera.updateProjectionMatrix();
     shadow.needsUpdate = true;
     invalidate();
     return () => { disposeFlightShadowMap(shadow); };
@@ -126,9 +131,9 @@ export function FlightLighting({ worldFrame, environment, localShadows, daylight
     <primitive object={probe} dispose={null} />
     <primitive object={target} />
     <directionalLight ref={sun} target={target} intensity={environment ? 1 : 2.4} castShadow={localShadows}
-      shadow-camera-left={-55 * METERS} shadow-camera-right={55 * METERS}
-      shadow-camera-top={55 * METERS} shadow-camera-bottom={-55 * METERS}
+      shadow-camera-left={-SHADOW_HALF_EXTENT_M * METERS} shadow-camera-right={SHADOW_HALF_EXTENT_M * METERS}
+      shadow-camera-top={SHADOW_HALF_EXTENT_M * METERS} shadow-camera-bottom={-SHADOW_HALF_EXTENT_M * METERS}
       shadow-camera-near={0.5 * METERS} shadow-camera-far={450 * METERS}
-      shadow-bias={-0.00005} shadow-normalBias={0.015 * METERS} />
+      shadow-bias={-0.00005} shadow-normalBias={normalBiasM * METERS} />
   </>;
 }

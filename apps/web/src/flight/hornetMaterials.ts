@@ -1,4 +1,4 @@
-import { Material, Mesh, MeshStandardMaterial, Texture, type Group } from 'three';
+import { BackSide, Material, Mesh, MeshStandardMaterial, Texture, type Group } from 'three';
 import type { FlightCloudLightingBridge } from '../scene/flightCloudLighting';
 import { isExcludedHornetPart } from './hornetPresentation';
 
@@ -28,6 +28,9 @@ export function cloneHornet(scene: Group, parked: boolean, cloudLighting?: Fligh
     const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
     const clonedMaterials = sourceMaterials.map((sourceMaterial: Material) => {
       const material = sourceMaterial.clone();
+      // The imported curved hull is double-sided. Casting its front skin makes
+      // it shadow itself in bands; keep thin wings/doors double-sided instead.
+      if (/^hull_/i.test(object.name)) material.shadowSide = BackSide;
       materials.push(material);
       for (const [key, value] of Object.entries(material)) {
         if (!(value instanceof Texture)) continue;

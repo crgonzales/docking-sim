@@ -3,6 +3,9 @@
 Completed local checkpoint on `codex/flight-visual-quality`, based on `5a34b36`.
 Trees and birds follow this pass; they are not included in this checkpoint.
 
+The subsequent [aircraft shadow-band fix](flight-shadow-bands-validation.md)
+updates shadow settings and records new matched visual evidence and costs.
+
 ## Baseline
 
 One existing in-app browser tab on port 5175, Apple M3, 981 × 1115 viewport.

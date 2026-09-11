@@ -21,12 +21,22 @@ interface FlightEvidenceCaptureProps {
 export function FlightEvidenceCapture({ session, environment, fixtureName, character, request, quality, onSaved }: FlightEvidenceCaptureProps) {
   const invalidate = useThree((state) => state.invalidate);
   const pending = useRef(false);
+  const frameTiming = useRef({ frames: 0, elapsedMs: 0, previousMs: null as number | null });
   useEffect(() => {
     if (request === 0) return;
     pending.current = true;
     invalidate();
   }, [request, invalidate]);
   useFrame(({ camera, gl, scene }) => {
+    // Count consecutive running frames only; paused warmup and pause duration
+    // must not contaminate a before/after performance sample.
+    const timing = frameTiming.current;
+    const now = performance.now();
+    if (character?.paused ?? session.paused) timing.previousMs = null;
+    else {
+      if (timing.previousMs !== null) { timing.frames++; timing.elapsedMs += now - timing.previousMs; }
+      timing.previousMs = now;
+    }
     if (!pending.current) return;
     pending.current = false;
     const instruments = session.instruments();
@@ -47,12 +57,16 @@ export function FlightEvidenceCapture({ session, environment, fixtureName, chara
         intensity: object.intensity, color: object.color.toArray(), position: object.position.toArray(),
         target: object.target.position.toArray(), castShadow: object.castShadow,
         mapReady: object.shadow.map !== null, mapSize: object.shadow.mapSize.toArray(),
+        coverage: { left: object.shadow.camera.left, right: object.shadow.camera.right,
+          top: object.shadow.camera.top, bottom: object.shadow.camera.bottom },
+        bias: object.shadow.bias, normalBias: object.shadow.normalBias,
       });
     });
     const context = {
       url: window.location.href, fixture: fixtureName, renderer: 'library', cloudSystem: 'eve',
       quality, dpr: gl.getPixelRatio(), drawingBuffer: [gl.domElement.width, gl.domElement.height], paused: character?.paused ?? session.paused,
       timings: renderTimings.snapshot(),
+      runningFrames: { frames: timing.frames, elapsedMs: timing.elapsedMs },
       rendererResources: {
         ...gl.info.memory, programs: gl.info.programs?.length ?? 0,
         maxTextureSize: gl.capabilities.maxTextureSize,
