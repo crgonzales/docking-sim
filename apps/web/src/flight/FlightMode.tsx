@@ -12,6 +12,7 @@ import type { TerrainTileSource } from '../scene/terrain/tileSource';
 import { flightWorldFrame } from './flightFrame';
 import { FLIGHT_KEYS, FlightSession } from './flightSession';
 import { handleFlightKeyDown } from './flightInput';
+import { FlightExercisePanel } from './FlightExercisePanel';
 import { HornetModel } from './HornetModel';
 import './flight.css';
 
@@ -25,6 +26,8 @@ const FLIGHT_ENVIRONMENT = (() => {
     quality: (query.has('quality') ? PROBE_QUALITY : 'medium') as 'low' | 'medium',
   };
 })();
+const FLIGHT_PROBE_ENABLED = (import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV
+  && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('flightProbe') === '1';
 const FlightScene = memo(function FlightScene({ session, report, cameraMode, paused }: { session: FlightSession; report: (data: Instruments) => void; cameraMode: FlightSession['camera']; paused: boolean }) {
   const invalidate = useThree((state) => state.invalidate);
   const settlingFrames = useRef(0);
@@ -139,11 +142,12 @@ export function FlightMode() {
         <dt>Normal load</dt><dd>{data.normalLoad_g.toFixed(2)} g</dd>
         <dt>Thrust</dt><dd>{(data.thrust_N / 1000).toFixed(1)} kN</dd>
         <dt>Pitch trim</dt><dd>{(session.controls.trim * 100).toFixed(1)}%</dd></dl>
-      <label className="flight-throttle">THROTTLE <b>{(session.controls.throttle * 100).toFixed(0)}% {session.controls.throttle > 0.8 ? 'AB' : ''}</b><input aria-label="Throttle" type="range" min="0" max="100" value={session.controls.throttle * 100} onChange={(e) => { session.controls.throttle = Number(e.target.value) / 100; report(session.instruments()); }} /></label>
-      <label className="flight-wind">Wind <select aria-label="Wind" value={session.environment.wind_N_m_s[1]} onChange={(e) => { session.environment.wind_N_m_s = [0, Number(e.target.value), 0]; report(session.instruments()); }}><option value="0">Calm</option><option value="10">10 m/s toward east</option></select></label>
+      <label className="flight-throttle">THROTTLE <b>{(session.controls.throttle * 100).toFixed(0)}% {session.controls.throttle > 0.8 ? 'AB' : ''}</b><input aria-label="Throttle" type="range" min="0" max="100" value={session.controls.throttle * 100} onChange={(e) => { session.setThrottle(Number(e.target.value) / 100); report(session.instruments()); }} /></label>
+      <label className="flight-wind">Wind <select aria-label="Wind" value={session.environment.wind_N_m_s[1]} onChange={(e) => { session.setWind([0, Number(e.target.value), 0]); report(session.instruments()); }}><option value="0">Calm</option><option value="10">10 m/s toward east</option></select></label>
       <div className="flight-actions"><button type="button" onClick={() => act(() => session.togglePause())}>{session.paused ? 'Resume · P' : 'Pause · P'}</button><button type="button" onClick={() => act(() => session.reset())}>Reset · R</button></div>
       <button className="flight-camera-button" type="button" onClick={() => act(() => { session.camera = session.camera === 'CHASE' ? 'NOSE' : 'CHASE'; })}>Camera: {session.camera.toLowerCase()} · C</button>
     </aside>
+    {FLIGHT_PROBE_ENABLED && <FlightExercisePanel session={session} report={() => report(session.instruments())} />}
     <footer className="flight-controls"><div><b>FLY</b> W / S pitch · A / D yaw · Q / E roll · Shift / Ctrl throttle · [ / ] trim</div>
       <div className="flight-touch-controls"><HoldControl session={session} code="KeyS">Nose up</HoldControl><HoldControl session={session} code="KeyW">Nose down</HoldControl><HoldControl session={session} code="KeyQ">Roll left</HoldControl><HoldControl session={session} code="KeyE">Roll right</HoldControl><HoldControl session={session} code="KeyA">Yaw left</HoldControl><HoldControl session={session} code="KeyD">Yaw right</HoldControl></div>
       <p>Engineering approximation · not a validated F/A-18 flight model · 50 km / 20 km altitude / M 0.95 limits · pauses on focus loss</p>

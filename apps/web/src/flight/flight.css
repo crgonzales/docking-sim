@@ -28,10 +28,15 @@
 .flight-mode select { max-width: 168px; font-size: 10px; }
 .flight-actions { display: flex; gap: 8px; }.flight-actions button { flex: 1; font-size: 10px; }
 .flight-camera-button { width: 100%; margin-top: 8px; font-size: 10px !important; }
+.flight-exercise-panel { position: absolute; left: 28px; top: 155px; width: 214px; padding: 15px 18px; background: #0d202beb; border: 1px solid #c9e9ff25; border-radius: 7px; box-shadow: 0 10px 30px #07172333; }
+.flight-exercise-select { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; color: #b4d4de; font-size: 10px; letter-spacing: 1px; }.flight-exercise-select select { max-width: 125px; }
+.flight-exercise-description { min-height: 26px; margin: 10px 0; color: #a6c4d1; font-size: 10px; line-height: 1.35; }
+.flight-exercise-state, .flight-exercise-progress { display: flex; justify-content: space-between; color: #d9e8ef; font-size: 10px; }.flight-exercise-state b { color: #beefcf; }.flight-exercise-panel progress { width: 100%; height: 5px; margin: 9px 0 5px; accent-color: #a8e4c2; }.flight-exercise-progress { color: #a6c4d1; font-size: 9px; }
+.flight-exercise-actions { margin-top: 12px; }.flight-exercise-panel small { display: block; margin-top: 10px; color: #8faab5; font-size: 9px; line-height: 1.35; }
 .flight-controls { position: absolute; bottom: 22px; left: 32px; right: 32px; text-align: center; font-size: 11px; text-shadow: 0 2px 5px #071821; }
 .flight-controls b { color: #beefcf; letter-spacing: 2px; margin-right: 12px; }
 .flight-touch-controls { margin: 12px 0; display: flex; gap: 7px; justify-content: center; }.flight-touch-controls button { background: #172e3ac9; padding: 7px 13px; font-size: 10px; }
 .flight-controls p { margin: 0; color: #d2e1e6; font-size: 9px; }
-@media (max-width: 900px) { .flight-panel { right: 14px; top: 88px; width: 180px; padding: 12px; }.flight-title { left: 18px; }.flight-instruments { left: 36%; gap: 10px; }.flight-number { min-width: 100px; }.flight-number strong { font-size: 27px; }.flight-attitude { width: 86px; height: 86px; }.flight-wings { top: 32px; }.flight-status { top: 65px; }.flight-controls { left: 12px; right: 12px; } }
+@media (max-width: 900px) { .flight-panel { right: 14px; top: 88px; width: 180px; padding: 12px; }.flight-exercise-panel { left: 14px; top: 145px; width: 180px; padding: 12px; }.flight-title { left: 18px; }.flight-instruments { left: 36%; gap: 10px; }.flight-number { min-width: 100px; }.flight-number strong { font-size: 27px; }.flight-attitude { width: 86px; height: 86px; }.flight-wings { top: 32px; }.flight-status { top: 65px; }.flight-controls { left: 12px; right: 12px; } }
 @media (min-height: 651px) and (max-height: 800px) { .flight-instruments { bottom: 120px; } }
-@media (max-height: 650px) { .flight-panel { top: 64px; }.flight-panel dl { row-gap: 5px; margin: 10px 0; }.flight-instruments { bottom: 98px; }.flight-controls { bottom: 10px; }.flight-title { top: 15px; }.flight-controls p { max-width: 65%; margin: auto; } }
+@media (max-height: 650px) { .flight-panel { top: 64px; }.flight-exercise-panel { top: 140px; }.flight-panel dl { row-gap: 5px; margin: 10px 0; }.flight-instruments { bottom: 98px; }.flight-controls { bottom: 10px; }.flight-title { top: 15px; }.flight-controls p { max-width: 65%; margin: auto; } }

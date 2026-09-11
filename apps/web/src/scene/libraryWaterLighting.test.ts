@@ -118,6 +118,7 @@ describe('pinned water metadata and aerial composition', () => {
       expect(composed).toContain('waterOpaque ? 1.0 : inputColor.a');
       expect(composed).toContain('!degenerateNormal && inputColor.a >= 0.5');
       expect(composed).toContain('waterLightingEnabled <= 0.0) return diffuseRadiance');
+      expect(composed).toContain('GetSunAndSkyIrradiance(positionECEF, waterIlluminationNormal(positionECEF, normal, waterFraction * waterLightingEnabled), sunDirection, skyIrradiance)');
       expect(composed.match(/uniform float waterLightingEnabled;/g)).toHaveLength(1);
       expect(() => waterAerialLighting(patched)).toThrow();
       expect(() => waterAerialLighting(source.replace('outputColor = vec4(radiance, inputColor.a);', ''))).toThrow();

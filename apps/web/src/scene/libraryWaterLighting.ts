@@ -42,11 +42,17 @@ float waterRadianceChannel(float albedo, float sun, float sky, float reflected,
 }
 `;
 
-const WATER_RADIANCE_GLSL = /* glsl */ `
+export const WATER_RADIANCE_GLSL = /* glsl */ `
 ${WATER_BRDF_GLSL}
+vec3 waterIlluminationNormal(vec3 positionECEF, vec3 normal, float water) {
+  // Dry land keeps its terrain normal; fractional shores transition smoothly.
+  return normalize(mix(normal, normalize(positionECEF), clamp(water, 0.0, 1.0)));
+}
 vec3 waterSurfaceRadiance(vec3 positionECEF, vec3 normal, vec3 viewDirection,
   vec3 sunIrradiance, vec3 skyIrradiance) {
-  vec3 n = normalize(normal);
+  // Statistical water is a smooth sphere. The packed normal buffer cannot
+  // resolve its tiny curvature and makes the sun reflection jump in bands.
+  vec3 n = normalize(positionECEF);
   float nv = clamp(dot(n, viewDirection), 0.0, 1.0);
   float nl = clamp(dot(n, sunDirection), 0.0, 1.0);
   vec3 halfSum = viewDirection + sunDirection;
@@ -103,6 +109,8 @@ export function waterAerialLighting(source: string): string {
     '// WATER_AERIAL_LIGHTING\n' + WATER_RADIANCE_GLSL + '\nvec3 getSunSkyIrradiance(');
   source = once(source, '  const float sunTransmittance\n) {',
     '  const float sunTransmittance,\n  const vec3 waterViewDirection,\n  const float waterFraction\n) {');
+  source = once(source, 'GetSunAndSkyIrradiance(positionECEF, normal, sunDirection, skyIrradiance)',
+    'GetSunAndSkyIrradiance(positionECEF, waterIlluminationNormal(positionECEF, normal, waterFraction * waterLightingEnabled), sunDirection, skyIrradiance)');
   const lightReturn = `  #if defined(SUN_LIGHT) && defined(SKY_LIGHT)
   return diffuse * (sunIrradiance + skyIrradiance);
   #elif defined(SUN_LIGHT)
