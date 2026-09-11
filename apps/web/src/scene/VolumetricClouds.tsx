@@ -344,7 +344,7 @@ export function VolumetricClouds({
           viewportHeight: { value: 900 },
           cloudMap: { value: cloudMap },
           cloudRotationOffset: { value: mainDeckRotation.current },
-          sunDir: { value: SUN_DIR },
+          sunDir: { value: SUN_DIR.clone() },
           earthCenter: { value: earthCenter },
         },
         transparent: true,

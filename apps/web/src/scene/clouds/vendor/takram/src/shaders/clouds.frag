@@ -40,6 +40,8 @@ uniform sampler3D higher_order_scattering_texture;
 uniform sampler2D depthBuffer;
 uniform mat4 viewMatrix;
 uniform mat4 reprojectionMatrix;
+uniform mat3 mediaReprojectionMatrix;
+uniform float mediaMotionEnabled;
 uniform mat4 viewReprojectionMatrix;
 uniform float cameraNear;
 uniform float cameraFar;
@@ -1190,7 +1192,13 @@ void main() {
       vec3 frontPosition = cameraPosition + frontDepth * rayDirection;
 
       // Velocity for temporal resolution.
-      vec3 frontPositionWorld = ecefToWorld(frontPosition);
+      // Current visible cloud fronts move with the canonical weather field.
+      // Project that physical front at its previous position for history;
+      // scene-depth/no-cloud reprojection below deliberately remains unchanged.
+      vec3 previousFrontPosition = mediaMotionEnabled > 0.5
+        ? mediaReprojectionMatrix * (frontPosition - altitudeCorrection) + altitudeCorrection
+        : frontPosition;
+      vec3 frontPositionWorld = ecefToWorld(previousFrontPosition);
       vec4 prevClip = reprojectionMatrix * vec4(frontPositionWorld, 1.0);
       float previousViewDepthM = prevClip.w * length(worldToECEFMatrix[0].xyz);
       prevClip /= prevClip.w;

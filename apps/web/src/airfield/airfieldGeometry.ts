@@ -20,8 +20,8 @@ function box(material: AirfieldMaterialName, position: Triple, size: Triple, rot
   return { material, position, size, rotation };
 }
 
-function paint(material: 'whiteMarking' | 'yellowMarking' | 'detail', x: number, z: number, width: number, length: number, yaw = 0): AirfieldBox {
-  const top = material === 'detail' ? 0.002 : AIRFIELD_MARKING_OFFSET_M;
+function paint(material: 'whiteMarking' | 'yellowMarking', x: number, z: number, width: number, length: number, yaw = 0): AirfieldBox {
+  const top = AIRFIELD_MARKING_OFFSET_M;
   return box(material, [x, top - 0.006, z], [width, 0.012, length], [0, yaw, 0]);
 }
 
@@ -94,14 +94,6 @@ function addApronAndTaxi(boxes: AirfieldBox[]): void {
     boxes.push(paint('yellowMarking', s.centerEastM, s.centerSouthM, s.widthM, 0.22));
     if (s.id.startsWith('taxi-connector')) {
       for (const x of [-46, -45]) boxes.push(paint('yellowMarking', x, s.centerSouthM, 0.18, s.lengthM - 2));
-    }
-  }
-  for (const s of AIRFIELD_SITE.surfaces.filter((s) => s.kind === 'APRON')) {
-    for (let x = s.centerEastM - s.widthM / 2 + 15; x < s.centerEastM + s.widthM / 2; x += 25) {
-      boxes.push(paint('detail', x, s.centerSouthM, 0.035, s.lengthM));
-    }
-    for (let z = s.centerSouthM - s.lengthM / 2 + 15; z < s.centerSouthM + s.lengthM / 2; z += 25) {
-      boxes.push(paint('detail', s.centerEastM, z, s.widthM, 0.035));
     }
   }
   for (const { footprint: f } of AIRFIELD_SITE.structures.filter((s) => s.kind === 'HANGAR')) {

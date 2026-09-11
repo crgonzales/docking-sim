@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { DirectionalLight, Mesh } from 'three';
 import { libraryStatus } from '../scene/LibraryEffects';
 import { renderTimings } from '../scene/renderTimings';
+import { SUN_DIR } from '../scene/sun';
 import type { CharacterSession } from '../character/characterSession';
 import type { FlightSession } from './flightSession';
+import type { FlightEnvironmentSource } from './flightEnvironment';
 
 interface FlightEvidenceCaptureProps {
   session: FlightSession;
+  environment?: FlightEnvironmentSource;
   fixtureName: string;
   character?: CharacterSession;
   request: number;
@@ -14,7 +18,7 @@ interface FlightEvidenceCaptureProps {
   onSaved: (message: string) => void;
 }
 
-export function FlightEvidenceCapture({ session, fixtureName, character, request, quality, onSaved }: FlightEvidenceCaptureProps) {
+export function FlightEvidenceCapture({ session, environment, fixtureName, character, request, quality, onSaved }: FlightEvidenceCaptureProps) {
   const invalidate = useThree((state) => state.invalidate);
   const pending = useRef(false);
   useEffect(() => {
@@ -22,18 +26,32 @@ export function FlightEvidenceCapture({ session, fixtureName, character, request
     pending.current = true;
     invalidate();
   }, [request, invalidate]);
-  useFrame(({ camera, gl }) => {
+  useFrame(({ camera, gl, scene }) => {
     if (!pending.current) return;
     pending.current = false;
     const instruments = session.instruments();
     const characterPose = character?.camera;
     const name = `flight-${fixtureName}-${Date.now()}`;
+    const localLights: unknown[] = [];
+    let shadowCasters = 0;
+    scene.traverseVisible((object) => {
+      if (object instanceof Mesh && object.castShadow) shadowCasters++;
+      if (object instanceof DirectionalLight) localLights.push({
+        intensity: object.intensity, position: object.position.toArray(),
+        target: object.target.position.toArray(), castShadow: object.castShadow,
+        mapReady: object.shadow.map !== null, mapSize: object.shadow.mapSize.toArray(),
+      });
+    });
     const context = {
       url: window.location.href, fixture: fixtureName, renderer: 'library', cloudSystem: 'eve',
       quality, dpr: gl.getPixelRatio(), drawingBuffer: [gl.domElement.width, gl.domElement.height], paused: character?.paused ?? session.paused,
       timings: renderTimings.snapshot(),
+      localLighting: { shadowsEnabled: gl.shadowMap.enabled, shadowCasters, lights: localLights },
       physicalState: structuredClone(session.state), controls: structuredClone(session.controls),
       environment: structuredClone(session.environment),
+      environmentClock: environment
+        ? { mode: 'dynamic', state: structuredClone(environment.state) }
+        : { mode: 'legacy-static', sunDirection: SUN_DIR.toArray(), weather: 'fixture/default static' },
       camera: { mode: character?.mode === 'ON_FOOT' ? 'ON_FOOT' : session.camera, position: camera.position.toArray(), quaternion: camera.quaternion.toArray(), projectionMatrix: camera.projectionMatrix.elements.slice() },
       character: character ? {
         state: structuredClone(character.state),

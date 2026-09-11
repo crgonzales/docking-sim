@@ -122,6 +122,11 @@ function isWalkableTransition(fromHeightM: number, toHeightM: number, distanceM:
 
 /** Coordinator for the opt-in vehicle/on-foot state machine. */
 export class CharacterSession {
+  private readonly resetListeners = new Set<() => void>();
+  onReset(listener: () => void): () => void {
+    this.resetListeners.add(listener);
+    return () => { this.resetListeners.delete(listener); };
+  }
   readonly flight: FlightSession;
   readonly start: CharacterStart;
   private readonly groundSampler: GroundSampler;
@@ -244,12 +249,14 @@ export class CharacterSession {
       this._yaw_rad = this.initialYawRad;
       this.configureParkedAircraft(null, true);
       this.refreshTerrain();
+      this.resetListeners.forEach((listener) => listener());
       return;
     }
     this.flight.reset();
     this.flightFrozen = false;
     this._mode = 'VEHICLE';
     this._groundReady = false;
+    this.resetListeners.forEach((listener) => listener());
   }
 
   /** Apply finite mouse/adapter deltas in radians; ignored while not looking. */

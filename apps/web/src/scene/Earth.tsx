@@ -57,6 +57,7 @@ import { SKY_LIGHTING_GLSL } from './sky/lighting';
 import { VolumetricClouds } from './VolumetricClouds';
 import { TerrainPatches } from './terrain/TerrainPatches';
 import type { TerrainTileSource } from './terrain/tileSource';
+import type { FlightEnvironmentSource } from '../flight/flightEnvironment';
 export {
   computeCloudShadowUv,
   deriveRayleighCoefficients,
@@ -554,9 +555,11 @@ export interface EarthProps {
   terrainSourceRef: { current: TerrainTileSource | null };
   /** Explicitly select the library material path for integrated modes. */
   libraryRenderer?: boolean;
+  /** Optional FLIGHT-owned sun; omitted preserves the static SceneRoot path. */
+  environment?: FlightEnvironmentSource;
 }
 
-export function Earth({ worldFrame, terrainSourceRef, libraryRenderer = LIBRARY_RENDERER }: EarthProps) {
+export function Earth({ worldFrame, terrainSourceRef, libraryRenderer = LIBRARY_RENDERER, environment }: EarthProps) {
   // Keep the existing query-selected SceneRoot default while allowing FLIGHT
   // to opt into the stabilized renderer without rewriting the URL.
   const LIBRARY_RENDERER = libraryRenderer;
@@ -627,7 +630,7 @@ export function Earth({ worldFrame, terrainSourceRef, libraryRenderer = LIBRARY_
           cloudMap: { value: cloudMap },
           atmosphereTransmittanceLut: { value: transmittanceLut },
           atmosphereMultipleScatteringLut: { value: multipleScatteringLut },
-          sunDir: { value: SUN_DIR },
+          sunDir: { value: SUN_DIR.clone() },
           planetCenter: { value: initialPosition },
           nightGain: { value: NIGHT_EMISSIVE_GAIN },
           specGain: { value: SPEC_GAIN },
@@ -649,7 +652,7 @@ export function Earth({ worldFrame, terrainSourceRef, libraryRenderer = LIBRARY_
         vertexShader: atmoVertex,
         fragmentShader: atmoFragment,
         uniforms: {
-          sunDir: { value: SUN_DIR },
+          sunDir: { value: SUN_DIR.clone() },
           planetCenter: { value: initialPosition },
           transmittanceLut: { value: transmittanceLut },
           multipleScatteringLut: { value: multipleScatteringLut },
@@ -692,6 +695,10 @@ export function Earth({ worldFrame, terrainSourceRef, libraryRenderer = LIBRARY_
     // silently fill the uniform with NaN — fromArray is the array-safe path.
     earthMaterial.uniforms.planetCenter!.value.fromArray(renderCenter);
     atmoMaterial.uniforms.planetCenter!.value.fromArray(renderCenter);
+    if (environment) {
+      earthMaterial.uniforms.sunDir!.value.fromArray(environment.state.sunDirection);
+      atmoMaterial.uniforms.sunDir!.value.fromArray(environment.state.sunDirection);
+    }
     earthMaterial.uniforms.oceanTime!.value += delta;
     earthMaterial.uniforms.farGlobeOpacity!.value = 1 - terrainFade;
     // Depth-write only needs to come off during the terrain crossfade, where

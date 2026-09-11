@@ -230,7 +230,7 @@ export function createTerrainPatchMaterial(
       specMap: { value: textures.specMap ?? null },
       cloudMap: { value: textures.cloudMap },
       transmittanceLut: { value: textures.transmittanceLut },
-      sunDir: { value: SUN_DIR },
+      sunDir: { value: SUN_DIR.clone() },
       planetCenter: { value: new Vector3(...options.planetCenter) },
       surfaceRadius: { value: options.surfaceRadius },
       atmosphereRadius: { value: options.atmosphereRadius },
@@ -323,7 +323,7 @@ export function createWaterMaterial(options: TerrainShaderOptions): ShaderMateri
     fragmentShader: WATER_FRAGMENT_SHADER,
     uniforms: {
       planetCenter: { value: new Vector3(...options.planetCenter) },
-      sunDir: { value: SUN_DIR },
+      sunDir: { value: SUN_DIR.clone() },
       terrainOpacity: { value: 0 },
       oceanTime: { value: 0 },
     },

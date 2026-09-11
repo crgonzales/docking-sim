@@ -1,9 +1,10 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { BoxGeometry, Group, InstancedMesh, Matrix4, MeshStandardMaterial, Object3D, Quaternion, StaticDrawUsage, Vector3 } from 'three';
 import type { WorldFrame } from '../scene/worldFrame';
 import { AIRFIELD_BASIS, AIRFIELD_DATUM_WORLD } from './airfieldSite';
 import { AIRFIELD_BOXES, type AirfieldBox, type AirfieldMaterialName } from './airfieldGeometry';
+import { applyAirfieldSurface } from './airfieldSurface';
 
 const MATERIAL_OPTIONS: Record<AirfieldMaterialName, ConstructorParameters<typeof MeshStandardMaterial>[0]> = {
   infield: { color: '#536047', roughness: 0.98, metalness: 0 },
@@ -35,11 +36,18 @@ function createBoxBatch() {
   const geometry = new BoxGeometry(1, 1, 1);
   const group = new Group();
   const materials: MeshStandardMaterial[] = [];
+  let edgeLightMaterial: MeshStandardMaterial | undefined;
   const meshes: InstancedMesh[] = [];
   const dummy = new Object3D();
   for (const [name, items] of grouped) {
     const material = new MeshStandardMaterial(MATERIAL_OPTIONS[name]);
+    applyAirfieldSurface(material, name);
+    if (name === 'edgeLight') edgeLightMaterial = material;
     const mesh = new InstancedMesh(geometry, material, items.length);
+    // The parent owns the one local directional shadow map. Flat deck/paint
+    // only receive it; opaque buildings, trim and perimeter geometry cast it.
+    mesh.castShadow = name === 'building' || name === 'roof' || name === 'detail';
+    mesh.receiveShadow = name !== 'edgeLight';
     mesh.instanceMatrix.setUsage(StaticDrawUsage);
     items.forEach((item, index) => {
       dummy.position.fromArray(item.position);
@@ -57,6 +65,7 @@ function createBoxBatch() {
   }
   return {
     group,
+    edgeLightMaterial,
     dispose() {
       group.removeFromParent();
       meshes.forEach((mesh) => mesh.dispose());
@@ -75,11 +84,20 @@ const SITE_QUATERNION = new Quaternion().setFromRotationMatrix(new Matrix4().mak
 
 export interface AirfieldProps {
   readonly worldFrame: WorldFrame;
+  /** 0 = night, 1 = day; absent/nonfinite keeps the legacy 2.2 intensity. */
+  readonly daylightRef?: RefObject<number>;
+}
+
+function edgeLightIntensity(daylight: number | null | undefined): number {
+  if (daylight == null || !Number.isFinite(daylight)) return 2.2;
+  const day = Math.max(0, Math.min(1, daylight));
+  return 2.2 + (0.12 - 2.2) * day * day * (3 - 2 * day);
 }
 
 /** One static instanced base, repositioned after the flight camera's -2 rebase. */
-export function Airfield({ worldFrame }: AirfieldProps) {
+export function Airfield({ worldFrame, daylightRef }: AirfieldProps) {
   const root = useRef<Group>(null);
+  const edgeLight = useRef<MeshStandardMaterial>();
   const invalidate = useThree((state) => state.invalidate);
   const initialPosition = useMemo(() => worldFrame.toRender(AIRFIELD_DATUM_WORLD), [worldFrame]);
   const metersToRender = useMemo(() => worldFrame.relativeToRender([1, 0, 0], [0, 0, 0])[0], [worldFrame]);
@@ -88,13 +106,23 @@ export function Airfield({ worldFrame }: AirfieldProps) {
   // and an abandoned React render allocates no GPU objects.
   useLayoutEffect(() => {
     const batch = createBoxBatch();
+    edgeLight.current = batch.edgeLightMaterial;
     root.current!.add(batch.group);
     invalidate();
-    return () => batch.dispose();
+    return () => {
+      edgeLight.current = undefined;
+      batch.dispose();
+    };
   }, [invalidate]);
+
+  useLayoutEffect(() => {
+    if (edgeLight.current) edgeLight.current.emissiveIntensity = edgeLightIntensity(daylightRef?.current);
+    invalidate();
+  }, [daylightRef, invalidate]);
 
   useFrame(() => {
     root.current?.position.fromArray(worldFrame.toRender(AIRFIELD_DATUM_WORLD));
+    if (edgeLight.current) edgeLight.current.emissiveIntensity = edgeLightIntensity(daylightRef?.current);
   }, -1);
 
   return <group ref={root} position={initialPosition} quaternion={SITE_QUATERNION} scale={metersToRender} />;

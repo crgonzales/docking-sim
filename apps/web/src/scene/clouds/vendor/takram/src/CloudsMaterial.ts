@@ -2,6 +2,7 @@ import {
   BasicDepthPacking,
   GLSL3,
   Matrix4,
+  Matrix3,
   Uniform,
   Vector2,
   Vector3,
@@ -87,6 +88,8 @@ export interface CloudsMaterialUniforms
   inverseProjectionMatrix: Uniform<Matrix4>
   inverseViewMatrix: Uniform<Matrix4>
   reprojectionMatrix: Uniform<Matrix4>
+  mediaReprojectionMatrix: Uniform<Matrix3>
+  mediaMotionEnabled: Uniform<number>
   viewReprojectionMatrix: Uniform<Matrix4>
   resolution: Uniform<Vector2>
   cameraNear: Uniform<number>
@@ -222,6 +225,8 @@ export class CloudsMaterial extends AtmosphereMaterialBase {
           inverseProjectionMatrix: new Uniform(new Matrix4()),
           inverseViewMatrix: new Uniform(new Matrix4()),
           reprojectionMatrix: new Uniform(new Matrix4()),
+          mediaReprojectionMatrix: new Uniform(new Matrix3()),
+          mediaMotionEnabled: new Uniform(0),
           viewReprojectionMatrix: new Uniform(new Matrix4()),
           resolution: new Uniform(new Vector2()),
           cameraNear: new Uniform(0),

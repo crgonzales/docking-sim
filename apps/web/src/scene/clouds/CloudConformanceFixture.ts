@@ -8,6 +8,7 @@ import { CloudConformanceResources, homogeneousCloudExpected } from './CloudConf
 import { verifyCloudLightVolume } from './CloudLightVolumeFixture';
 import { runCloudTemporalConformance } from './CloudTemporalFixture';
 import { runCloudWeatherConformance } from './CloudWeatherFixture';
+import { runCloudMotionConformance } from './CloudMotionFixture';
 import { runCloudPresentationConformance } from './CloudPresentationFixture';
 import { runCloudColumnConformance } from './CloudColumnFixture';
 import { runCloudDistantConformance } from './CloudDistantFixture';
@@ -343,6 +344,7 @@ export async function runCloudConformance(renderer: WebGLRenderer): Promise<Clou
     cases.push(...await runCloudSamplingConformance(renderer, resources));
     cases.push(...await runCloudTemporalConformance(renderer, resources, tolerance));
     cases.push(...await runCloudWeatherConformance(renderer, resources, tolerance));
+    cases.push(...await runCloudMotionConformance(renderer, resources, tolerance));
     cases.push(...await runCloudPresentationConformance(renderer, resources, tolerance));
     cases.push(...await runCloudColumnConformance(renderer, resources, tolerance));
     cases.push(...await runCloudDistantConformance(renderer, resources, tolerance));

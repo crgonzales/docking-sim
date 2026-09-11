@@ -9,6 +9,11 @@ const PHYSICAL_CONTROL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'KeyA', 'KeyD', '
 
 /** Web-side pacing only. Pure flight dynamics consume complete fixed steps. */
 export class FlightSession {
+  private readonly resetListeners = new Set<() => void>();
+  onReset(listener: () => void): () => void {
+    this.resetListeners.add(listener);
+    return () => { this.resetListeners.delete(listener); };
+  }
   state = createTrimmedFlight().state;
   controls: FlightControls = createTrimmedFlight().controls;
   environment: FlightEnvironment = { ...STILL_AIR, wind_N_m_s: [0, 0, 0] };
@@ -60,6 +65,7 @@ export class FlightSession {
     this.state = trim.state; this.controls = trim.controls; this.manualControls = { ...trim.controls };
     this.environment = { ...STILL_AIR, wind_N_m_s: [0, 0, 0] };
     this.paused = false; this.keys.clear(); this.pointers.clear(); this.accumulator = 0;
+    this.resetListeners.forEach((listener) => listener());
   }
   startExercise(id: FlightExerciseId): void {
     this.reset();

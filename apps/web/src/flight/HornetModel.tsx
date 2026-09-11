@@ -1,5 +1,5 @@
-import { Component, memo, Suspense, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { Component, memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import {
   BufferGeometry,
@@ -43,7 +43,7 @@ function Panel({ points, color = '#929fa9' }: { points: number[][]; color?: stri
     return g;
   }, [points]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry}><meshStandardMaterial color={color} side={DoubleSide} metalness={0.25} roughness={0.6} /></mesh>;
+  return <mesh geometry={geometry} castShadow receiveShadow><meshStandardMaterial color={color} side={DoubleSide} metalness={0.25} roughness={0.6} /></mesh>;
 }
 
 const ProceduralHornetModel = memo(function ProceduralHornetModel({ session, parked }: { session: FlightSession; parked: boolean }) {
@@ -67,34 +67,34 @@ const ProceduralHornetModel = memo(function ProceduralHornetModel({ session, par
   useEffect(() => () => body.dispose(), [body]);
   return <group>
     {parked && [[-1.5, -1.5], [-1.5, 1.5], [5.5, 0]].map(([x, y]) => <group key={`${x}/${y}`}>
-      <mesh position={[x, y, 1.4]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[x, y, 1.4]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[0.08, 0.08, 1.2, 8]} /><meshStandardMaterial color="#aab4bc" />
       </mesh>
-      <mesh position={[x, y, 2]}>
+      <mesh position={[x, y, 2]} castShadow receiveShadow>
         <cylinderGeometry args={[0.4, 0.4, 0.22, 12]} /><meshStandardMaterial color="#20272c" />
       </mesh>
     </group>)}
-    <mesh geometry={body}><meshStandardMaterial color="#aab4bc" metalness={0.35} roughness={0.57} side={DoubleSide} /></mesh>
-    <mesh position={[4.2, 0, -0.74]} scale={[2.2, 0.65, 0.74]}>
+    <mesh geometry={body} castShadow receiveShadow><meshStandardMaterial color="#aab4bc" metalness={0.35} roughness={0.57} side={DoubleSide} /></mesh>
+    <mesh position={[4.2, 0, -0.74]} scale={[2.2, 0.65, 0.74]} receiveShadow>
       <sphereGeometry args={[1, 24, 12]} /><meshStandardMaterial color="#193943" metalness={0.7} roughness={0.18} />
     </mesh>
-    <mesh position={[6.4, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+    <mesh position={[6.4, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow receiveShadow>
       <coneGeometry args={[0.5, 3.8, 16]} /><meshStandardMaterial color="#535d66" />
     </mesh>
     {[-1, 1].map((side) => <group key={side}>
       <Panel points={[[2, side * 1.1, -0.1], [-1.5, side * 6.15, 0], [-3.3, side * 6.15, 0], [-4, side * 1.1, -0.1]]} />
       <Panel points={[[5.5, side * 0.65, -0.3], [1.7, side * 2.3, -0.2], [-1, side * 1.3, -0.15]]} color="#b3bec5" />
       <Panel points={[[-3.7, side * 1.3, -0.5], [-5.6, side * 2.45, -3.65], [-7.2, side * 2.75, -3.65], [-7.8, side * 1.3, -0.5]]} color="#7c8a95" />
-      <mesh position={[-4.4, side * 0.8, 0.45]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[-4.4, side * 0.8, 0.45]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
         <cylinderGeometry args={[0.6, 0.67, 7.5, 16]} /><meshStandardMaterial color="#71818d" roughness={0.65} />
       </mesh>
-      <mesh position={[-8.3, side * 0.8, 0.45]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[-8.3, side * 0.8, 0.45]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
         <cylinderGeometry args={[0.52, 0.6, 0.7, 16, 1, true]} /><meshStandardMaterial color="#263239" side={DoubleSide} metalness={0.8} roughness={0.45} />
       </mesh>
       <mesh position={[-8.5, side * 0.8, 0.45]} rotation={[0, Math.PI / 2, 0]}>
         <circleGeometry args={[0.49, 16]} /><meshBasicMaterial color="#e89856" side={DoubleSide} />
       </mesh>
-      <mesh position={[1, side * 1.1, 0.4]} scale={[1.3, 0.4, 0.48]}>
+      <mesh position={[1, side * 1.1, 0.4]} scale={[1.3, 0.4, 0.48]} castShadow receiveShadow>
         <boxGeometry /><meshStandardMaterial color="#28343c" />
       </mesh>
       <mesh position={[-2, side * 6.15, 0]}><sphereGeometry args={[0.09, 8, 6]} /><meshBasicMaterial color={side < 0 ? '#ff5151' : '#75ffa0'} /></mesh>
@@ -122,6 +122,7 @@ function cloneHornet(scene: Group, parked: boolean): ClonedHornet {
       return;
     }
     if (!(object instanceof Mesh)) return;
+    const canopyGlass = /canopy_glass|windshield|windshied/i.test(object.name);
     const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
     const clonedMaterials = sourceMaterials.map((sourceMaterial) => {
       const material = sourceMaterial.clone();
@@ -131,11 +132,16 @@ function cloneHornet(scene: Group, parked: boolean): ClonedHornet {
         // light; the source's textures and canopy alpha remain unchanged.
         material.metalness = Math.min(material.metalness, 0.35);
         material.roughness = Math.max(material.roughness, 0.45);
-        if (/canopy_glass|windshied/i.test(object.name)) material.depthWrite = false;
+        if (canopyGlass) material.depthWrite = false;
       }
       return material;
     });
     object.material = Array.isArray(object.material) ? clonedMaterials : clonedMaterials[0]!;
+    // Three's depth shadow material does not reproduce blended glass opacity.
+    // Keep the opaque canopy frame, hull and deployed gear as casters; a mixed
+    // opaque/transparent mesh conservatively skips casting without splitting it.
+    object.castShadow = !canopyGlass && clonedMaterials.every((material) => !material.transparent && material.opacity >= 1);
+    object.receiveShadow = true;
   });
   return { model, materials };
 }
@@ -149,14 +155,26 @@ class HornetModelErrorBoundary extends Component<{ fallback: ReactNode; children
 
 const GltfHornetModel = memo(function GltfHornetModel({ parked }: { parked: boolean }) {
   const { scene } = useGLTF(HORNET_MODEL_URL);
-  const cloned = useMemo(() => cloneHornet(scene as Group, parked), [scene, parked]);
+  const root = useRef<Group>(null);
+  const invalidate = useThree((state) => state.invalidate);
   const transform = useMemo(() => new Matrix4().compose(
     BODY_PIVOT,
     SOURCE_TO_BODY_ROTATION,
     new Vector3(HORNET_SCALE, HORNET_SCALE, HORNET_SCALE),
   ), []);
-  useEffect(() => () => cloned.materials.forEach((material) => material.dispose()), [cloned]);
-  return <group matrix={transform} matrixAutoUpdate={false}><primitive object={cloned.model} dispose={null} /></group>;
+  // Allocate owned materials in committed setup, including StrictMode replay.
+  // Rebasing/daylight do not clone or dispose them; cached source assets survive.
+  useLayoutEffect(() => {
+    const cloned = cloneHornet(scene as Group, parked);
+    const parent = root.current!;
+    parent.add(cloned.model);
+    invalidate();
+    return () => {
+      parent.remove(cloned.model);
+      cloned.materials.forEach((material) => material.dispose());
+    };
+  }, [scene, parked, invalidate]);
+  return <group ref={root} matrix={transform} matrixAutoUpdate={false} dispose={null} />;
 });
 
 // drei's cache retains the source hierarchy, geometry and textures across

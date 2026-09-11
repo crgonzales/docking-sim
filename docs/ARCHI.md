@@ -63,7 +63,7 @@ These coefficients are not a validated F/A-18 dataset.
 pause/reset/blur handling, aircraft visuals, HUD and NED→world adapter.
 It reuses Earth/WorldFrame through explicit renderer options without changing
 the renderer internals: FLIGHT owns one camera/floating origin and one
-`LibraryEffects` composer, with medium EVE clouds, exposure 2 and DPR 1 by
+`LibraryEffects` composer, with medium volumetric weather, exposure 2 and DPR 1 by
 default. Existing `quality`, `dpr`, `exposure` and cloud diagnostic query
 overrides remain available. Flat local physics are mapped onto a spherical
 equatorial ocean chart for presentation; 50 km radius, 20 km ceiling and M
@@ -158,4 +158,11 @@ integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
 - Ordinary `?mode=flight` starts on foot beside a parked, gear-down Hornet. `start=airborne` or `character=0` retains legacy airborne flight; `character=1&start=airborne` retains character-owned airborne mode. The DEV cloud-base fixture takes precedence.
 - `character/CharacterSession` coordinates exclusive ON_FOOT/VEHICLE input and camera ownership; walking uses a 100 Hz fixed step, clears held input on pause/blur/transition, and supports nearby boarding/guarded exits. Parked aircraft physics stays frozen even after boarding. `FlightSession.park()` cancels exercises and reconciles private throttle/trim.
 - `airfield/airfieldSite.ts` owns the surveyed 105 m tangent plane near 7°N/0.02°E, runway/apron/pad definitions and building/perimeter collision footprints. Ground support intersects the existing flight-chart radial direction with that same plane; async terrain streaming cannot displace it. `airfieldGeometry.ts` partitions coplanar deck cells; `Airfield.tsx` batches static geometry into 11 instanced material groups, updating after camera rebasing and disposing resources on unmount.
-- One Earth/EVE composer and shared terrain source remain in FlightMode; first-person uses 1.7 m eyes and an 80° vertical field of view. Base UI hides inactive flight controls and exercise resets, and DEV evidence records the active character/camera. Airborne 50 km / 20 km / M 0.95 limits remain unchanged; no runway contact/ground-roll solver, building interiors or aircraft body collision.
+- One Earth/volumetric-weather composer and shared terrain source remain in FlightMode; first-person uses 1.7 m eyes and an 80° vertical field of view. Base UI hides inactive flight controls and exercise resets, and DEV evidence records the active character/camera. Airborne 50 km / 20 km / M 0.95 limits remain unchanged; no runway contact/ground-roll solver, building interiors or aircraft body collision.
+
+### Flight environment time and weather
+
+- `flight/FlightEnvironmentClock` owns render-side time separately from aircraft/walking fixed steps. Default is 10:00 reference local solar time at 1x; explicit seeks/reset are discontinuities, while continuous time never wraps at midnight. Pause/focus loss freezes daylight/weather even during the 96-frame paused render warmup. UI notifications are bounded to ~10 Hz.
+- Optional environment state reaches Earth and LibraryEffects; ordinary SceneRoot and the original cloud-base fixture retain static defaults. One normalized equinox sun drives sky, terrain/ocean and local PBR. `FlightLighting` borrows the composer-owned transmittance LUT for sunlight color, plus one 1024 local shadow map updated only for the color render. Filtered airfield detail stays in surveyed site coordinates and never changes collision height.
+- `cloudMotion.ts` rotates physical ECEF about north +Z at 15 m/s equatorial wind; maps and both noise domains sample the inverse canonical transform. Seeded fronts are continuous 3D fields restricted to the sphere. The orbital atlas stays canonical; physical light-volume snapshots refresh every 2 seconds and validate against live time/sun. Only cloud-front reprojection includes media motion; scene depth stays camera-only, and stationary history reuse is disabled while media moves.
+- User-facing naming is volumetric weather. Legacy `eve` URLs/shader identifiers remain compatible, with existing third-party attribution retained. Weather is procedural advection, not precipitation or a meteorological solver. See `docs/6-memo/f18-integration/ground-weather-validation.md` for measured evidence and remaining visual limits.

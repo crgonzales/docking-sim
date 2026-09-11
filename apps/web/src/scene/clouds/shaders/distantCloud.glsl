@@ -12,9 +12,10 @@ float cloudSunOpticalDepth(const vec3 position, const float footprintM,
   const float mipLevel, const float jitter, out CloudLightingSample lighting);
 
 vec4 eveReadColumn(const vec3 p, const float footprintM) {
-  float lod = eveWeatherMapLod(p, footprintM, 0.0,
+  vec3 canonicalPositionECEFM = eveWeatherCanonicalPositionECEFM(p);
+  float lod = eveWeatherMapLod(canonicalPositionECEFM, footprintM, 0.0,
     eveColumnDimensions, vec2(2.0 * PI, PI));
-  return textureLod(eveColumnTexture, eveWeatherUv(p), lod);
+  return textureLod(eveColumnTexture, eveWeatherUv(canonicalPositionECEFM), lod);
 }
 
 // Height stays conditional on coverage through filtering; an empty texel must

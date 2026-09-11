@@ -1,14 +1,17 @@
 // EVE media hook. This source-only include consumes finite profile tables from
 // the WeatherSnapshot bindings. Coverage and typeField are independent maps;
 // typeField is blended into one profile before any height curve is evaluated.
-// Visual time remains a caller-owned compatibility uniform; flow/advection is
-// intentionally unimplemented, so it never moves this field.
+// Visual time and motion are caller-owned uniforms. The opt-in path rotates
+// physical ECEF lookups into this stable canonical frame.
 
 uniform sampler2D eveWeatherCoverageTexture;
 uniform sampler2D eveWeatherTypeFieldTexture;
 uniform sampler2D eveWeatherReferenceFieldTexture;
 uniform sampler3D eveWeatherNoiseTexture;
 uniform float eveWeatherPlanetRadiusM;
+uniform float eveWeatherMotionTimeS;
+uniform float eveWeatherMotionAngleRad;
+uniform float eveWeatherMotionEnabled;
 uniform vec2 eveWeatherMapDimensions;
 uniform vec2 eveWeatherReferenceMapDimensions;
 uniform vec3 eveWeatherNoiseDimensions;
@@ -40,6 +43,19 @@ uniform vec4 eveCloudDensityKnots[4];
 uniform vec4 eveCloudDensityValues[4];
 
 const int EVE_CLOUD_PROFILE_COUNT = 4;
+
+vec3 eveWeatherCanonicalPositionECEFM(const vec3 positionECEFM) {
+  if (eveWeatherMotionEnabled <= 0.5) return positionECEFM;
+  // Inverse of the physical eastward +Z rotation. The same result feeds both
+  // authored coverage/type maps and both primary/detail noise domains.
+  float cosine = cos(eveWeatherMotionAngleRad);
+  float sine = sin(eveWeatherMotionAngleRad);
+  return vec3(
+    cosine * positionECEFM.x + sine * positionECEFM.y,
+    -sine * positionECEFM.x + cosine * positionECEFM.y,
+    positionECEFM.z
+  );
+}
 
 // Orthonormal rotation plus a fixed physical offset keeps the erosion field in
 // ECEF while preventing the primary cube's exact repeat from surviving.
@@ -100,19 +116,50 @@ float eveWeatherMapLod(
   return max(0.0, weatherLod) + angularLod;
 }
 
-vec2 eveSampleWeather(
-  const vec3 positionECEFM,
+vec2 eveSeededWeatherFront(const vec3 canonicalPositionECEFM) {
+  vec3 normal = normalize(canonicalPositionECEFM);
+  const float seed = 8.5896983;
+  // Restrict continuous 3D waves to the sphere; longitude seams and poles agree.
+  float broad = 0.5 + 0.5 * sin(dot(normal, vec3(9.0, 31.0, 13.0)) + seed
+    + 0.8 * sin(dot(normal, vec3(17.0, -11.0, 7.0))));
+  float secondary = 0.5 + 0.5 * sin(dot(normal, vec3(37.0, -19.0, -23.0)) + 1.7 + seed * 0.37);
+  float meridional = 0.5 + 0.5 * sin(dot(normal, vec3(5.0, 8.0, 13.0)) + 0.91);
+  float organized = smoothstep(0.32, 0.72, broad);
+  float broken = 0.65 + 0.35 * secondary;
+  return clamp(vec2(
+    0.06 + 0.85 * organized * broken + 0.03 * meridional,
+    0.04 + 0.78 * organized + 0.12 * meridional + 0.04 * secondary
+  ), 0.0, 1.0);
+}
+
+vec2 eveApplySeededWeatherFront(
+  const vec2 authoredField,
+  const vec3 canonicalPositionECEFM
+) {
+  if (eveWeatherMotionEnabled <= 0.5) return authoredField;
+  vec2 front = eveSeededWeatherFront(canonicalPositionECEFM);
+  return clamp(vec2(
+    authoredField.x * (0.12 + 1.5 * front.x),
+    authoredField.y * 0.55 + front.y * 0.45
+  ), 0.0, 1.0);
+}
+
+vec2 eveSampleWeatherCanonical(
+  const vec3 canonicalPositionECEFM,
   const float footprintM,
   const float weatherLod
 ) {
-  vec2 uv = eveWeatherUv(positionECEFM);
-  float mapLod = eveWeatherMapLod(positionECEFM, footprintM, weatherLod,
+  vec2 uv = eveWeatherUv(canonicalPositionECEFM);
+  float mapLod = eveWeatherMapLod(canonicalPositionECEFM, footprintM, weatherLod,
     eveWeatherMapDimensions, vec2(2.0 * PI, PI));
   vec2 globalField = vec2(
     textureLod(eveWeatherCoverageTexture, uv, mapLod).r,
     textureLod(eveWeatherTypeFieldTexture, uv, mapLod).r
   );
-  if (eveWeatherReferenceFieldEnabled <= 0.5) return globalField;
+  vec2 selectedField = globalField;
+  if (eveWeatherReferenceFieldEnabled <= 0.5) {
+    return eveApplySeededWeatherFront(selectedField, canonicalPositionECEFM);
+  }
 
   // The reference asset is authored south-first and is uploaded without a
   // second vertical flip. Global assets are north-first and are oriented once
@@ -125,17 +172,27 @@ vec2 eveSampleWeather(
     max(eveWeatherReferenceBoundsDeg.zw - eveWeatherReferenceBoundsDeg.xy, vec2(1e-6));
   float inside = step(0.0, referenceUv.x) * step(referenceUv.x, 1.0) *
     step(0.0, referenceUv.y) * step(referenceUv.y, 1.0);
-  if (inside <= 0.0) return globalField;
+  if (inside <= 0.0) return eveApplySeededWeatherFront(selectedField, canonicalPositionECEFM);
   float edge = min(min(referenceUv.x, 1.0 - referenceUv.x), min(referenceUv.y, 1.0 - referenceUv.y));
   float boundaryBlend = inside * smoothstep(0.0, 0.08, edge);
   // The local map covers only its authored angular bounds. Reusing the global
   // LOD undersamples its much finer physical texels, despite fewer total pixels.
   vec2 referenceSpanRad = radians(max(
     eveWeatherReferenceBoundsDeg.zw - eveWeatherReferenceBoundsDeg.xy, vec2(1e-6)));
-  float referenceLod = eveWeatherMapLod(positionECEFM, footprintM, weatherLod,
+  float referenceLod = eveWeatherMapLod(canonicalPositionECEFM, footprintM, weatherLod,
     eveWeatherReferenceMapDimensions, referenceSpanRad);
   vec2 referenceField = textureLod(eveWeatherReferenceFieldTexture, referenceUv, referenceLod).rg;
-  return mix(globalField, referenceField, boundaryBlend);
+  selectedField = mix(globalField, referenceField, boundaryBlend);
+  return eveApplySeededWeatherFront(selectedField, canonicalPositionECEFM);
+}
+
+vec2 eveSampleWeather(
+  const vec3 positionECEFM,
+  const float footprintM,
+  const float weatherLod
+) {
+  return eveSampleWeatherCanonical(
+    eveWeatherCanonicalPositionECEFM(positionECEFM), footprintM, weatherLod);
 }
 
 // Stock-equivalent signature. Every production marcher calls this same hook.
@@ -153,7 +210,8 @@ MediaSample sampleCloudMedia(
   media.phaseAnisotropy = vec2(0.0);
   media.phaseMix = 0.0;
 
-  vec2 weather = eveSampleWeather(positionECEFM, footprintM, weatherLod);
+  vec3 canonicalPositionECEFM = eveWeatherCanonicalPositionECEFM(positionECEFM);
+  vec2 weather = eveSampleWeatherCanonical(canonicalPositionECEFM, footprintM, weatherLod);
   float coverage = clamp(weather.x, 0.0, 1.0);
   if (coverage <= 0.0) return media;
 
@@ -190,14 +248,14 @@ MediaSample sampleCloudMedia(
     max(footprintM, 0.0) * eveWeatherNoiseDimensions.x / leftScalesM)));
   vec2 rightLod = max(vec2(0.0), log2(max(vec2(1.0),
     max(footprintM, 0.0) * eveWeatherNoiseDimensions.x / rightScalesM)));
-  vec3 detailPositionECEFM = eveDetailNoisePositionECEFM(positionECEFM);
+  vec3 detailPositionECEFM = eveDetailNoisePositionECEFM(canonicalPositionECEFM);
   vec4 primaryNoise = textureLod(
-    eveWeatherNoiseTexture, fract(positionECEFM / leftScalesM.x), leftLod.x);
+    eveWeatherNoiseTexture, fract(canonicalPositionECEFM / leftScalesM.x), leftLod.x);
   vec4 detailNoise = textureLod(
     eveWeatherNoiseTexture, fract(detailPositionECEFM / leftScalesM.y), leftLod.y);
   if (typeBlend > 0.0) {
     primaryNoise = mix(primaryNoise, textureLod(
-      eveWeatherNoiseTexture, fract(positionECEFM / rightScalesM.x), rightLod.x), typeBlend);
+      eveWeatherNoiseTexture, fract(canonicalPositionECEFM / rightScalesM.x), rightLod.x), typeBlend);
     detailNoise = mix(detailNoise, textureLod(
       eveWeatherNoiseTexture, fract(detailPositionECEFM / rightScalesM.y), rightLod.y), typeBlend);
   }

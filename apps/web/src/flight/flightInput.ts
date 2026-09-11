@@ -8,7 +8,7 @@ const CONTROL_CHORD_KEYS = new Set(['ControlLeft', 'ControlRight', 'ShiftLeft', 
 /** Return true when a discrete command needs a UI update, even while rendering is paused. */
 export function handleFlightKeyDown(event: KeyEvent, session: FlightSession, target: KeyTarget | null): boolean {
   if (!FLIGHT_KEYS.has(event.code) || event.defaultPrevented || event.isComposing || (event.ctrlKey && !CONTROL_CHORD_KEYS.has(event.code)) || event.metaKey || event.altKey) return false;
-  if (target?.isContentEditable || target?.tagName === 'TEXTAREA') return false;
+  if (target?.isContentEditable || target?.tagName === 'TEXTAREA' || target?.tagName === 'BUTTON') return false;
   if (target?.tagName === 'INPUT' || target?.tagName === 'SELECT') {
     const flightWidget = target.tagName === 'SELECT' || target.type === 'range';
     if (!flightWidget || (event.code !== 'KeyP' && event.code !== 'KeyR')) return false;

@@ -16,6 +16,12 @@ import {
   type CloudTypeProfile,
   type WeatherFieldSample
 } from './cloudConfig'
+import {
+  canonicalWeatherPositionECEFM,
+  IDENTITY_WEATHER_MOTION,
+  sampleSeededWeatherFront,
+  type WeatherMotionState
+} from './cloudMotion'
 
 const DEGREES_PER_RADIAN = 180 / Math.PI
 const RADIANS_PER_DEGREE = Math.PI / 180
@@ -95,6 +101,10 @@ export interface WeatherSnapshotOptions {
 }
 
 export type WeatherBindingUniforms = Readonly<Record<string, Uniform<unknown>>>
+
+export interface WeatherBindingOptions {
+  readonly motion?: WeatherMotionState
+}
 
 export interface WeatherTextureBindings {
   /** Global rows must be reversed on CPU before raw upload with flipY=false. */
@@ -323,6 +333,25 @@ export function sampleWeatherField(positionECEFM: readonly [number, number, numb
   return sampleReferenceWeatherField((v - 0.5) * 180, (u - 0.5) * 360)
 }
 
+/**
+ * CPU registration oracle for the opt-in moving field. The authored reference
+ * field and seeded fronts are sampled in the same canonical frame; the static
+ * sampleWeatherField contract above remains byte-for-byte legacy behavior.
+ */
+export function sampleWeatherFieldWithMotion(
+  positionECEFM: readonly [number, number, number],
+  motion: WeatherMotionState = IDENTITY_WEATHER_MOTION
+): WeatherFieldSample {
+  const canonical = canonicalWeatherPositionECEFM(positionECEFM, motion)
+  const authored = sampleWeatherField(canonical)
+  if (!motion.enabled) return authored
+  const fronts = sampleSeededWeatherFront(canonical)
+  return Object.freeze({
+    coverage: Math.max(0, Math.min(1, authored.coverage * (0.12 + 1.5 * fronts[0]))),
+    typeField: Math.max(0, Math.min(1, authored.typeField * 0.55 + fronts[1] * 0.45))
+  })
+}
+
 function weightForProfile(profile: ReturnType<typeof interpolateCloudProfile>): readonly [number, number, number, number] {
   const left = EVE_CLOUD_PROFILES.findIndex(({ id }) => id === profile.leftType)
   const right = EVE_CLOUD_PROFILES.findIndex(({ id }) => id === profile.rightType)
@@ -416,8 +445,10 @@ function vector4Table(values: readonly (readonly [number, number, number, number
  */
 export function createWeatherBindingUniforms(
   snapshot: WeatherSnapshot,
-  textures: WeatherTextureBindings = {}
+  textures: WeatherTextureBindings = {},
+  options: WeatherBindingOptions = {}
 ): WeatherBindingUniforms {
+  const motion = options.motion ?? IDENTITY_WEATHER_MOTION
   const northAxis = new Vector3(...snapshot.northAxisECEF)
   const sunDirection = new Vector3(...snapshot.sunDirectionECEF)
   const bounds = new Vector2(snapshot.bounds.minAltitudeM, snapshot.bounds.maxAltitudeM)
@@ -439,6 +470,9 @@ export function createWeatherBindingUniforms(
   return Object.freeze({
     eveWeatherGeneration: new Uniform(snapshot.generation),
     eveWeatherVisualTimeS: new Uniform(snapshot.visualTimeS),
+    eveWeatherMotionTimeS: new Uniform(motion.timeSeconds),
+    eveWeatherMotionAngleRad: new Uniform(motion.angleRad),
+    eveWeatherMotionEnabled: new Uniform(motion.enabled ? 1 : 0),
     eveWeatherPlanetRadiusM: new Uniform(snapshot.planetRadiusM),
     eveWeatherNorthAxisECEF: new Uniform(northAxis),
     eveWeatherSunDirectionECEF: new Uniform(sunDirection),

@@ -59,7 +59,10 @@ export class CloudLightVolume {
     eveLightValid: new Uniform(0),
     eveLightGeneration: new Uniform(-1),
   };
-  readonly status = { state: 'uninitialized', format: '', bytes: 0, generation: -1, pendingSlices: 0, error: '' };
+  readonly status = {
+    state: 'uninitialized', format: '', bytes: 0, generation: -1, pendingSlices: 0, error: '',
+    ageSeconds: null as number | null, valid: false
+  };
   private state = createCloudLightGenerationState();
   private buffers: [WebGLArrayRenderTarget, WebGLArrayRenderTarget] | null = null;
   private readonly bindings = new Map<number, Uniforms>();
@@ -224,6 +227,8 @@ void main() {
     const sunAgreement = published ? published.inputs.sunDirectionECEF.reduce((v, c, i) => v + c * current.sunDirectionECEF[i]!, 0) : 0;
     const valid = published !== null && published.inputs.weatherGeneration === current.weatherGeneration &&
       age >= 0 && age <= 3 && sunAgreement >= Math.cos(Math.PI / 180);
+    this.status.ageSeconds = Number.isFinite(age) ? Math.max(0, age) : null;
+    this.status.valid = valid;
     this.uniforms.eveLightValid.value = valid ? 1 : 0;
     if (published) {
       const layout = published.inputs.layout;
@@ -246,6 +251,11 @@ void main() {
     this.uniforms.eveLightGeneration.value = -1;
     this.status.generation = -1;
     this.status.pendingSlices = 0;
+    this.status.ageSeconds = null;
+    this.status.valid = false;
+    if (!['failed', 'unsupported', 'disposed'].includes(this.status.state)) {
+      this.status.state = 'invalidated';
+    }
   }
 
   dispose(): void {

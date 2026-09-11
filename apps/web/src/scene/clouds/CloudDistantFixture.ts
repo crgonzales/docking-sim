@@ -46,6 +46,8 @@ export async function runCloudDistantConformance(
       struct CloudLightingSample { float valid; vec3 skyIrradiance; };
       struct MediaSample { float extinction; float scattering; };
       ${raySphereIntersection}
+      // Analytic fixture is static: its atlas and physical coordinates coincide.
+      vec3 eveWeatherCanonicalPositionECEFM(const vec3 p) { return p; }
       vec2 eveWeatherUv(const vec3 p) { return vec2(p.x < 0.0 ? 0.75 : 0.25, 0.5); }
       float eveWeatherMapLod(const vec3 p, const float f, const float l, const vec2 d, const vec2 a) { return 0.0; }
       vec2 eveSampleWeather(const vec3 p, const float f, const float l) {

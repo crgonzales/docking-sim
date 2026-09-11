@@ -224,7 +224,7 @@ export function Clouds({
       fragmentShader: CLOUD_FRAGMENT,
       uniforms: {
         cloudMap: { value: deckConfig.texture },
-        sunDir: { value: SUN_DIR },
+        sunDir: { value: SUN_DIR.clone() },
         opacity: { value: deckConfig.opacity },
         detailScale: { value: deckConfig.detailScale },
         detailStrength: { value: deckConfig.detailStrength },
@@ -249,7 +249,7 @@ export function Clouds({
       fragmentShader: CLOUD_FRAGMENT,
       uniforms: {
         cloudMap: { value: cirrusConfig.texture },
-        sunDir: { value: SUN_DIR },
+        sunDir: { value: SUN_DIR.clone() },
         opacity: { value: cirrusConfig.opacity },
         detailScale: { value: cirrusConfig.detailScale },
         detailStrength: { value: cirrusConfig.detailStrength },

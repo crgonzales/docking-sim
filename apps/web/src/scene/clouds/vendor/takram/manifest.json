@@ -235,17 +235,17 @@
     ]
   },
   "fork": {
-    "purpose": "Maintained media/lighting backend, shared transport, alternate near/far integration, and per-view temporal reconstruction; opt-in EVE development selector, visual acceptance pending.",
+    "purpose": "Maintained media/lighting backend, shared transport, alternate near/far integration, and per-view temporal reconstruction; legacy development selector, visual acceptance pending.",
     "modifiedFileCount": 15,
     "addedFileCount": 4,
     "modifiedUpstreamFiles": {
       "src/CloudsEffect.ts": "Forward hooks; shared-lighting mode retires stock Beer shadow updates and exports one cloud overlay.",
-      "src/CloudsMaterial.ts": "Shared hook uniforms, bounded reference/far schedules, camera-depth and Bayer reprojection controls.",
-      "src/CloudsPass.ts": "Own paired view/history targets and invalidation; detect consecutive stationary physical camera frames across render-origin rebases.",
+      "src/CloudsMaterial.ts": "Shared hook uniforms, bounded reference/far schedules, camera-depth and Bayer reprojection controls. Optional canonical media motion reprojection uniforms.",
+      "src/CloudsPass.ts": "Own paired view/history targets and invalidation; detect consecutive stationary physical camera frames across render-origin rebases. Disable stationary reuse while media moves; track the previous rendered weather transform without history resets.",
       "src/ShadowMaterial.ts": "Resolve the media include and share hook uniforms with the shadow producer.",
       "src/ShadowPass.ts": "Forward shader hooks to the production shadow material.",
       "src/index.ts": "Export the local hook contract and stock hook factory.",
-      "src/shaders/clouds.frag": "Canonical physical media and disjoint light transport; native/far alternate L/T integrals and single atmosphere blend; conservative whole-ray budgets, log-depth, positive previous/current cloud depth, and GPU diagnostics. Near/far reconstruction depth follows finite opacity contributions with exact endpoints. Optional EVE low-flight horizon presentation blends premultiplied cloud light/opacity into the background after transport.",
+      "src/shaders/clouds.frag": "Canonical physical media and disjoint light transport; native/far alternate L/T integrals and single atmosphere blend; conservative whole-ray budgets, log-depth, positive previous/current cloud depth, and GPU diagnostics. Near/far reconstruction depth follows finite opacity contributions with exact endpoints. Optional low-flight horizon presentation blends premultiplied cloud light/opacity into the background after transport. Advect only the visible physical cloud front into the previous weather frame, preserving altitude correction and the camera-only no-cloud branch.",
       "src/shaders/clouds.glsl": "Initialize finite media coefficients, weights and phase parameters.",
       "src/shaders/parameters.glsl": "Declare physical reference sampling controls and stock phase defaults.",
       "src/shaders/shadow.frag": "Canonical media shadow integration, clipped midpoint reference segments, finite opaque front depth, paired half-float storage and motion-depth encoding.",

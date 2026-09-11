@@ -26,6 +26,7 @@ import { directionToECEF, updateWorldToECEF } from './libraryFrame';
 import { installComposerPassTimings, renderTimings } from './renderTimings';
 import { PROBE_CLOUDS, PROBE_DPR, PROBE_EXPOSURE, PROBE_QUALITY, PROBE_WEATHER, PROBE_WEATHER_STRUCTURE } from './renderProbeConfig';
 import type { CloudLightQuality } from './clouds/cloudLightVolumeLayout';
+import type { FlightEnvironmentSource } from '../flight/flightEnvironment';
 
 export const libraryStatus = { state: 'loading', error: '', shadowRange: null as CloudShadowRange | null, shadowTexelM: [] as number[], lightingSelection: [0, 0, 0], eve: null as EveCloudSystem['status'] | null };
 const ROOT = '/vendor/takram';
@@ -54,9 +55,13 @@ export interface LibraryEffectsProps {
   readonly exposure?: number;
   /** Used for render diagnostics; the Canvas remains the DPR owner. */
   readonly dpr?: number;
+  /** Optional FLIGHT-owned daylight state; omitted preserves static SceneRoot lighting. */
+  readonly environment?: FlightEnvironmentSource;
+  /** Borrowed LUT for local PBR sunlight; this composer retains ownership. */
+  readonly sunTransmittanceRef?: { current: Texture | null };
 }
 
-export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, exposure, dpr }: LibraryEffectsProps) {
+export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, exposure, dpr, environment, sunTransmittanceRef }: LibraryEffectsProps) {
   const { gl, scene, camera, size, invalidate } = useThree();
   const query = new URLSearchParams(window.location.search);
   const selectedCloudSystem = cloudSystem ?? (query.get('cloudSystem') === 'eve' ? 'eve' : 'legacy');
@@ -66,6 +71,9 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
   const latestSize = useRef(size);
   const cloudFrame = useRef(new CloudReprojectionFrame());
   const cameraECEF = useRef(new Vector3());
+  const sunRender = useRef(new Vector3());
+  const sunECEF = useRef(new Vector3());
+  const environmentDiscontinuity = useRef(environment?.state.discontinuityRevision ?? 0);
   latestSize.current = size;
   const live = useRef<{ composer: EffectComposer; aerial: ShadowDiagnosticAerialEffect; clouds?: CloudsEffect; eve?: EveCloudSystem; mask: LightingMaskPass; originalShadow?: { maxFar: number | null; splitLambda: number }; firstUsePending: boolean }>();
   useEffect(() => {
@@ -88,7 +96,11 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
     const ellipsoid = new Ellipsoid(EARTH_RADIUS_M, EARTH_RADIUS_M, EARTH_RADIUS_M);
     const stage = new URLSearchParams(window.location.search).get('stage') ?? 'full';
     const eveEnabled = selectedCloudSystem === 'eve';
-    const eve = PROBE_CLOUDS && eveEnabled ? new EveCloudSystem(camera, selectedQuality, directionToECEF(SUN_DIR)) : undefined;
+    const initialSunRender = environment
+      ? new Vector3().fromArray(environment.state.sunDirection)
+      : SUN_DIR.clone();
+    const initialSunECEF = directionToECEF(initialSunRender);
+    const eve = PROBE_CLOUDS && eveEnabled ? new EveCloudSystem(camera, selectedQuality, initialSunECEF) : undefined;
     const invalidateEve = () => eve?.invalidateGraphicsContext();
     gl.domElement.addEventListener('webglcontextlost', invalidateEve);
     gl.domElement.addEventListener('webglcontextrestored', invalidateEve);
@@ -101,7 +113,7 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
     });
     if (eve && aerial instanceof EveAerialPerspectiveEffect) aerial.installCloudLighting(eve.lightingUniforms);
     aerial.normalBuffer = normals.texture; // The pinned constructor does not set HAS_NORMALS.
-    aerial.sunDirection.copy(directionToECEF(SUN_DIR));
+    aerial.sunDirection.copy(initialSunECEF);
     aerial.lightingMask = { map: mask.texture, channel: 'r' };
     const clouds = PROBE_CLOUDS && !eve ? new CloudsEffect(camera) : undefined;
     if (clouds) {
@@ -178,6 +190,7 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
         const assetAssignmentStartedAt = renderTimings.start('cloud.assetsAssignmentCpuWall');
         try {
           Object.assign(aerial, luts); aerial.stbnTexture = blueNoise as Data3DTexture;
+          if (sunTransmittanceRef) sunTransmittanceRef.current = luts.transmittanceTexture;
           if (eve) { Object.assign(eve.effect, luts); eve.effect.stbnTexture = blueNoise as Data3DTexture; }
           if (clouds) {
             Object.assign(clouds, luts);
@@ -195,8 +208,8 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
         libraryStatus.state = 'ready';
         invalidate(); // A paused flight renders on demand; show completed asset loading too.
       }).catch(error => { if (!disposed) { libraryStatus.state = 'failed'; libraryStatus.error = String(error); console.error(error); } });
-    return () => { disposed = true; gl.domElement.removeEventListener('webglcontextlost', invalidateEve); gl.domElement.removeEventListener('webglcontextrestored', invalidateEve); eve?.dispose(); live.current = undefined; passTimingCleanup(); renderTimings.detachRenderer(gl); composer.dispose(); owned.forEach(texture => texture.dispose()); owned.clear(); };
-  }, [gl, scene, camera, worldFrame, selectedCloudSystem, selectedQuality, invalidate]);
+    return () => { disposed = true; if (sunTransmittanceRef) sunTransmittanceRef.current = null; gl.domElement.removeEventListener('webglcontextlost', invalidateEve); gl.domElement.removeEventListener('webglcontextrestored', invalidateEve); eve?.dispose(); live.current = undefined; passTimingCleanup(); renderTimings.detachRenderer(gl); composer.dispose(); owned.forEach(texture => texture.dispose()); owned.clear(); };
+  }, [gl, scene, camera, worldFrame, selectedCloudSystem, selectedQuality, invalidate, environment, sunTransmittanceRef]);
   useEffect(() => {
     const composer = live.current?.composer;
     if (composer === undefined) return;
@@ -216,7 +229,22 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
     value.aerial.waterLighting.value = cloudShadowProbe.waterReflections ? 1 : 0;
     updateWorldToECEF(worldFrame, value.aerial.worldToECEFMatrix);
     if (value.clouds) value.clouds.worldToECEFMatrix.copy(value.aerial.worldToECEFMatrix);
-    value.eve?.beforeRender(gl, value.aerial.worldToECEFMatrix, worldFrame.anchor, SKY_CONFIG.renderScaleMPerUnit);
+    let environmentSunDelta = 0;
+    if (environment) {
+      const state = environment.state;
+      sunRender.current.fromArray(state.sunDirection);
+      sunECEF.current.set(sunRender.current.x, -sunRender.current.z, sunRender.current.y);
+      const discontinuity = state.discontinuityRevision !== environmentDiscontinuity.current;
+      environmentDiscontinuity.current = state.discontinuityRevision;
+      value.aerial.sunDirection.copy(sunECEF.current);
+      value.clouds?.sunDirection.copy(sunECEF.current);
+      // Weather time owns the one discontinuity invalidation; daylight itself
+      // remains a live light input without restarting compatible history.
+      value.eve?.setSunDirection(sunECEF.current, false);
+      value.eve?.setEnvironmentTime(state.timeSeconds, discontinuity);
+      environmentSunDelta = state.paused ? 0 : delta;
+    }
+    value.eve?.beforeRender(gl, value.aerial.worldToECEFMatrix, worldFrame.anchor, SKY_CONFIG.renderScaleMPerUnit, environmentSunDelta);
     if (value.clouds) {
       const shadowRangeStartedAt = renderTimings.start('cloud.schedule.shadowRange');
       try {

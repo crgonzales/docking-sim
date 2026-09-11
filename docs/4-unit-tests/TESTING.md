@@ -2,7 +2,7 @@
 
 ## Test Framework
 
-Vitest ^2.1.0 (in `@docking/sim-core`). `apps/web` has no test setup yet — its `test` script is a no-op placeholder.
+Vitest ^2.1.0 in the workspace packages, including `@docking/web`. Web tests are colocated with their modules; rendering conformance also runs in the browser through the development probe.
 
 ## Running Tests
 

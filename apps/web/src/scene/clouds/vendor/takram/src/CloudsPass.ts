@@ -3,6 +3,7 @@ import {
   BasicDepthPacking,
   HalfFloatType,
   LinearFilter,
+  Matrix3,
   Matrix4,
   NearestFilter,
   RedFormat,
@@ -113,6 +114,12 @@ export class CloudsPass extends PassBase {
   private readonly cameraToECEF = new Matrix4()
   private readonly previousCameraToECEF = new Matrix4()
   private readonly previousProjection = new Matrix4()
+  private readonly mediaReprojection = new Matrix3()
+  private mediaAngleRad = 0
+  private previousMediaAngleRad = 0
+  private mediaMotionEnabled = false
+  private previousMediaMotionEnabled = false
+  private mediaMotionChanged = false
 
   constructor(
     {
@@ -147,6 +154,27 @@ export class CloudsPass extends PassBase {
 
   copyCameraSettings(camera: Camera): void {
     this.currentMaterial.copyCameraSettings(camera)
+  }
+
+  /**
+   * Opt-in seam for canonical custom media. The matrix maps a current physical
+   * cloud front to its previous ECEF position; ordinary camera/depth motion is
+   * still handled by the existing reprojection matrices.
+   */
+  setMediaMotion(angleRad: number, enabled: boolean): void {
+    if (!Number.isFinite(angleRad)) throw new RangeError('Cloud media angle must be finite')
+    this.mediaAngleRad = angleRad
+    this.mediaMotionEnabled = enabled
+    const delta = angleRad - this.previousMediaAngleRad
+    const shortest = ((delta + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI
+    const relative = enabled && this.previousMediaMotionEnabled
+      ? shortest : 0
+    const cosine = Math.cos(relative)
+    const sine = Math.sin(relative)
+    // R(-relative): current front -> previous front for an eastward field.
+    this.mediaReprojection.set(cosine, sine, 0, -sine, cosine, 0, 0, 0, 1)
+    this.mediaMotionChanged = enabled !== this.previousMediaMotionEnabled ||
+      (enabled && Math.abs(shortest) > 1e-12)
   }
 
   override initialize(
@@ -217,6 +245,7 @@ export class CloudsPass extends PassBase {
         1e-12 * Math.max(1, Math.abs(current[i]), Math.abs(previous[i]))
       stationary = Math.abs(current[i] - previous[i]) <= tolerance
     }
+    if (this.mediaMotionChanged) stationary = false
     this.resolveMaterial.uniforms.stationaryCamera.value = stationary
   }
 
@@ -236,6 +265,8 @@ export class CloudsPass extends PassBase {
     // Update frame uniforms before copyCameraSettings.
     this.currentMaterial.uniforms.frame.value = frame
     this.resolveMaterial.uniforms.frame.value = frame
+    this.currentMaterial.uniforms.mediaMotionEnabled.value = this.mediaMotionEnabled ? 1 : 0
+    this.currentMaterial.uniforms.mediaReprojectionMatrix.value.copy(this.mediaReprojection)
 
     this.copyCameraSettings(this.mainCamera)
     this.copyShadow()
@@ -253,6 +284,9 @@ export class CloudsPass extends PassBase {
     this.previousFrame = frame
     this.previousCameraToECEF.copy(this.cameraToECEF)
     this.previousProjection.copy(this.mainCamera.projectionMatrix)
+    this.previousMediaAngleRad = this.mediaAngleRad
+    this.previousMediaMotionEnabled = this.mediaMotionEnabled
+    this.mediaMotionChanged = false
   }
 
   override setSize(width: number, height: number): void {

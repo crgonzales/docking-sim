@@ -1,11 +1,10 @@
 import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Matrix4, NoToneMapping, Vector3, PerspectiveCamera, type Group, type HemisphereLight } from 'three';
+import { Matrix4, NoToneMapping, Vector3, PerspectiveCamera, type Group, type Texture } from 'three';
 import { conjugateQuaternion, rotateVector, type Vec3 } from '@docking/sim-core';
 import { Earth } from '../scene/Earth';
 import { WorldFrame } from '../scene/worldFrame';
 import { SKY_CONFIG } from '../scene/sky/skyConfig';
-import { SUN_DIR, SUN_LIGHT_DISTANCE_M } from '../scene/sun';
 import { LibraryEffects, libraryStatus } from '../scene/LibraryEffects';
 import { PROBE_DPR, PROBE_EXPOSURE, PROBE_QUALITY } from '../scene/renderProbeConfig';
 import type { TerrainTileSource } from '../scene/terrain/tileSource';
@@ -25,13 +24,17 @@ import { handleFlightKeyDown } from './flightInput';
 import { FlightExercisePanel } from './FlightExercisePanel';
 import { CLOUD_BASE_FLIGHT_FIXTURE } from './flightFixture';
 import { FlightEvidenceCapture } from './FlightEvidenceCapture';
+import { FlightLighting } from './FlightLighting';
+import { FlightEnvironmentPanel } from './FlightEnvironmentPanel';
+import { FlightEnvironmentClock, subscribeEnvironmentToFlightReset } from './flightEnvironment';
 import { HornetModel } from './HornetModel';
 import './flight.css';
 
 type Instruments = ReturnType<FlightSession['instruments']>;
 const degrees = (rad: number) => rad * 180 / Math.PI;
+const FLIGHT_QUERY = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
 const FLIGHT_ENVIRONMENT = (() => {
-  const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+  const query = FLIGHT_QUERY;
   return {
     dpr: query.has('dpr') ? PROBE_DPR : 1,
     exposure: query.has('exposure') ? PROBE_EXPOSURE : 2,
@@ -39,12 +42,15 @@ const FLIGHT_ENVIRONMENT = (() => {
   };
 })();
 const FLIGHT_PROBE_ENABLED = (import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV
-  && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('flightProbe') === '1';
+  && typeof window !== 'undefined' && FLIGHT_QUERY.get('flightProbe') === '1';
 const FLIGHT_FIXTURE = FLIGHT_PROBE_ENABLED && typeof window !== 'undefined'
-  && new URLSearchParams(window.location.search).get('flightFixture') === 'cloud-base' ? CLOUD_BASE_FLIGHT_FIXTURE : null;
+  && FLIGHT_QUERY.get('flightFixture') === 'cloud-base' ? CLOUD_BASE_FLIGHT_FIXTURE : null;
+const FLIGHT_DYNAMIC_ENVIRONMENT = !FLIGHT_FIXTURE
+  || FLIGHT_QUERY.get('environment') === 'dynamic'
+  || FLIGHT_QUERY.get('flightEnvironment') === 'dynamic';
 const FLIGHT_CAMERA_NEAR = 0.3 / SKY_CONFIG.renderScaleMPerUnit;
 const CHARACTER_CAMERA_NEAR = 0.1 / SKY_CONFIG.renderScaleMPerUnit;
-const FlightScene = memo(function FlightScene({ session, character, baseRoute, parked, terrainSourceRef, report, onCharacterUpdate, cameraMode, paused, captureRequest, onCaptured }: {
+const FlightScene = memo(function FlightScene({ session, character, baseRoute, parked, terrainSourceRef, report, onCharacterUpdate, cameraMode, paused, environment, captureRequest, onCaptured, onInvalidate }: {
   session: FlightSession;
   character: CharacterSession | null;
   baseRoute: boolean;
@@ -54,11 +60,14 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
   onCharacterUpdate: () => void;
   cameraMode: FlightSession['camera'];
   paused: boolean;
+  environment: FlightEnvironmentClock | null;
   captureRequest: number;
   onCaptured: (message: string) => void;
+  onInvalidate: (invalidate: () => void) => void;
 }) {
   const { invalidate, size } = useThree();
   const settlingFrames = useRef(0);
+  const environmentDiscontinuity = useRef(environment?.state.discontinuityRevision ?? 0);
   // A single paused-camera frame leaves temporal clouds at their noisy initial
   // sample. Medium's column cache takes 64 frames (1024 rows / 16 per frame),
   // followed by two 16-frame Bayer cycles. Then demand mode sleeps.
@@ -67,8 +76,13 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
     settlingFrames.current = paused ? 96 : 0;
     invalidate();
   }, [cameraMode, paused, size.width, size.height, invalidate]);
+  useEffect(() => {
+    onInvalidate(invalidate);
+    return () => onInvalidate(() => undefined);
+  }, [invalidate, onInvalidate]);
   const aircraft = useRef<Group>(null);
-  const skyLight = useRef<HemisphereLight>(null);
+  const daylightRef = useRef(1);
+  const sunTransmittanceRef = useRef<Texture | null>(null);
   const frame = useMemo(() => new WorldFrame(flightWorldFrame(session.state.position_N_m).position), [session]);
   const exposureRef = useMemo(() => ({ current: FLIGHT_ENVIRONMENT.exposure }), []);
   const scratch = useMemo(() => ({ matrix: new Matrix4(), forward: new Vector3(), right: new Vector3(), down: new Vector3() }), []);
@@ -78,6 +92,17 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
     // invalidate(n) request with a single frame while assets finish loading.
     // Asset completion invalidates once. Preserve the budget until then,
     // rather than spending it on frames with no cloud history to accumulate.
+    if (environment && environment.state.discontinuityRevision !== environmentDiscontinuity.current) {
+      environmentDiscontinuity.current = environment.state.discontinuityRevision;
+      settlingFrames.current = 96;
+      invalidate();
+    }
+    if (environment) {
+      const ownerPaused = character?.paused ?? session.paused;
+      if (environment.state.paused !== ownerPaused) environment.setPaused(ownerPaused);
+      environment.advance(delta);
+
+    }
     if (settlingFrames.current > 0 && libraryStatus.state === 'ready') {
       settlingFrames.current -= 1;
       if (settlingFrames.current > 0) invalidate();
@@ -85,7 +110,6 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
     if (character === null) session.advance(delta);
     else character.advance(delta);
     const f = flightWorldFrame(session.state.position_N_m);
-    skyLight.current?.position.fromArray(f.up);
     const q_NB = conjugateQuaternion(session.state.q_BN);
     const bodyDirection = (v: Vec3) => f.direction(rotateVector(q_NB, v));
     const onFoot = character?.mode === 'ON_FOOT';
@@ -128,12 +152,9 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
     }
   }, -2);
   return <>
-    <color attach="background" args={['#8eb1c7']} />
-    <hemisphereLight ref={skyLight} args={['#d8edff', '#44515a', 0.8]} />
-    {/* The camera is the render origin each frame; this fixed offset preserves sun direction. */}
-    <directionalLight position={SUN_DIR.clone().multiplyScalar(SUN_LIGHT_DISTANCE_M / SKY_CONFIG.renderScaleMPerUnit)} intensity={2.4} />
-    <Suspense fallback={null}><Earth worldFrame={frame} terrainSourceRef={terrainSourceRef} libraryRenderer /></Suspense>
-    {baseRoute && <Airfield worldFrame={frame} />}
+    <FlightLighting worldFrame={frame} environment={environment ?? undefined} localShadows={baseRoute} daylightRef={daylightRef} sunTransmittanceRef={sunTransmittanceRef} />
+    <Suspense fallback={null}><Earth worldFrame={frame} terrainSourceRef={terrainSourceRef} libraryRenderer environment={environment ?? undefined} /></Suspense>
+    {baseRoute && <Airfield worldFrame={frame} daylightRef={daylightRef} />}
     <group ref={aircraft} scale={1 / SKY_CONFIG.renderScaleMPerUnit}><HornetModel session={session} parked={parked} /></group>
     <LibraryEffects
       worldFrame={frame}
@@ -142,9 +163,11 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
       quality={FLIGHT_ENVIRONMENT.quality}
       exposure={FLIGHT_ENVIRONMENT.exposure}
       dpr={FLIGHT_ENVIRONMENT.dpr}
+      environment={environment ?? undefined}
+      sunTransmittanceRef={sunTransmittanceRef}
     />
-    {FLIGHT_FIXTURE && <FlightEvidenceCapture session={session} fixtureName={FLIGHT_FIXTURE.name} request={captureRequest} quality={FLIGHT_ENVIRONMENT.quality} onSaved={onCaptured} />}
-    {FLIGHT_PROBE_ENABLED && baseRoute && <FlightEvidenceCapture session={session} character={character ?? undefined} fixtureName="base" request={captureRequest} quality={FLIGHT_ENVIRONMENT.quality} onSaved={onCaptured} />}
+    {FLIGHT_FIXTURE && <FlightEvidenceCapture session={session} environment={environment ?? undefined} fixtureName={FLIGHT_FIXTURE.name} request={captureRequest} quality={FLIGHT_ENVIRONMENT.quality} onSaved={onCaptured} />}
+    {FLIGHT_PROBE_ENABLED && baseRoute && <FlightEvidenceCapture session={session} character={character ?? undefined} environment={environment ?? undefined} fixtureName="base" request={captureRequest} quality={FLIGHT_ENVIRONMENT.quality} onSaved={onCaptured} />}
   </>;
 });
 
@@ -156,6 +179,9 @@ function HoldControl({ session, code, children, disabled = false }: { session: F
 
 export function FlightMode() {
   const terrainSourceRef = useRef<TerrainTileSource | null>(null);
+  const invalidateEnvironmentRef = useRef<(() => void) | null>(null);
+  const [environment] = useState(() => new FlightEnvironmentClock({ paused: Boolean(FLIGHT_FIXTURE) }));
+  const activeEnvironment = FLIGHT_DYNAMIC_ENVIRONMENT ? environment : null;
   const [session] = useState(() => {
     const next = new FlightSession();
     if (FLIGHT_FIXTURE) next.applyFixture(FLIGHT_FIXTURE);
@@ -182,8 +208,12 @@ export function FlightMode() {
   const root = useRef<HTMLElement>(null);
   const report = useCallback((next: Instruments) => setData(next), []);
   const reportCharacter = useCallback(() => {
+    activeEnvironment?.setPaused(character?.paused ?? session.paused);
     setData(session.instruments());
-  }, [session]);
+  }, [activeEnvironment, character, session]);
+  const setEnvironmentInvalidate = useCallback((invalidate: () => void) => {
+    invalidateEnvironmentRef.current = invalidate;
+  }, []);
   const { focusRoot } = useCharacterInput({
     enabled: character !== null,
     session: character,
@@ -200,23 +230,44 @@ export function FlightMode() {
       }
     };
     const up = (event: KeyboardEvent) => { if (FLIGHT_KEYS.has(event.code)) session.key(event.code, false); };
-    const blur = () => { session.loseFocus(); report(session.instruments()); };
+    const blur = () => { session.loseFocus(); activeEnvironment?.loseFocus(); report(session.instruments()); };
     const visibility = () => { if (document.hidden) blur(); };
     window.addEventListener('keydown', down); window.addEventListener('keyup', up);
     window.addEventListener('blur', blur); document.addEventListener('visibilitychange', visibility);
     return () => { session.releaseControls(); window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); document.removeEventListener('visibilitychange', visibility); };
-  }, [character, session, report]);
-  const act = (action: () => void) => { action(); report(session.instruments()); if (character !== null) focusRoot(); };
+  }, [activeEnvironment, character, session, report]);
+  const act = (action: () => void) => {
+    action();
+    activeEnvironment?.setPaused(character?.paused ?? session.paused);
+    report(session.instruments());
+    if (character !== null) focusRoot();
+  };
+  const resetGame = () => act(() => {
+    if (character !== null) character.reset();
+    else session.reset();
+  });
+  useEffect(() => {
+    if (!activeEnvironment) return;
+    return subscribeEnvironmentToFlightReset(activeEnvironment, session, character, () => {
+      invalidateEnvironmentRef.current?.();
+    });
+  }, [activeEnvironment, character, session]);
+  const resetEnvironment = () => {
+    if (!activeEnvironment) return;
+    activeEnvironment.reset(activeEnvironment.state.paused);
+    invalidateEnvironmentRef.current?.();
+  };
   const onFoot = character?.mode === 'ON_FOOT';
   const parked = character?.parked ?? false;
   const uiPaused = character?.paused ?? session.paused;
   const baseRoute = character?.start === 'GROUND';
   const status = data.status === 'CONTACT' ? 'SURFACE CONTACT · RESET TO FLY' : data.status === 'ENVELOPE' ? 'PROTOTYPE LIMIT · RESET TO FLY' : session.paused ? 'PAUSED · P TO RESUME' : Math.abs(degrees(data.alpha_rad)) > 20 ? 'HIGH ANGLE OF ATTACK' : data.airspeed_m_s < 90 ? 'LOW AIRSPEED' : 'FREE FLIGHT';
   return <section className="flight-mode" ref={root} tabIndex={0} aria-label="F/A-18 flight simulator">
-    <Canvas frameloop={uiPaused ? 'demand' : 'always'} dpr={FLIGHT_ENVIRONMENT.dpr} gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }} camera={{ fov: 52, near: 0.3, far: 30000000 }} onCreated={({ gl }) => { gl.toneMapping = NoToneMapping; if (character !== null) setCanvas(gl.domElement); }}>
-      <FlightScene session={session} character={character} baseRoute={baseRoute} parked={parked} terrainSourceRef={terrainSourceRef} report={report} onCharacterUpdate={reportCharacter} cameraMode={session.camera} paused={uiPaused} captureRequest={captureRequest} onCaptured={setCaptureStatus} />
+    <Canvas shadows={baseRoute ? 'soft' : false} frameloop={uiPaused ? 'demand' : 'always'} dpr={FLIGHT_ENVIRONMENT.dpr} gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }} camera={{ fov: 52, near: 0.3, far: 30000000 }} onCreated={({ gl }) => { gl.toneMapping = NoToneMapping; if (character !== null) setCanvas(gl.domElement); }}>
+      <FlightScene session={session} character={character} baseRoute={baseRoute} parked={parked} terrainSourceRef={terrainSourceRef} report={report} onCharacterUpdate={reportCharacter} cameraMode={session.camera} paused={uiPaused} environment={activeEnvironment} captureRequest={captureRequest} onCaptured={setCaptureStatus} onInvalidate={setEnvironmentInvalidate} />
     </Canvas>
     <header className="flight-title"><span>FLIGHT LAB / 01</span><h1>F/A-18C <small>{baseRoute ? 'Runway 18 / 36' : 'Flight dynamics prototype'}</small></h1><p>{character === null ? 'Equatorial ocean · airborne start · no weapons' : baseRoute ? 'Flight base · hangars · landing pad' : 'Airborne vehicle · character controls'}</p></header>
+    {activeEnvironment && <FlightEnvironmentPanel environment={activeEnvironment} onTogglePause={() => act(() => { if (character !== null) character.togglePause(); else session.togglePause(); })} onReset={resetEnvironment} onChanged={() => invalidateEnvironmentRef.current?.()} />}
     {character === null && <div className="flight-status" role="status">{status}</div>}
     {!onFoot && !parked && <div className="flight-instruments" aria-label="Flight instruments">
       <div className="flight-number"><span>TRUE AIRSPEED</span><strong data-testid="airspeed">{(data.airspeed_m_s * 1.943844).toFixed(0)} <small>KT</small></strong><em>M {data.mach.toFixed(2)} · GS {(data.groundSpeed_m_s * 1.943844).toFixed(0)} KT</em></div>
@@ -236,7 +287,7 @@ export function FlightMode() {
         <dt>Pitch trim</dt><dd>{(session.controls.trim * 100).toFixed(1)}%</dd></dl>
       {!parked && <label className="flight-throttle">THROTTLE <b>{(session.controls.throttle * 100).toFixed(0)}% {session.controls.throttle > 0.8 ? 'AB' : ''}</b><input aria-label="Throttle" type="range" min="0" max="100" value={session.controls.throttle * 100} onChange={(e) => { session.setThrottle(Number(e.target.value) / 100); report(session.instruments()); }} /></label>}
       {!parked && <label className="flight-wind">Wind <select aria-label="Wind" value={session.environment.wind_N_m_s[1]} onChange={(e) => { session.setWind([0, Number(e.target.value), 0]); report(session.instruments()); }}><option value="0">Calm</option><option value="10">10 m/s toward east</option></select></label>}
-      <div className="flight-actions"><button type="button" onClick={() => act(() => { if (character !== null) character.togglePause(); else session.togglePause(); })}>{uiPaused ? 'Resume · P' : 'Pause · P'}</button><button type="button" onClick={() => act(() => { if (character !== null) character.reset(); else session.reset(); })}>Reset · R</button></div>
+      <div className="flight-actions"><button type="button" onClick={() => act(() => { if (character !== null) character.togglePause(); else session.togglePause(); })}>{uiPaused ? 'Resume · P' : 'Pause · P'}</button><button type="button" onClick={resetGame}>Reset · R</button></div>
       <button className="flight-camera-button" type="button" onClick={() => act(() => { session.camera = session.camera === 'CHASE' ? 'NOSE' : 'CHASE'; })}>Camera: {session.camera.toLowerCase()} · C</button>
     </aside>}
     {FLIGHT_PROBE_ENABLED && !parked && <FlightExercisePanel session={session} report={() => report(session.instruments())} fixtureName={FLIGHT_FIXTURE?.name} captureStatus={captureStatus} onCapture={FLIGHT_FIXTURE ? () => { setCaptureStatus('Capturing…'); setCaptureRequest((value) => value + 1); } : undefined} />}

@@ -8,6 +8,7 @@ import { CloudColumnAtlas } from './CloudColumnAtlas';
 import { createCloudLightVolumeLayout, type CloudLightBuildInputs, type CloudLightQuality } from './cloudLightVolumeLayout';
 import { CloudTemporalState, type CloudTemporalFrame } from './CloudTemporalState';
 import { createWeatherBindingUniforms, createWeatherSnapshot } from './cloudWeather';
+import { createWeatherMotionState, IDENTITY_WEATHER_MOTION, type WeatherMotionState } from './cloudMotion';
 import { CLOUD_WEATHER_GPU_BYTES, loadCloudWeatherAssets } from './cloudWeatherAssets';
 import { createCloudPresentationUniforms } from './cloudPresentation';
 import { ForkCloudsEffect, createCloudShaderHooks } from './takramCloudBackend';
@@ -19,18 +20,23 @@ import presentationGLSL from './shaders/cloudPresentation.glsl?raw';
 import distantGLSL from './shaders/distantCloud.glsl?raw';
 import columnGLSL from './shaders/cloudColumn.glsl?raw';
 
+const CLOUD_LIGHT_REFRESH_INTERVAL_S = 2;
+
 /** One main-view owner. Weather and light bindings also feed aerial surface lighting. */
 export class EveCloudSystem {
   readonly effect: ForkCloudsEffect;
   readonly weather;
   readonly weatherUniforms;
+  /** Identity-advection snapshot used only while baking the orbital atlas. */
+  readonly canonicalWeatherUniforms;
   readonly lightVolume: CloudLightVolume;
   readonly columnAtlas: CloudColumnAtlas;
   readonly lightingUniforms;
   readonly status = { backend: 'eve', state: 'loading', error: '', assetBytes: 0,
     viewBytes: 0, historyReset: [] as readonly string[], light: {} as CloudLightVolume['status'],
     columns: {} as CloudColumnAtlas['status'], referenceWeather: false,
-    representation: 'volume', farWeight: 0 };
+    representation: 'volume', farWeight: 0, lightRefreshCadenceSeconds: CLOUD_LIGHT_REFRESH_INTERVAL_S,
+    motion: { enabled: false, timeSeconds: 0, angleRad: 0, atlasAngleRad: 0, windSpeedMps: 15 } };
   private assets?: Awaited<ReturnType<typeof loadCloudWeatherAssets>>;
   private readonly abort = new AbortController();
   private readonly temporal = new CloudTemporalState();
@@ -44,17 +50,23 @@ export class EveCloudSystem {
   private previousLightPosition = new Vector3(Infinity, 0, 0);
   private lightGeneration = 0;
   private lightInputs?: CloudLightBuildInputs;
+  private readonly sunDirectionECEF = new Vector3();
+  private lightRefreshElapsed = CLOUD_LIGHT_REFRESH_INTERVAL_S;
+  private weatherMotion: WeatherMotionState = IDENTITY_WEATHER_MOTION;
+  private weatherTimeSeconds = 0;
   private frame?: CloudTemporalFrame;
   private disposed = false;
   private columnReadySince = 0;
   private readonly requestedView = new URLSearchParams(location.search).get('cloudView');
 
   constructor(readonly camera: Camera, readonly quality: CloudLightQuality, sunDirection: Vector3) {
-    // Assets are static in this milestone. A frozen visual time is intentional:
-    // don't age a valid lighting generation while its density field is unchanged.
+    // The legacy constructor remains frozen until an environment explicitly opts
+    // into motion. This preserves the DEV fixture and ordinary SceneRoot.
     this.weather = createWeatherSnapshot({ visualTimeS: 0, generation: 1,
       planetRadiusM: EARTH_RADIUS_M, sunDirectionECEF: sunDirection.toArray() });
+    this.sunDirectionECEF.copy(sunDirection).normalize();
     this.weatherUniforms = createWeatherBindingUniforms(this.weather);
+    this.canonicalWeatherUniforms = createWeatherBindingUniforms(this.weather);
     const maxViewPixels = quality === 'low' ? 600_000 : 1_500_000;
     this.columnAtlas = new CloudColumnAtlas({ quality,
       reservedCloudBytes: maxViewPixels * 36 + CLOUD_WEATHER_GPU_BYTES });
@@ -96,6 +108,50 @@ export class EveCloudSystem {
     effect.cloudsPass.resolveMaterial.uniforms.stationaryDepthAbsoluteThresholdM.value = effect.clouds.maxStepSize;
   }
 
+  /** Update live sun bindings without reconstructing weather resources. */
+  setSunDirection(sunDirection: Vector3, discontinuity = false): void {
+    const length = sunDirection.length();
+    if (!(length > 0) || !Number.isFinite(length)) throw new RangeError('Cloud sun direction must be finite and non-zero');
+    const normalized = this.sunDirectionECEF.copy(sunDirection).normalize();
+    const binding = this.weatherUniforms.eveWeatherSunDirectionECEF?.value;
+    if (binding instanceof Vector3) binding.copy(normalized);
+    const canonicalBinding = this.canonicalWeatherUniforms.eveWeatherSunDirectionECEF?.value;
+    if (canonicalBinding instanceof Vector3) canonicalBinding.copy(normalized);
+    this.effect.sunDirection.copy(normalized);
+    if (discontinuity) this.invalidate();
+  }
+
+  /**
+   * Bind the caller-owned continuous environment time. Continuous motion only
+   * updates uniforms; the explicit discontinuity revision is the sole reason
+   * to discard view/light history.
+   */
+  setEnvironmentTime(timeSeconds: number, discontinuity = false): void {
+    const motion = createWeatherMotionState(timeSeconds, this.weather.planetRadiusM, true);
+    const changed = motion.timeSeconds !== this.weatherTimeSeconds ||
+      motion.angleRad !== this.weatherMotion.angleRad || !this.weatherMotion.enabled;
+    // Recompute even on paused frames: the previous rendered angle has caught
+    // up, so its velocity must return to zero immediately.
+    this.effect.cloudsPass.setMediaMotion(motion.angleRad, true);
+    if (!changed && !discontinuity) return;
+    this.weatherMotion = motion;
+    this.weatherTimeSeconds = motion.timeSeconds;
+    this.weatherUniforms.eveWeatherVisualTimeS.value = motion.timeSeconds;
+    this.weatherUniforms.eveWeatherMotionTimeS.value = motion.timeSeconds;
+    this.weatherUniforms.eveWeatherMotionAngleRad.value = motion.angleRad;
+    this.weatherUniforms.eveWeatherMotionEnabled.value = 1;
+    // The atlas is canonical and never follows live time. It still uses the
+    // same seeded fronts, with identity coordinates, exactly once per build.
+    this.canonicalWeatherUniforms.eveWeatherMotionTimeS.value = 0;
+    this.canonicalWeatherUniforms.eveWeatherMotionAngleRad.value = 0;
+    this.canonicalWeatherUniforms.eveWeatherMotionEnabled.value = 1;
+    Object.assign(this.status.motion, {
+      enabled: true, timeSeconds: motion.timeSeconds, angleRad: motion.angleRad,
+      atlasAngleRad: 0, windSpeedMps: motion.windSpeedMps
+    });
+    if (discontinuity) this.invalidate();
+  }
+
   async load(): Promise<void> {
     const assets = await loadCloudWeatherAssets({ signal: this.abort.signal });
     if (this.disposed) { assets.dispose(); return; }
@@ -103,17 +159,21 @@ export class EveCloudSystem {
     for (const [name, texture] of Object.entries(assets.textures)) {
       const uniformName = ({ coverage: 'eveWeatherCoverageTexture', typeField: 'eveWeatherTypeFieldTexture',
         referenceField: 'eveWeatherReferenceFieldTexture', noise: 'eveWeatherNoiseTexture' } as Record<string, string>)[name];
-      if (uniformName) this.weatherUniforms[uniformName].value = texture;
+      if (uniformName) {
+        this.weatherUniforms[uniformName].value = texture;
+        this.canonicalWeatherUniforms[uniformName].value = texture;
+      }
     }
     // The authored test region must never overwrite global weather in ordinary flight.
-    this.weatherUniforms.eveWeatherReferenceFieldEnabled.value =
-      new URLSearchParams(location.search).get('weatherRegion') === 'reference' ? 1 : 0;
-    this.status.referenceWeather = this.weatherUniforms.eveWeatherReferenceFieldEnabled.value === 1;
+    const referenceEnabled = new URLSearchParams(location.search).get('weatherRegion') === 'reference' ? 1 : 0;
+    this.weatherUniforms.eveWeatherReferenceFieldEnabled.value = referenceEnabled;
+    this.canonicalWeatherUniforms.eveWeatherReferenceFieldEnabled.value = referenceEnabled;
+    this.status.referenceWeather = referenceEnabled === 1;
     this.status.assetBytes = assets.bytes;
     this.status.state = 'ready';
   }
 
-  beforeRender(renderer: WebGLRenderer, worldToECEF: Matrix4, anchor: readonly number[], metersPerUnit: number): void {
+  beforeRender(renderer: WebGLRenderer, worldToECEF: Matrix4, anchor: readonly number[], metersPerUnit: number, frameDeltaSeconds = 0): void {
     const effect = this.effect;
     effect.worldToECEFMatrix.copy(worldToECEF);
     renderer.getDrawingBufferSize(this.drawingSize);
@@ -129,7 +189,7 @@ export class EveCloudSystem {
     this.camera.getWorldPosition(this.position).applyMatrix4(worldToECEF);
     const altitudeM = this.position.length() - this.weather.planetRadiusM;
     if (this.assets) {
-      this.columnAtlas.request(this.weather.generation, this.weatherUniforms);
+      this.columnAtlas.request(this.weather.generation, this.canonicalWeatherUniforms);
       const started = renderTimings.start('cloud.columnAtlasCpuWall');
       const gpu = renderTimings.beginGpu('cloud.columnAtlas');
       try { this.columnAtlas.update(renderer); }
@@ -148,20 +208,34 @@ export class EveCloudSystem {
     this.status.representation = farWeight >= 1 ? 'scaled' : farWeight > 0 ? 'transition' : 'volume';
     effect.clouds.farIterationCount = this.quality === 'low' ? 24 : 32;
     this.up.set(0, 1, 0).transformDirection(this.camera.matrixWorld).transformDirection(worldToECEF);
-    if (!this.lightInputs || this.position.distanceTo(this.previousLightPosition) > 20_000) {
+    this.lightRefreshElapsed += Math.max(0, Math.min(frameDeltaSeconds, 0.1));
+    // The cadence uses active real time, so it stops on pause. After a fast
+    // preview the last snapshot may already be too old: request the stopped
+    // weather time once so settling frames can finish a valid light volume.
+    const pausedWeatherNeedsRefresh = this.weatherMotion.enabled && frameDeltaSeconds === 0
+      && this.lightInputs?.visualTimeSeconds !== this.weatherTimeSeconds;
+    if (!this.lightInputs || this.position.distanceTo(this.previousLightPosition) > 20_000
+      || this.lightRefreshElapsed >= CLOUD_LIGHT_REFRESH_INTERVAL_S || pausedWeatherNeedsRefresh) {
       const layout = createCloudLightVolumeLayout({ quality: this.quality,
         planetRadiusM: this.weather.planetRadiusM, cameraPositionECEFM: this.position.toArray(),
         // Surface receivers need the same cached sky visibility as cloud samples.
         cameraUpECEF: this.up.toArray(), minAltitudeM: 0,
         maxAltitudeM: this.weather.bounds.maxAltitudeM });
       this.lightInputs = { generation: ++this.lightGeneration, weatherGeneration: this.weather.generation,
-        visualTimeSeconds: this.weather.visualTimeS, sunDirectionECEF: this.weather.sunDirectionECEF, layout };
+        visualTimeSeconds: this.weatherTimeSeconds,
+        sunDirectionECEF: [this.sunDirectionECEF.x, this.sunDirectionECEF.y, this.sunDirectionECEF.z], layout };
       this.lightVolume.request(this.lightInputs, this.weatherUniforms);
       this.previousLightPosition.copy(this.position);
+      this.lightRefreshElapsed = 0;
     }
     const lightStartedAt = renderTimings.start('cloud.lightVolumeCpuWall');
     const lightGpu = renderTimings.beginGpu('cloud.lightVolume');
-    try { this.lightVolume.update(renderer, this.lightInputs); }
+    const currentLightInputs: CloudLightBuildInputs = {
+      ...this.lightInputs,
+      visualTimeSeconds: this.weatherTimeSeconds,
+      sunDirectionECEF: [this.sunDirectionECEF.x, this.sunDirectionECEF.y, this.sunDirectionECEF.z],
+    };
+    try { this.lightVolume.update(renderer, currentLightInputs); }
     finally {
       renderTimings.endGpu(lightGpu);
       renderTimings.end('cloud.lightVolumeCpuWall', lightStartedAt);
@@ -193,6 +267,7 @@ export class EveCloudSystem {
     this.effect.cloudsPass.invalidateHistory();
     this.lightVolume.invalidate();
     this.lightInputs = undefined;
+    this.lightRefreshElapsed = CLOUD_LIGHT_REFRESH_INTERVAL_S;
   }
 
   /** GPU render-target contents do not survive a lost/restored context. */
