@@ -13,6 +13,8 @@ import { flightWorldFrame } from './flightFrame';
 import { FLIGHT_KEYS, FlightSession } from './flightSession';
 import { handleFlightKeyDown } from './flightInput';
 import { FlightExercisePanel } from './FlightExercisePanel';
+import { CLOUD_BASE_FLIGHT_FIXTURE } from './flightFixture';
+import { FlightEvidenceCapture } from './FlightEvidenceCapture';
 import { HornetModel } from './HornetModel';
 import './flight.css';
 
@@ -28,8 +30,10 @@ const FLIGHT_ENVIRONMENT = (() => {
 })();
 const FLIGHT_PROBE_ENABLED = (import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV
   && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('flightProbe') === '1';
-const FlightScene = memo(function FlightScene({ session, report, cameraMode, paused }: { session: FlightSession; report: (data: Instruments) => void; cameraMode: FlightSession['camera']; paused: boolean }) {
-  const invalidate = useThree((state) => state.invalidate);
+const FLIGHT_FIXTURE = FLIGHT_PROBE_ENABLED && typeof window !== 'undefined'
+  && new URLSearchParams(window.location.search).get('flightFixture') === 'cloud-base' ? CLOUD_BASE_FLIGHT_FIXTURE : null;
+const FlightScene = memo(function FlightScene({ session, report, cameraMode, paused, captureRequest, onCaptured }: { session: FlightSession; report: (data: Instruments) => void; cameraMode: FlightSession['camera']; paused: boolean; captureRequest: number; onCaptured: (message: string) => void }) {
+  const { invalidate, size } = useThree();
   const settlingFrames = useRef(0);
   // A single paused-camera frame leaves temporal clouds at their noisy initial
   // sample. Medium's column cache takes 64 frames (1024 rows / 16 per frame),
@@ -38,7 +42,7 @@ const FlightScene = memo(function FlightScene({ session, report, cameraMode, pau
   useEffect(() => {
     settlingFrames.current = paused ? 96 : 0;
     invalidate();
-  }, [cameraMode, paused, invalidate]);
+  }, [cameraMode, paused, size.width, size.height, invalidate]);
   const aircraft = useRef<Group>(null);
   const skyLight = useRef<HemisphereLight>(null);
   const terrainSourceRef = useRef<TerrainTileSource | null>(null);
@@ -90,6 +94,7 @@ const FlightScene = memo(function FlightScene({ session, report, cameraMode, pau
       exposure={FLIGHT_ENVIRONMENT.exposure}
       dpr={FLIGHT_ENVIRONMENT.dpr}
     />
+    {FLIGHT_FIXTURE && <FlightEvidenceCapture session={session} fixtureName={FLIGHT_FIXTURE.name} request={captureRequest} quality={FLIGHT_ENVIRONMENT.quality} onSaved={onCaptured} />}
   </>;
 });
 
@@ -100,8 +105,14 @@ function HoldControl({ session, code, children }: { session: FlightSession; code
 }
 
 export function FlightMode() {
-  const [session] = useState(() => new FlightSession());
+  const [session] = useState(() => {
+    const next = new FlightSession();
+    if (FLIGHT_FIXTURE) next.applyFixture(FLIGHT_FIXTURE);
+    return next;
+  });
   const [data, setData] = useState(() => session.instruments());
+  const [captureRequest, setCaptureRequest] = useState(0);
+  const [captureStatus, setCaptureStatus] = useState('');
   const root = useRef<HTMLElement>(null);
   const report = useCallback((next: Instruments) => setData(next), []);
   useEffect(() => {
@@ -122,7 +133,7 @@ export function FlightMode() {
   const status = data.status === 'CONTACT' ? 'SURFACE CONTACT · RESET TO FLY' : data.status === 'ENVELOPE' ? 'PROTOTYPE LIMIT · RESET TO FLY' : session.paused ? 'PAUSED · P TO RESUME' : Math.abs(degrees(data.alpha_rad)) > 20 ? 'HIGH ANGLE OF ATTACK' : data.airspeed_m_s < 90 ? 'LOW AIRSPEED' : 'FREE FLIGHT';
   return <section className="flight-mode" ref={root} tabIndex={0} aria-label="F/A-18 flight simulator">
     <Canvas frameloop={session.paused ? 'demand' : 'always'} dpr={FLIGHT_ENVIRONMENT.dpr} gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }} camera={{ fov: 52, near: 0.3, far: 30000000 }} onCreated={({ gl }) => { gl.toneMapping = NoToneMapping; }}>
-      <FlightScene session={session} report={report} cameraMode={session.camera} paused={session.paused} />
+      <FlightScene session={session} report={report} cameraMode={session.camera} paused={session.paused} captureRequest={captureRequest} onCaptured={setCaptureStatus} />
     </Canvas>
     <header className="flight-title"><span>FLIGHT LAB / 01</span><h1>F/A-18C <small>Flight dynamics prototype</small></h1><p>Equatorial ocean · airborne start · no weapons</p></header>
     <div className="flight-status" role="status">{status}</div>
@@ -147,7 +158,7 @@ export function FlightMode() {
       <div className="flight-actions"><button type="button" onClick={() => act(() => session.togglePause())}>{session.paused ? 'Resume · P' : 'Pause · P'}</button><button type="button" onClick={() => act(() => session.reset())}>Reset · R</button></div>
       <button className="flight-camera-button" type="button" onClick={() => act(() => { session.camera = session.camera === 'CHASE' ? 'NOSE' : 'CHASE'; })}>Camera: {session.camera.toLowerCase()} · C</button>
     </aside>
-    {FLIGHT_PROBE_ENABLED && <FlightExercisePanel session={session} report={() => report(session.instruments())} />}
+    {FLIGHT_PROBE_ENABLED && <FlightExercisePanel session={session} report={() => report(session.instruments())} fixtureName={FLIGHT_FIXTURE?.name} captureStatus={captureStatus} onCapture={FLIGHT_FIXTURE ? () => { setCaptureStatus('Capturing…'); setCaptureRequest((value) => value + 1); } : undefined} />}
     <footer className="flight-controls"><div><b>FLY</b> W / S pitch · A / D yaw · Q / E roll · Shift / Ctrl throttle · [ / ] trim</div>
       <div className="flight-touch-controls"><HoldControl session={session} code="KeyS">Nose up</HoldControl><HoldControl session={session} code="KeyW">Nose down</HoldControl><HoldControl session={session} code="KeyQ">Roll left</HoldControl><HoldControl session={session} code="KeyE">Roll right</HoldControl><HoldControl session={session} code="KeyA">Yaw left</HoldControl><HoldControl session={session} code="KeyD">Yaw right</HoldControl></div>
       <p>Engineering approximation · not a validated F/A-18 flight model · 50 km / 20 km altitude / M 0.95 limits · pauses on focus loss</p>

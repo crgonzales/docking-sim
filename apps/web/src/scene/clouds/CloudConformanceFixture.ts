@@ -15,6 +15,7 @@ import { runTerrainSurfaceConformance } from '../terrain/TerrainSurfaceFixture';
 import { verifyCloudAerialTransport } from './CloudAerialFixture';
 import { verifyOceanShadowReceiver } from './CloudOceanReceiverFixture';
 import { verifyWaterReflectionContinuity } from './WaterReflectionFixture';
+import { runCloudSamplingConformance } from './CloudSamplingFixture';
 import {
   CloudsMaterial, ShadowMaterial, createAtmosphereUniforms, createCloudLayerUniforms,
   createCloudParameterUniforms, createCloudShaderHooks,
@@ -339,6 +340,7 @@ export async function runCloudConformance(renderer: WebGLRenderer): Promise<Clou
     await verifyCloudAerialTransport(renderer, resources, params, atmosphere, record);
     await verifyOceanShadowReceiver(renderer, resources, params, atmosphere, record);
     await verifyWaterReflectionContinuity(renderer, resources, record);
+    cases.push(...await runCloudSamplingConformance(renderer, resources));
     cases.push(...await runCloudTemporalConformance(renderer, resources, tolerance));
     cases.push(...await runCloudWeatherConformance(renderer, resources, tolerance));
     cases.push(...await runCloudPresentationConformance(renderer, resources, tolerance));

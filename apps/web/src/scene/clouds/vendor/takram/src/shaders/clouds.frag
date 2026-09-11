@@ -593,8 +593,9 @@ vec4 marchClouds(
       // The step cap is a quality preference; the remaining budget must never
       // leave an unintegrated suffix. Endpoints stay contiguous even in gaps.
       float remainingLength = maxRayDistance - segmentStart;
-      float budgetStep = remainingLength / float(iterationCount - i);
-      segmentSize = distant ? budgetStep : max(segmentSize, budgetStep);
+      float remainingSteps = float(iterationCount - i);
+      float budgetStep = cloudBudgetStep(remainingLength, remainingSteps, perspectiveStepScale);
+      segmentSize = distant ? remainingLength / remainingSteps : max(segmentSize, budgetStep);
     }
     float segmentLength = min(segmentSize, maxRayDistance - segmentStart);
     if (segmentLength <= 0.0) {
@@ -1034,7 +1035,12 @@ void main() {
   bool intersectsGround = any(lessThan(rayNearFar, vec2(0.0)));
   bool intersectsScene = rayNearFar.y < rayNearFar.x;
 
+  #ifdef TEMPORAL_UPSCALE
+  vec2 fullPixel = gl_FragCoord.xy * 4.0 + temporalJitter * resolution;
+  float stbn = samplePrimarySTBN(fullPixel, frame);
+  #else
   float stbn = getSTBN();
+  #endif
 
   vec4 color = vec4(0.0);
   float frontDepth = rayNearFar.y;

@@ -65,6 +65,7 @@ import {
 
 import fragmentShader from './shaders/clouds.frag?raw'
 import clouds from './shaders/clouds.glsl?raw'
+import cloudSampling from './shaders/cloudSampling.glsl?raw'
 import vertexShader from './shaders/clouds.vert?raw'
 import parameters from './shaders/parameters.glsl?raw'
 import types from './shaders/types.glsl?raw'
@@ -204,7 +205,7 @@ export class CloudsMaterial extends AtmosphereMaterialBase {
             },
             types,
             parameters,
-            clouds,
+            clouds: `${cloudSampling}\n${clouds}`,
             media: shaderHooks.mediaGLSL,
             lighting: shaderHooks.lightingGLSL
           })

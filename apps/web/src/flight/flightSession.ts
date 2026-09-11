@@ -1,5 +1,6 @@
 import { createTrimmedFlight, flightInstruments, FLIGHT_DT_S, stepFlight, STILL_AIR, type FlightControls, type FlightEnvironment, type FlightState } from '@docking/sim-core';
 import { FlightExerciseRun, idleFlightExercise, type FlightExerciseId, type FlightExerciseSnapshot } from './flightExercise';
+import type { FlightFixture } from './flightFixture';
 
 export const FLIGHT_KEYS = new Set(['ArrowUp', 'ArrowDown', 'KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyE', 'KeyW', 'KeyS', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'BracketLeft', 'BracketRight', 'KeyP', 'KeyR', 'KeyC']);
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -74,6 +75,23 @@ export class FlightSession {
     if (wind_N_m_s.some((value) => !Number.isFinite(value))) return;
     this.cancelExercise();
     this.environment.wind_N_m_s = [...wind_N_m_s];
+  }
+  applyFixture(fixture: FlightFixture): void {
+    this.cancelExercise();
+    this.setThrottle(fixture.controls.throttle);
+    this.setWind([...fixture.environment.wind_N_m_s]);
+    this.state = {
+      ...fixture.state,
+      position_N_m: [...fixture.state.position_N_m], velocity_N_m_s: [...fixture.state.velocity_N_m_s],
+      q_BN: [...fixture.state.q_BN], omega_B_rad_s: [...fixture.state.omega_B_rad_s],
+    };
+    this.controls = { ...fixture.controls };
+    this.manualControls = { ...fixture.controls };
+    this.environment = { ...fixture.environment, wind_N_m_s: [...fixture.environment.wind_N_m_s] };
+    this.camera = fixture.camera;
+    this.paused = true;
+    this.accumulator = 0;
+    this.keys.clear(); this.pointers.clear();
   }
   advance(delta_s: number): void {
     if (!Number.isFinite(delta_s) || delta_s < 0) return;

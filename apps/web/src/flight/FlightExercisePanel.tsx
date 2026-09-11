@@ -5,6 +5,9 @@ import type { FlightSession } from './flightSession';
 interface FlightExercisePanelProps {
   session: FlightSession;
   report: () => void;
+  fixtureName?: string;
+  captureStatus?: string;
+  onCapture?: () => void;
 }
 
 const phaseLabel = (session: FlightSession): string => {
@@ -14,7 +17,7 @@ const phaseLabel = (session: FlightSession): string => {
   return exercise.phase;
 };
 
-export function FlightExercisePanel({ session, report }: FlightExercisePanelProps) {
+export function FlightExercisePanel({ session, report, fixtureName, captureStatus, onCapture }: FlightExercisePanelProps) {
   const [selected, setSelected] = useState<FlightExerciseId>('TURN_RIGHT');
   const exercise = session.exerciseSnapshot();
   const running = exercise.phase === 'RUNNING';
@@ -36,6 +39,7 @@ export function FlightExercisePanel({ session, report }: FlightExercisePanelProp
       <button type="button" onClick={start} disabled={running}>Start</button>
       <button type="button" onClick={stop} disabled={!running}>Stop</button>
     </div>
+    {fixtureName && onCapture && <><button className="flight-camera-button" type="button" onClick={onCapture}>Capture {fixtureName} evidence</button>{captureStatus && <small>{captureStatus}</small>}</>}
     <small>Start trims and resets airborne. Manual input, pause, reset or blur cancels.</small>
   </aside>;
 }
