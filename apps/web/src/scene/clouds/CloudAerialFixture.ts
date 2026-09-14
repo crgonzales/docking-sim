@@ -1,7 +1,7 @@
 import { EffectPass } from 'postprocessing';
 import { BasicDepthPacking, FloatType, Matrix3, Uniform, Vector2, Vector3, WebGLRenderTarget, type WebGLRenderer } from 'three';
 import { Ellipsoid } from '@takram/three-geospatial';
-import { EveAerialPerspectiveEffect } from './EveAerialPerspectiveEffect';
+import { VolumetricAerialPerspectiveEffect } from './VolumetricAerialPerspectiveEffect';
 import type { CloudsMaterial } from './takramCloudBackend';
 import type { CloudConformanceResources } from './CloudConformanceResources';
 
@@ -14,7 +14,7 @@ export async function verifyCloudAerialTransport(
   record: (name: string, measured: readonly number[], expected: readonly number[]) => void,
 ): Promise<void> {
   const radius = params.atmosphereUniforms.bottomRadius.value;
-  const aerial = new EveAerialPerspectiveEffect(resources.camera, {
+  const aerial = new VolumetricAerialPerspectiveEffect(resources.camera, {
     ellipsoid: new Ellipsoid(radius, radius, radius), correctAltitude: false, correctGeometricError: false,
     normalBuffer: resources.one2D, reconstructNormal: false,
     sunLight: true, skyLight: true, transmittance: false, inscatter: false,
@@ -26,11 +26,11 @@ export async function verifyCloudAerialTransport(
   const pass = new EffectPass(resources.camera, aerial);
   try {
     aerial.installCloudLighting({ ...params.shaderHooks!.uniforms,
-      eveWeatherSunDirectionECEF: new Uniform(new Vector3(1, 0, 0)),
-      eveCloudPlanetRadiusM: new Uniform(radius), eveCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
-      eveLightVolumeTexture: new Uniform(resources.shadowArray), eveLightFrame: new Uniform(new Matrix3()),
-      eveLightCapRadius: new Uniform(1), eveLightAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
-      eveLightSlices: new Uniform(1), eveLightValid: new Uniform(0), eveLightGeneration: new Uniform(-1),
+      volumetricWeatherSunDirectionECEF: new Uniform(new Vector3(1, 0, 0)),
+      volumetricCloudPlanetRadiusM: new Uniform(radius), volumetricCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
+      volumetricLightVolumeTexture: new Uniform(resources.shadowArray), volumetricLightFrame: new Uniform(new Matrix3()),
+      volumetricLightCapRadius: new Uniform(1), volumetricLightAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
+      volumetricLightSlices: new Uniform(1), volumetricLightValid: new Uniform(0), volumetricLightGeneration: new Uniform(-1),
     }, params.shaderHooks!.mediaGLSL);
     aerial.normalBuffer = resources.one2D;
     aerial.worldToECEFMatrix.copy(params.atmosphereUniforms.worldToECEFMatrix.value);

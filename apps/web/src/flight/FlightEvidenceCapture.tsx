@@ -63,7 +63,7 @@ export function FlightEvidenceCapture({ session, environment, fixtureName, chara
       });
     });
     const context = {
-      url: window.location.href, fixture: fixtureName, renderer: 'library', cloudSystem: 'eve',
+      url: window.location.href, fixture: fixtureName, renderer: 'library', cloudSystem: 'volumetric',
       quality, dpr: gl.getPixelRatio(), drawingBuffer: [gl.domElement.width, gl.domElement.height], paused: character?.paused ?? session.paused,
       timings: renderTimings.snapshot(),
       runningFrames: { frames: timing.frames, elapsedMs: timing.elapsedMs },
@@ -96,7 +96,7 @@ export function FlightEvidenceCapture({ session, environment, fixtureName, chara
       libraryStatus: {
         state: libraryStatus.state, error: libraryStatus.error,
         shadowRange: structuredClone(libraryStatus.shadowRange), shadowTexelM: [...libraryStatus.shadowTexelM],
-        lightingSelection: [...libraryStatus.lightingSelection], eve: structuredClone(libraryStatus.eve),
+        lightingSelection: [...libraryStatus.lightingSelection], volumetric: structuredClone(libraryStatus.volumetric),
         graphics: structuredClone(libraryStatus.graphics),
       },
     };

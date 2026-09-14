@@ -16,16 +16,18 @@ export async function runCloudDistantConformance(
   const texture = new DataTexture(texels, 2, 1, RGBAFormat, FloatType);
   texture.needsUpdate = true;
   const uniforms = {
-    eveColumnTexture: new Uniform(texture), eveColumnDimensions: new Uniform(new Vector2(2048, 1024)),
-    eveColumnReady: new Uniform(1), eveColumnGeneration: new Uniform(1),
+    volumetricColumnTexture: new Uniform(texture), volumetricColumnDimensions: new Uniform(new Vector2(2048, 1024)),
+    volumetricColumnReady: new Uniform(1), volumetricColumnGeneration: new Uniform(1),
     fixtureOrigin: new Uniform(new Vector3(radius + 3000, 0, 0)),
     fixtureDirection: new Uniform(new Vector3(-1, 0, 0)),
     fixtureStart: new Uniform(0), fixtureEnd: new Uniform(3000), altitudeCorrection: new Uniform(new Vector3()),
     minHeight: new Uniform(1000), maxHeight: new Uniform(2000), cloudEntryFootprintM: new Uniform(50000),
-    eveCloudBaseAltitudeM: new Uniform(new Vector4(1000, 1000, 1000, 1000)),
-    eveCloudTopAltitudeM: new Uniform(new Vector4(2000, 2000, 2000, 2000)),
+    volumetricCloudBaseAltitudeM: new Uniform(new Vector4(1000, 1000, 1000, 1000)),
+    volumetricCloudTopAltitudeM: new Uniform(new Vector4(2000, 2000, 2000, 2000)),
     fixtureCoverage: new Uniform(new Vector2(1, 1)), fixtureExtinction: new Uniform(new Vector2()),
     fixtureAlbedo: new Uniform(new Vector2(0.25, 0.75)),
+    fixtureLightingOnly: new Uniform(false),
+    fixtureScatteringOrders: new Uniform(new Vector2()),
   };
   const material = new RawShaderMaterial({ glslVersion: GLSL3, depthTest: false, depthWrite: false, uniforms,
     vertexShader: 'precision highp float; in vec3 position; void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
@@ -33,24 +35,26 @@ export async function runCloudDistantConformance(
       const float PI = 3.141592653589793;
       const float RECIPROCAL_PI4 = 0.07957747154594767;
       const float METER_TO_LENGTH_UNIT = 0.001;
-      const float eveWeatherPlanetRadiusM = 6371000.0;
+      const float volumetricWeatherPlanetRadiusM = 6371000.0;
       uniform float minHeight, maxHeight, cloudEntryFootprintM;
       const float cloudRaySlope = 0.0, skyLightScale = 1.0;
-      const int EVE_CLOUD_PROFILE_COUNT = 4;
-      const vec4 eveCloudPhaseAnisotropyX = vec4(0.0), eveCloudPhaseAnisotropyY = vec4(0.0), eveCloudPhaseMix = vec4(0.0);
+      const int VOLUMETRIC_CLOUD_PROFILE_COUNT = 4;
+      const vec4 volumetricCloudPhaseAnisotropyX = vec4(0.0), volumetricCloudPhaseAnisotropyY = vec4(0.0), volumetricCloudPhaseMix = vec4(0.0);
       const vec3 sunDirection = vec3(1.0, 0.0, 0.0);
       uniform vec3 fixtureOrigin, fixtureDirection, altitudeCorrection;
       uniform float fixtureStart, fixtureEnd;
-      uniform vec4 eveCloudBaseAltitudeM, eveCloudTopAltitudeM;
+      uniform vec4 volumetricCloudBaseAltitudeM, volumetricCloudTopAltitudeM;
       uniform vec2 fixtureCoverage, fixtureExtinction, fixtureAlbedo;
+      uniform bool fixtureLightingOnly;
+      uniform vec2 fixtureScatteringOrders;
       struct CloudLightingSample { float valid; vec3 skyIrradiance; };
       struct MediaSample { float extinction; float scattering; };
       ${raySphereIntersection}
       // Analytic fixture is static: its atlas and physical coordinates coincide.
-      vec3 eveWeatherCanonicalPositionECEFM(const vec3 p) { return p; }
-      vec2 eveWeatherUv(const vec3 p) { return vec2(p.x < 0.0 ? 0.75 : 0.25, 0.5); }
-      float eveWeatherMapLod(const vec3 p, const float f, const float l, const vec2 d, const vec2 a) { return 0.0; }
-      vec2 eveSampleWeather(const vec3 p, const float f, const float l) {
+      vec3 volumetricWeatherCanonicalPositionECEFM(const vec3 p) { return p; }
+      vec2 volumetricWeatherUv(const vec3 p) { return vec2(p.x < 0.0 ? 0.75 : 0.25, 0.5); }
+      float volumetricWeatherMapLod(const vec3 p, const float f, const float l, const vec2 d, const vec2 a) { return 0.0; }
+      vec2 volumetricSampleWeather(const vec3 p, const float f, const float l) {
         return vec2(p.x < 0.0 ? fixtureCoverage.y : fixtureCoverage.x, 0.0);
       }
       MediaSample sampleCloudMedia(const vec3 p, const float f, const float l, const float j) {
@@ -61,14 +65,24 @@ export async function runCloudDistantConformance(
       }
       ${columnGLSL}
       vec3 GetSunAndSkyScalarIrradiance(const vec3 p, const vec3 s, out vec3 sky) { sky = vec3(4.0 * PI); return vec3(0.0); }
-      float approximateMultipleScattering(const float t, const float c, const vec2 a, const float m) { return 0.0; }
-      float eveSkyVisibility(const vec3 p, const float f) { return 1.0; }
+      float approximateMultipleScattering(const float t, const float c, const vec2 a, const float m) { return fixtureScatteringOrders.x; }
+      float phaseFunction(const float c, const float t, const vec2 a, const float m) { return fixtureScatteringOrders.y; }
+      float volumetricSkyVisibility(const vec3 p, const float f) { return 1.0; }
       ${distantGLSL}
       float cloudSunOpticalDepth(const vec3 p, const float f, const float l, const float j, out CloudLightingSample light) {
         light.valid = 1.0; light.skyIrradiance = vec3(4.0 * PI); return 0.0;
       }
       layout(location=0) out vec4 outputValue; layout(location=1) out vec4 metadata;
       void main() {
+        if (fixtureLightingOnly) {
+          // Isolate the production top-light response from the column geometry.
+          // Inputs are known single/total scattering, not a second copy of the
+          // response formula; the checks below protect its lighting boundaries.
+          float response = volumetricCloudTopScattering(0.0, 0.0, vec2(0.0), 0.0,
+            fixtureOrigin, fixtureDirection);
+          outputValue = vec4(response, 0.25, 0.5, 1.0); metadata = vec4(0.0);
+          return;
+        }
         float depth, opticalDepth; ivec3 samples; vec3 light;
         vec4 value = renderDistantClouds(fixtureOrigin, fixtureDirection, vec2(fixtureStart, fixtureEnd), 0.0, 0.5,
           depth, samples, opticalDepth, light);
@@ -89,11 +103,11 @@ export async function runCloudDistantConformance(
     texels.set([nearOpacity, nearOpacity * heightM / 1000, nearOpacity * thicknessM / 1000, nearOpacity * 0.25,
       farOpacity, farOpacity * heightM / 1000, farOpacity * thicknessM / 1000, farOpacity * 0.75]);
     texture.needsUpdate = true;
-    uniforms.eveColumnTexture.value = texture;
+    uniforms.volumetricColumnTexture.value = texture;
   };
   const setProfile = (baseM: number, topM: number) => {
-    uniforms.eveCloudBaseAltitudeM.value.setScalar(baseM);
-    uniforms.eveCloudTopAltitudeM.value.setScalar(topM);
+    uniforms.volumetricCloudBaseAltitudeM.value.setScalar(baseM);
+    uniforms.volumetricCloudTopAltitudeM.value.setScalar(topM);
   };
   const closestM = 400_000;
   const setLimbRay = (altitudeM: number) => {
@@ -132,10 +146,10 @@ export async function runCloudDistantConformance(
     uniforms.altitudeCorrection.value.set(1000, 2000, 3000);
     uniforms.fixtureOrigin.value.add(uniforms.altitudeCorrection.value);
     await sample('physical-and-atmosphere-frame-registration', [0.25, 0.5, 1.5, 1]);
-    uniforms.eveColumnReady.value = 0;
+    uniforms.volumetricColumnReady.value = 0;
     await sample('unpublished-is-empty', [0, 0, -0.001, 0]);
-    uniforms.eveColumnReady.value = 1;
-    uniforms.eveColumnTexture.value = resources.zero2D;
+    uniforms.volumetricColumnReady.value = 1;
+    uniforms.volumetricColumnTexture.value = resources.zero2D;
     await sample('clear-column-is-empty', [0, 0, -0.001, 0]);
 
     uniforms.altitudeCorrection.value.set(0, 0, 0);
@@ -213,6 +227,30 @@ export async function runCloudDistantConformance(
     uniforms.fixtureStart.value = entryDistance;
     await sample('host-entry-origin-and-nonzero-near-depth',
       over(nearAlpha, farAlpha, nearDepth - entryDistance, farDepth - entryDistance));
+
+    uniforms.fixtureLightingOnly.value = true;
+    uniforms.fixtureScatteringOrders.value.set(0.08, 0.03);
+    uniforms.fixtureOrigin.value.set(radius + 3000, 0, 0);
+    uniforms.fixtureDirection.value.set(-1, 0, 0);
+    await sample('sunlit-top-restores-higher-order-light-only', [0.13, 0.25, 0.5, 1]);
+    uniforms.fixtureDirection.value.set(1, 0, 0);
+    await sample('underside-retains-original-lighting', [0.08, 0.25, 0.5, 1]);
+    uniforms.fixtureDirection.value.set(0, 1, 0);
+    await sample('grazing-view-retains-original-lighting', [0.08, 0.25, 0.5, 1]);
+    uniforms.fixtureOrigin.value.set(-radius - 3000, 0, 0);
+    uniforms.fixtureDirection.value.set(1, 0, 0);
+    await sample('night-side-retains-original-lighting', [0.08, 0.25, 0.5, 1]);
+    uniforms.fixtureOrigin.value.set(0, radius + 3000, 0);
+    uniforms.fixtureDirection.value.set(0, -1, 0);
+    await sample('terminator-retains-original-lighting', [0.08, 0.25, 0.5, 1]);
+    uniforms.fixtureOrigin.value.set(radius + 3000, 0, 0);
+    uniforms.fixtureDirection.value.set(-0.175, Math.sqrt(1 - 0.175 ** 2), 0);
+    await sample('top-response-fades-continuously-toward-limb', [0.105, 0.25, 0.5, 1]);
+    uniforms.fixtureDirection.value.set(-1, 0, 0);
+    uniforms.fixtureScatteringOrders.value.set(0.03, 0.03);
+    await sample('single-scattering-lobe-is-unchanged', [0.03, 0.25, 0.5, 1]);
+    uniforms.fixtureScatteringOrders.value.set(0, 0);
+    await sample('unlit-clouds-do-not-create-light', [0, 0.25, 0.5, 1]);
   } finally { texture.dispose(); pass.dispose(); material.dispose(); }
   return cases;
 }

@@ -196,6 +196,8 @@ function boundedActiveSetSolve(system: LinearSystem, upperBound_s: number, maxIt
   const x = new Array<number>(variableCount).fill(0);
   const status = new Array<BoundStatus>(variableCount).fill(-1);
   const tolerance = 1e-8;
+  const boundTolerance_s = 1e-10;
+  let releaseBound = true;
 
   for (let iteration = 0; iteration < maxIterations; iteration += 1) {
     let gradients = gradient(system, x);
@@ -208,10 +210,16 @@ function boundedActiveSetSolve(system: LinearSystem, upperBound_s: number, maxIt
         releaseIndex = index;
       }
     }
-    if (releaseIndex >= 0) status[releaseIndex] = 0;
+    // Finish the current free-set solve after hitting a bound before admitting
+    // another variable. Releasing at both ends of every iteration can cycle
+    // at a zero-length step on clustered/near-parallel physical RCS layouts.
+    if (releaseBound && releaseIndex >= 0) status[releaseIndex] = 0;
 
     const freeIndices = status.flatMap((bound, index) => bound === 0 ? [index] : []);
-    if (freeIndices.length === 0) return x;
+    if (freeIndices.length === 0) {
+      if (!releaseBound) { releaseBound = true; continue; }
+      return x;
+    }
     const freeDirections = solveFreeVariables(system, x, freeIndices);
     const candidateValues = freeDirections.map((direction, index) => direction + (x[freeIndices[index]!] ?? 0));
     let stepFraction = 1;
@@ -221,14 +229,14 @@ function boundedActiveSetSolve(system: LinearSystem, upperBound_s: number, maxIt
       const index = freeIndices[candidateIndex]!;
       const candidate = candidateValues[candidateIndex] ?? 0;
       const current = x[index] ?? 0;
-      if (candidate < 0 && candidate < current) {
+      if (candidate < -boundTolerance_s && candidate < current) {
         const fraction = current / (current - candidate);
         if (fraction < stepFraction) {
           stepFraction = fraction;
           limitingIndex = index;
           limitingStatus = -1;
         }
-      } else if (candidate > upperBound_s && candidate > current) {
+      } else if (candidate > upperBound_s + boundTolerance_s && candidate > current) {
         const fraction = (upperBound_s - current) / (candidate - current);
         if (fraction < stepFraction) {
           stepFraction = fraction;
@@ -245,9 +253,13 @@ function boundedActiveSetSolve(system: LinearSystem, upperBound_s: number, maxIt
     if (limitingIndex >= 0) {
       x[limitingIndex] = limitingStatus === 1 ? upperBound_s : 0;
       status[limitingIndex] = limitingStatus;
+      releaseBound = false;
       continue;
     }
-    freeIndices.forEach((index, candidateIndex) => { x[index] = candidateValues[candidateIndex] ?? 0; });
+    // Round-off near zero must not repeatedly remove/re-admit the same jet.
+    freeIndices.forEach((index, candidateIndex) => {
+      x[index] = Math.max(0, Math.min(upperBound_s, candidateValues[candidateIndex] ?? 0));
+    });
     gradients = gradient(system, x);
     let kktViolation = -1;
     let kktIndex = -1;
@@ -259,7 +271,7 @@ function boundedActiveSetSolve(system: LinearSystem, upperBound_s: number, maxIt
       }
     }
     if (kktIndex < 0 || kktViolation <= tolerance) return x;
-    status[kktIndex] = 0;
+    releaseBound = true;
   }
   return x;
 }

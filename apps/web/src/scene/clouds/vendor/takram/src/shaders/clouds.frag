@@ -645,12 +645,19 @@ vec4 marchClouds(
       bool hasSuppliedLighting = suppliedLighting.valid > 0.5;
       if (hasSuppliedLighting) skyIrradiance = suppliedLighting.skyIrradiance;
 
+      #ifdef VOLUMETRIC_DISTANT_CLOUDS
+      vec3 radiance = sunIrradiance * volumetricCloudTopScattering(
+        opticalDepth, cosTheta, media.phaseAnisotropy, media.phaseMix,
+        position - altitudeCorrection, rayDirection
+      );
+      #else
       vec3 radiance = sunIrradiance * approximateMultipleScattering(
         opticalDepth,
         cosTheta,
         media.phaseAnisotropy,
         media.phaseMix
       );
+      #endif
 
       #ifdef GROUND_BOUNCE
       // Fudge factor for the irradiance from ground.
@@ -1088,7 +1095,7 @@ void main() {
       );
     }
     if (representationMix > 0.0) {
-      #ifdef EVE_DISTANT_CLOUDS
+      #ifdef VOLUMETRIC_DISTANT_CLOUDS
       farColor = renderDistantClouds(
         rayOrigin, rayDirection, rayNearFar, cosTheta, stbn,
         farFrontDepth, farSampleCount, farOpticalDepth, farLighting
@@ -1274,11 +1281,11 @@ void main() {
   color.a = color.a * (1.0 - haze.a) + haze.a;
   #endif // HAZE
 
-  #ifdef EVE_CLOUD_PRESENTATION
+  #ifdef VOLUMETRIC_CLOUD_PRESENTATION
   if (hitClouds) {
     // Apply the same weight to premultiplied light and opacity. Only the view
     // fades into its atmospheric background; weather and shadows stay physical.
-    color *= eveCloudHorizonVisibility(cameraPosition - altitudeCorrection, rayDirection, frontDepth);
+    color *= volumetricCloudHorizonVisibility(cameraPosition - altitudeCorrection, rayDirection, frontDepth);
   }
   #endif
 

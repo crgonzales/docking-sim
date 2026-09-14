@@ -107,11 +107,11 @@ export function runFlightCloudLightingConformance(
       coverage: resources.zero2D, typeField: resources.zero2D,
       referenceField: resources.zero2D, noise: resources.zero3D,
     }),
-    eveCloudPlanetRadiusM: new Uniform(EARTH_RADIUS_M),
-    eveCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
-    eveLightVolumeTexture: new Uniform(texture), eveLightFrame: new Uniform(frame.clone()),
-    eveLightCapRadius: new Uniform(1), eveLightAltitudeBoundsM: new Uniform(new Vector2(0, 2000)),
-    eveLightSlices: new Uniform(2), eveLightValid: new Uniform(1), eveLightGeneration: new Uniform(1),
+    volumetricCloudPlanetRadiusM: new Uniform(EARTH_RADIUS_M),
+    volumetricCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
+    volumetricLightVolumeTexture: new Uniform(texture), volumetricLightFrame: new Uniform(frame.clone()),
+    volumetricLightCapRadius: new Uniform(1), volumetricLightAltitudeBoundsM: new Uniform(new Vector2(0, 2000)),
+    volumetricLightSlices: new Uniform(2), volumetricLightValid: new Uniform(1), volumetricLightGeneration: new Uniform(1),
   });
   const bindingsA = bindingsFor(cacheA);
   // Fresh Uniform objects AND different texture values expose stale borrowed
@@ -200,15 +200,15 @@ export function runFlightCloudLightingConformance(
 
         // Invalid, outside-disc and outside-altitude queries integrate the real
         // canonical zero-coverage medium, whose cloud visibility must be one.
-        bindingsA.eveLightValid.value = 0;
+        bindingsA.volumetricLightValid.value = 0;
         ratio('invalid-cache-empty-fallback', read('combined'), combined(1, 1));
-        bindingsA.eveLightValid.value = 1;
-        bindingsA.eveLightFrame.value.identity();
+        bindingsA.volumetricLightValid.value = 1;
+        bindingsA.volumetricLightFrame.value.identity();
         ratio('outside-disc-empty-fallback', read('combined'), combined(1, 1));
-        bindingsA.eveLightFrame.value.copy(frame);
-        bindingsA.eveLightAltitudeBoundsM.value.set(2500, 3500);
+        bindingsA.volumetricLightFrame.value.copy(frame);
+        bindingsA.volumetricLightAltitudeBoundsM.value.set(2500, 3500);
         ratio('outside-altitude-empty-fallback', read('combined'), combined(1, 1));
-        bindingsA.eveLightAltitudeBoundsM.value.set(0, 2000);
+        bindingsA.volumetricLightAltitudeBoundsM.value.set(0, 2000);
 
         mesh.position.y = 64;
         moveView(64);

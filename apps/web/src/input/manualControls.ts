@@ -19,6 +19,19 @@ import {
 } from '../telemetry/scenarioEmitter';
 import { bindingForCode, bindingForKey, codesFor } from './bindings';
 import { useViewStore } from '../viewStore';
+import { useScenarioStore } from '../telemetry/scenarioStore';
+import { holdPosition, togglePrecision, toggleScenarioPause, retryScenario } from '../telemetry/scenarioEmitter';
+
+function lessonActive(): boolean {
+  return useAppModeStore.getState().mode === 'MISSION' && useScenarioStore.getState().selectedMission === 'FIRST_DOCKING';
+}
+function missionBlocked(): boolean {
+  const s = useScenarioStore.getState();
+  return useAppModeStore.getState().mode === 'MISSION' && (s.phase !== 'RUNNING' || s.paused);
+}
+function editableTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName));
+}
 
 const ZERO_COMMAND: ManualCommand = {
   translation: [0, 0, 0],
@@ -86,6 +99,7 @@ export function attachManualControls(element: HTMLElement): () => void {
   let authorityCommandPending = false;
 
   const emitCommand = (): void => {
+    if (missionBlocked()) return;
     const frame = getLatestFrame();
     if (frame?.control_mode !== undefined) {
       if (modeCommandPending && frame.control_mode === controlMode) modeCommandPending = false;
@@ -129,11 +143,30 @@ export function attachManualControls(element: HTMLElement): () => void {
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
+    if (event.metaKey || event.altKey || event.isComposing || event.defaultPrevented || editableTarget(event.target)) return;
+    // Space activates a focused native button; flight hold owns it elsewhere.
+    if (event.code === 'Space' && event.target instanceof HTMLElement && event.target.tagName === 'BUTTON') return;
     const binding = bindingForCode(event.code) ?? bindingForKey(event.key);
-    if (!binding) return;
+    if (!binding || (binding.lessonOnly && !lessonActive())) return;
+    if (lessonActive() && ['toggleControlMode', 'toggleManualSubMode', 'toggleManualAuthority', 'cycleController'].includes(binding.id)) {
+      event.preventDefault();
+      return;
+    }
+    if (binding.lessonOnly) {
+      event.preventDefault();
+      if (event.repeat) return;
+      if (useScenarioStore.getState().phase === 'BRIEFING') return;
+      if (binding.id === 'lessonPause') toggleScenarioPause();
+      if (binding.id === 'lessonRetry') retryScenario();
+      if (binding.id === 'lessonHold') holdPosition();
+      if (binding.id === 'lessonPrecision') togglePrecision();
+      return;
+    }
+    if (missionBlocked() && binding.group !== 'CAMERA') return;
 
     if (binding.group === 'TRANSLATE' || binding.group === 'ROTATE') {
       if (binding.code !== null) pressed.add(binding.code);
+      if (lessonActive()) emitCommand();
       event.preventDefault();
       return;
     }
@@ -190,6 +223,7 @@ export function attachManualControls(element: HTMLElement): () => void {
 
   const onKeyUp = (event: KeyboardEvent): void => {
     pressed.delete(event.code);
+    if (lessonActive()) emitCommand();
   };
 
   const onMouseDown = (event: MouseEvent): void => {
@@ -234,6 +268,16 @@ export function attachManualControls(element: HTMLElement): () => void {
     stopDragging();
     state.setFlyMoveInput([0, 0, 0]);
     zeroCommand();
+  });
+
+  const unsubscribeScenario = useScenarioStore.subscribe((state, previous) => {
+    if (state.inputEpoch === previous.inputEpoch) return;
+    pressed.clear();
+    stopDragging();
+    modeCommandPending = subModeCommandPending = authorityCommandPending = false;
+    controlMode = getLatestFrame()?.control_mode ?? 'MANUAL';
+    manualSubMode = getLatestFrame()?.manual_sub_mode ?? 'RATE';
+    manualAuthority = getLatestFrame()?.manual_authority ?? 'LOW';
   });
 
   const onBlur = (): void => {
@@ -300,6 +344,7 @@ export function attachManualControls(element: HTMLElement): () => void {
     window.removeEventListener('pointercancel', stopDragging);
     document.removeEventListener('visibilitychange', onVisibilityChange);
     unsubscribeView();
+    unsubscribeScenario();
     pressed.clear();
     zeroCommand();
   };

@@ -8,7 +8,7 @@ import {
   cloudDetailNoisePositionECEFM, createWeatherSnapshot, evaluateCloudLayerMedia,
   sampleWeatherField, sampleWeatherFieldWithMotion,
 } from './cloudWeather';
-import { EVE_REFERENCE_REGION, interpolateCloudProfile } from './cloudConfig';
+import { VOLUMETRIC_REFERENCE_REGION, interpolateCloudProfile } from './cloudConfig';
 
 type Position = readonly [number, number, number];
 const radiusM = 6_371_000;
@@ -57,7 +57,7 @@ describe('physical weather advection', () => {
     // The CPU authored sampler covers only its reference region, not the global
     // GPU assets. Choose a known covered zone rather than assuming base7degN is
     // covered by that reference-only CPU map.
-    const zone = EVE_REFERENCE_REGION.zones.deepGroup;
+    const zone = VOLUMETRIC_REFERENCE_REGION.zones.deepGroup;
     const latitude = zone.latitudeDeg * Math.PI / 180, longitude = zone.longitudeDeg * Math.PI / 180;
     const direction = positionAt(latitude, longitude);
     const field = sampleWeatherFieldWithMotion(direction, createWeatherMotionState(0, radiusM));

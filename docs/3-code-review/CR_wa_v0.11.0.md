@@ -97,6 +97,6 @@ No findings.
 - Package boundaries, FSW purity, and GNC conventions: unaffected.
 - Error handling and security: no actionable issues.
 - Performance and lifecycle: DPR/shadow resizing, cached uniforms, borrowed textures, composer resources, and material hooks are handled safely.
-- Approval gate: final validation reports 759/759 GPU checks, 608/608 web tests, focused tests 9/9, and a green workspace build in the [validation memo](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/flight-quality-validation.md:94). New logic has corresponding tests and documentation.
+- Approval gate: final validation reports 759/759 GPU checks, 608/608 web tests, focused tests 9/9, and a green workspace build in the [validation memo](docking-sim-flight-integrated/docs/6-memo/f18-integration/flight-quality-validation.md:94). New logic has corresponding tests and documentation.
 
 APPROVED

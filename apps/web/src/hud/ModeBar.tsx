@@ -13,13 +13,13 @@ const CONTROL_MODES = ['AUTO', 'MANUAL'] as const;
 const MANUAL_SUB_MODES = ['RATE', 'PULSE'] as const;
 
 /** Bottom mode bar: active controller, control mode, sim clock. */
-export function ModeBar() {
+export function ModeBar({ simple = false }: { simple?: boolean }) {
   const frame = useTelemetryBus((s) => s.frame);
   const [muted, setMuted] = useState(getMasterMuted);
   const [volume, setVolume] = useState(getMasterVolume);
 
   return (
-    <div className="hud-modebar">
+    <div className={`hud-modebar ${simple ? 'lesson-modebar' : ''}`}>
       <div className="hud-mode-group">
         {CONTROLLERS.map((c) => (
           <span key={c} className={`hud-mode ${frame?.controller === c ? 'active' : ''}`}>

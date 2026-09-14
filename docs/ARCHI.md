@@ -92,9 +92,13 @@ physical inputs → in-code derivations), baked Hillaire atmosphere LUTs
 RGB float is unfilterable in WebGL2), KTX2/UASTC textures + seeded cloud
 placement mask via `scripts/make*.mjs` (provenance: `assets/ASSETS.md`).
 
-Library renderer (`renderer=library&cloudSystem=eve` for query-selected
+Library renderer (`renderer=library&cloudSystem=volumetric` for query-selected
 SceneRoot diagnostics; FLIGHT selects the same components explicitly): Takram
 Bruneton atmosphere and a maintained Three-clouds fork provide the host passes.
+Their runtime LUT/noise binaries under `apps/web/public/vendor/takram/` are
+gitignored; `scripts/setupRendererSpikeAssets.mjs` copies them from the pinned
+packages, fetches the pinned STBN, verifies `asset-checksums.json` and runs first
+in the web `build`, so fresh checkouts (Cloudflare Pages) reproduce them.
 Canonical world-fixed cloud density feeds local volumes, shared lighting and a
 prepared opacity/height column atlas for orbital views. Light-cache texels
 average transmitted light from canonical subrays, never prethreshold noise.
@@ -105,11 +109,22 @@ periodic RGBA16F textures hold material heights and baked spatial slopes.
 Patch-local phase reduction preserves ground precision. Color and normal passes
 share the geographic water classifier and bounded imagery-to-reflectance
 calibration. The latter is artistic calibration, not measured albedo. Resource
-ownership and verified limits: `6-memo/eve-cloud-system/stabilization-completion.md`.
+ownership and verified limits: `6-memo/volumetric-cloud-system/stabilization-completion.md`.
 The query-selected SceneRoot behavior remains unchanged for nonflight modes;
 integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
 
 ## Roadmap
+
+MISSION now opens a choice of `FIRST_DOCKING_01` (prepared six-metre manual
+practice) and the original emergency scenario. The first docking HUD reads
+estimated port geometry, scales existing LOW/RATE input for precision and
+shows a station-anchored target. Explicit maintained-forward input never
+corrects alignment. Public `holdManualPosition()` captures the next estimated
+pose and resets RATE controllers; braking still uses real thrusters. The web
+scenario publisher owns pause, short-input latching and seeded full/final-two-
+metre restarts; focus loss pauses and clears both keyboard and pointer input.
+No-input and manual-completion oracles, hold dynamics, input ownership and
+pause/retry tests cover the new seams. See `6-memo/first-docking-gameplay.md`.
 
 1. ~~Restructure + cinematic visual pass (Earth, starfield, craft, HUD)~~ ✅ v0.2.0 (primitive craft; normalized glTF models are a documented follow-up — see `apps/web/public/assets/ASSETS.md`)
 2. ~~Discrete RCS thrusters + allocator, sensor models, EKF~~ ✅ v0.3.0 (16-jet canted RCS, NNLS allocator, seeded sensors + degrade hooks, 6-state EKF, PID/LQR, `SimLoop` command/injection seam; attitude = kinematic LVLH hold pending Phase 3)
@@ -117,7 +132,8 @@ integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
 4. ~~MPC terminal approach + passive abort safety~~ ✅ v0.5.0 (active-set QP + 1 Hz condensed CW MPC w/ soft corridor/terminal constraints + probed octahedral authority; two-level corridor monitor, keep-out-proven passive abort, truth-side DOCKED/COLLISION/ABORT outcome latch)
 5. ~~Monte Carlo + guided scenario mode (`docs/scenario-mode-spec.md`)~~ ✅ v0.6.0 (`packages/scenario`: schema v1 + validator, ScenarioDirector w/ merged failure injection + BRIEFING/RUNNING/DEBRIEF, perfect-operator bot, seeded MC runner; sim-core nav-source/guidance-freeze/vel-bias command surface; MISSION switch panel + ANALYSIS worker-pool MC screen; demo video remains a manual follow-up)
 6. ~~Flight feel: manual authority, thruster plumes, procedural audio~~ ✅ v0.7.0 (`MANUAL_AUTHORITY_PRESETS` LOW/HIGH resolving through `getResolvedManualLimits()`, manual gains isolated on `stepManualDamping` so `step()`/`stepAuto()` — and the shared ABORT COASTING damping path — keep AUTO gains; `setManualAuthority` deterministic command; truth-side per-jet duty in `RenderState`, accumulated across truth ticks and latched at the FSW boundary; shader plumes + pooled-voice WebAudio over a shared master gain. Open items closed in v0.8.0: FPS counter + GPU-verified 60 fps checkpoints)
-7. ~~Sky overhaul: physically-based atmosphere, EVE-style clouds, relief, debug camera~~ ✅ v0.8.0 (`sky/skyConfig.ts` single source + derivation oracles; baked transmittance/multiple-scattering LUTs driving limb raymarch, aerial perspective, and sun extinction tint; deck + cirrus + 12k seeded volumetric puffs off one shared coverage function and mask; GEBCO relief normals, orbit-correct ocean, camera-relative sun at derived infinity; debug camera `B` + arrow-key orbit + FPS counter; owner accepts a 30 fps floor for visual quality — measured 60 at every checkpoint. Craft stay primitive — glTF hull bake too dark, flip deferred)
+7. ~~Sky overhaul: physically-based atmosphere, volumetric clouds, relief, debug camera~~ ✅ v0.8.0 (`sky/skyConfig.ts` single source + derivation oracles; baked transmittance/multiple-scattering LUTs driving limb raymarch, aerial perspective, and sun extinction tint; deck + cirrus + 12k seeded volumetric puffs off one shared coverage function and mask; GEBCO relief normals, orbit-correct ocean, camera-relative sun at derived infinity; debug camera `B` + arrow-key orbit + FPS counter; owner accepts a 30 fps floor for visual quality — measured 60 at every checkpoint. Craft stay primitive — glTF hull bake too dark, flip deferred)
+8. ~~Space-to-ground world, volumetric weather, FLIGHT mode, first docking~~ ✅ v0.14.0 (quadtree ETOPO/USGS terrain + inside-atmosphere sky; library renderer with canonical volumetric clouds, shared light cache, orbital column atlas, temporal reconstruction and moving weather under neutral naming; FLIGHT with the licensed Hornet, airfield/on-foot start, environment clock, Balanced/High presets and final SMAA; Crew Dragon RCS registration and `FIRST_DOCKING_01` manual mission with hold/pause/retry; full-update audit APPROVED, 825 tests)
 
 ## Testing gate (oracle tests, not vibes)
 
@@ -173,4 +189,4 @@ integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
 - Aircraft material/map handles are owned clones; shared GLTF geometry, images, normals and source material data remain unchanged. Painted hull/glass roughness is explicit. Airfield detail uses six shared 256² mipmapped textures (~2 MiB), centimetre-scale pavement aggregate, filtered normal/roughness and surveyed concrete masks/joints. The same 11 instanced batches and collision geometry remain.
 - `cloudMotion.ts` rotates physical ECEF about north +Z at 15 m/s equatorial wind; maps and both noise domains sample the inverse canonical transform. Seeded fronts are continuous 3D fields restricted to the sphere. The orbital atlas stays canonical; physical light-volume snapshots refresh every 2 seconds and validate against live time/sun. Only cloud-front reprojection includes media motion; scene depth stays camera-only, and stationary history reuse is disabled while media moves.
 - `cloudViewSampling` bounds preferred primary spacing to 160m at Medium and 320m at Low, retaining 192/128 iterations, Bayer reconstruction and the existing 800m stationary depth allowance. The remaining-ray budget can exceed these preferred caps at grazing angles. The GPU sampling fixture exercises the production marcher against analytic thin clouds after empty space; it verifies noise, complete path coverage and an 800m negative control.
-- User-facing naming is volumetric weather. Legacy `eve` URLs/shader identifiers remain compatible, with existing third-party attribution retained. Weather is procedural advection, not precipitation or a meteorological solver. See `docs/6-memo/f18-integration/ground-weather-validation.md` for measured evidence and remaining visual limits.
+- User-facing naming is volumetric weather. Legacy `eve` URL values remain compatible through one parser alias; implementation identifiers, assets and diagnostics use volumetric naming, with third-party attribution retained. Weather is procedural advection, not precipitation or a meteorological solver. See `docs/6-memo/f18-integration/ground-weather-validation.md` for measured evidence and remaining visual limits.

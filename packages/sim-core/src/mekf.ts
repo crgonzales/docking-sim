@@ -300,7 +300,7 @@ export function createMekf(config: MekfConfig = {}): Mekf {
         if (navSource === 'PRIMARY' && starTracker !== null) updateInternal(starTracker);
         return;
       }
-      predictInternal(sensor.gyro_rps, dt_s);
+      predictInternal(sensor.gyro_mean_rps ?? sensor.gyro_rps, dt_s);
       if (navSource === 'PRIMARY' && starTracker !== null) updateInternal(starTracker);
     },
     predict(gyro_rps, dt_s) {

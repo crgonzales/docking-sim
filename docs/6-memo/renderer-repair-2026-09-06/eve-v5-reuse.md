@@ -1,6 +1,6 @@
 # Modern EVE reuse decision — 2026-09-07
 
-The user chose modern EVE's complete cloud-system organization as the target. The [implementation plan](../../1-plans/F_0.12.0_eve-cloud-system.plan.md) replaces the earlier optional-experiment recommendation. This is a source audit and architecture decision, not a renderer implementation or visual acceptance report. Pass 06 remains the running prototype and rollback source tree `22e78a9563b6dce7172d928785478cfd55acbc9f`.
+The user chose modern EVE's complete cloud-system organization as the target. The [implementation plan](../../1-plans/F_0.12.0_volumetric-cloud-system.plan.md) replaces the earlier optional-experiment recommendation. This is a source audit and architecture decision, not a renderer implementation or visual acceptance report. Pass 06 remains the running prototype and rollback source tree `22e78a9563b6dce7172d928785478cfd55acbc9f`.
 
 ## Source boundary
 

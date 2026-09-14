@@ -3,12 +3,12 @@ import { Uniform, Vector2, Vector3, Vector4, type Texture } from 'three'
 import type { CloudMediaQuery, CloudMediaSample } from './CloudBackend'
 import {
   clampCloudWeatherField,
-  EVE_CLOUD_COVERAGE_EDGE_SOFTNESS,
-  EVE_CLOUD_NOISE_SHAPE,
-  EVE_CLOUD_PROFILES,
-  EVE_CLOUD_PROFILE_TABLES,
-  EVE_CLOUD_SUPPORT_BOUNDS,
-  EVE_REFERENCE_REGION,
+  VOLUMETRIC_CLOUD_COVERAGE_EDGE_SOFTNESS,
+  VOLUMETRIC_CLOUD_NOISE_SHAPE,
+  VOLUMETRIC_CLOUD_PROFILES,
+  VOLUMETRIC_CLOUD_PROFILE_TABLES,
+  VOLUMETRIC_CLOUD_SUPPORT_BOUNDS,
+  VOLUMETRIC_REFERENCE_REGION,
   evaluateHeightCurve,
   interpolateCloudProfile,
   type CloudSupportBounds,
@@ -38,9 +38,9 @@ export interface WeatherAssetDescriptor {
   readonly rowOrder: 'north-first' | 'south-first' | 'not-applicable'
 }
 
-export const EVE_WEATHER_ASSETS = Object.freeze({
+export const VOLUMETRIC_WEATHER_ASSETS = Object.freeze({
   coverage: Object.freeze({
-    path: '/assets/clouds/eve/global-coverage-r8.bin',
+    path: '/assets/clouds/volumetric/global-coverage-r8.bin',
     sha256: '22e089d3dff76bf26097c4168644b1a35989b2d384b770c83787673b6eb9abef',
     bytes: 524288,
     format: 'R8',
@@ -48,7 +48,7 @@ export const EVE_WEATHER_ASSETS = Object.freeze({
     rowOrder: 'north-first' as const
   }),
   typeField: Object.freeze({
-    path: '/assets/clouds/eve/global-type-r8.bin',
+    path: '/assets/clouds/volumetric/global-type-r8.bin',
     sha256: 'defe79160d3365b4c006298edd6ce876034ce63c2eff29e99a2d2dd5414cee7a',
     bytes: 524288,
     format: 'R8',
@@ -56,7 +56,7 @@ export const EVE_WEATHER_ASSETS = Object.freeze({
     rowOrder: 'north-first' as const
   }),
   referenceField: Object.freeze({
-    path: '/assets/clouds/eve/reference-field-rg8.bin',
+    path: '/assets/clouds/volumetric/reference-field-rg8.bin',
     sha256: '2a5946d8209287e772b7f639fb2e5b5bf045b2424f66b1732ab2ec4f5e420a8f',
     bytes: 16384,
     format: 'RG8',
@@ -64,7 +64,7 @@ export const EVE_WEATHER_ASSETS = Object.freeze({
     rowOrder: 'south-first' as const
   }),
   noise: Object.freeze({
-    path: '/assets/clouds/eve/periodic-noise-rgba8.bin',
+    path: '/assets/clouds/volumetric/periodic-noise-rgba8.bin',
     sha256: '980d4a1569c8e1cadaea32d62842c790a4d732752b6243eb25e08ad1575a9628',
     bytes: 1048576,
     format: 'RGBA8',
@@ -83,7 +83,7 @@ export interface WeatherSnapshot {
   readonly noiseAsset: WeatherAssetDescriptor
   readonly profiles: readonly CloudTypeProfile[]
   readonly profileTables: CloudProfileTables
-  readonly referenceRegion: typeof EVE_REFERENCE_REGION
+  readonly referenceRegion: typeof VOLUMETRIC_REFERENCE_REGION
   /** [min longitude, min latitude, max longitude, max latitude] degrees. */
   readonly referenceBoundsDeg: readonly [number, number, number, number]
   readonly bounds: CloudSupportBounds
@@ -135,12 +135,12 @@ export function cloudDetailNoisePositionECEFM(
   ] as const)
 }
 
-/** Canonical two-domain shape terms mirrored by eveCloudNoiseShape in GLSL. */
+/** Canonical two-domain shape terms mirrored by volumetricCloudNoiseShape in GLSL. */
 export function evaluateCloudNoiseShape(
   primaryNoise: CloudNoiseSample,
   detailNoise: CloudNoiseSample = primaryNoise
 ): readonly [support: number, erosion: number] {
-  const { primaryWorleyMix, detailSupportMix, erosionWorleyMix } = EVE_CLOUD_NOISE_SHAPE
+  const { primaryWorleyMix, detailSupportMix, erosionWorleyMix } = VOLUMETRIC_CLOUD_NOISE_SHAPE
   const primaryBillow = primaryNoise[0] +
     (primaryNoise[1] - primaryNoise[0]) * primaryWorleyMix
   const detailBillow = detailNoise[0] +
@@ -177,20 +177,20 @@ export function createWeatherSnapshot(options: WeatherSnapshotOptions): WeatherS
   return Object.freeze({
     planetRadiusM,
     northAxisECEF: NORTH_AXIS_ECEF,
-    coverageAsset: EVE_WEATHER_ASSETS.coverage,
-    typeFieldAsset: EVE_WEATHER_ASSETS.typeField,
-    referenceFieldAsset: EVE_WEATHER_ASSETS.referenceField,
-    noiseAsset: EVE_WEATHER_ASSETS.noise,
-    profiles: EVE_CLOUD_PROFILES,
-    profileTables: EVE_CLOUD_PROFILE_TABLES,
-    referenceRegion: EVE_REFERENCE_REGION,
+    coverageAsset: VOLUMETRIC_WEATHER_ASSETS.coverage,
+    typeFieldAsset: VOLUMETRIC_WEATHER_ASSETS.typeField,
+    referenceFieldAsset: VOLUMETRIC_WEATHER_ASSETS.referenceField,
+    noiseAsset: VOLUMETRIC_WEATHER_ASSETS.noise,
+    profiles: VOLUMETRIC_CLOUD_PROFILES,
+    profileTables: VOLUMETRIC_CLOUD_PROFILE_TABLES,
+    referenceRegion: VOLUMETRIC_REFERENCE_REGION,
     referenceBoundsDeg: Object.freeze([
-      EVE_REFERENCE_REGION.centerLongitudeDeg - EVE_REFERENCE_REGION.longitudeExtentDeg,
-      EVE_REFERENCE_REGION.centerLatitudeDeg - EVE_REFERENCE_REGION.latitudeExtentDeg,
-      EVE_REFERENCE_REGION.centerLongitudeDeg + EVE_REFERENCE_REGION.longitudeExtentDeg,
-      EVE_REFERENCE_REGION.centerLatitudeDeg + EVE_REFERENCE_REGION.latitudeExtentDeg
+      VOLUMETRIC_REFERENCE_REGION.centerLongitudeDeg - VOLUMETRIC_REFERENCE_REGION.longitudeExtentDeg,
+      VOLUMETRIC_REFERENCE_REGION.centerLatitudeDeg - VOLUMETRIC_REFERENCE_REGION.latitudeExtentDeg,
+      VOLUMETRIC_REFERENCE_REGION.centerLongitudeDeg + VOLUMETRIC_REFERENCE_REGION.longitudeExtentDeg,
+      VOLUMETRIC_REFERENCE_REGION.centerLatitudeDeg + VOLUMETRIC_REFERENCE_REGION.latitudeExtentDeg
     ] as const),
-    bounds: EVE_CLOUD_SUPPORT_BOUNDS,
+    bounds: VOLUMETRIC_CLOUD_SUPPORT_BOUNDS,
     visualTimeS,
     sunDirectionECEF: normalizeDirection(options.sunDirectionECEF),
     generation
@@ -277,7 +277,7 @@ function distanceSquared(
 /** Deterministic authored zones used by the offline reference field. */
 export function sampleReferenceWeatherField(latitudeDeg: number, longitudeDeg: number): WeatherFieldSample {
   const longitude = wrapLongitude(longitudeDeg)
-  const zones = EVE_REFERENCE_REGION.zones
+  const zones = VOLUMETRIC_REFERENCE_REGION.zones
   if (
     distanceSquared(latitudeDeg, longitude, zones.clearGap.latitudeDeg, zones.clearGap.longitudeDeg) <
     zones.clearGap.radiusDeg ** 2
@@ -353,8 +353,8 @@ export function sampleWeatherFieldWithMotion(
 }
 
 function weightForProfile(profile: ReturnType<typeof interpolateCloudProfile>): readonly [number, number, number, number] {
-  const left = EVE_CLOUD_PROFILES.findIndex(({ id }) => id === profile.leftType)
-  const right = EVE_CLOUD_PROFILES.findIndex(({ id }) => id === profile.rightType)
+  const left = VOLUMETRIC_CLOUD_PROFILES.findIndex(({ id }) => id === profile.leftType)
+  const right = VOLUMETRIC_CLOUD_PROFILES.findIndex(({ id }) => id === profile.rightType)
   const weights: [number, number, number, number] = [0, 0, 0, 0]
   weights[left] = 1 - profile.blend
   weights[right] += profile.blend
@@ -387,8 +387,8 @@ export function evaluateCloudLayerMedia(
   // density is set by the density curve and erosion, not attenuated by coverage.
   const heightCoverage = weather.coverage * evaluateHeightCurve(profile.coverageCurve, height01)
   const baseShape = heightCoverage > 0 ? smoothstep(
-    1 - heightCoverage - EVE_CLOUD_COVERAGE_EDGE_SOFTNESS,
-    1 - heightCoverage + EVE_CLOUD_COVERAGE_EDGE_SOFTNESS,
+    1 - heightCoverage - VOLUMETRIC_CLOUD_COVERAGE_EDGE_SOFTNESS,
+    1 - heightCoverage + VOLUMETRIC_CLOUD_COVERAGE_EDGE_SOFTNESS,
     normalizedNoise
   ) : 0
   const erosionMask = smoothstep(
@@ -462,58 +462,58 @@ export function createWeatherBindingUniforms(
     snapshot.referenceFieldAsset.dimensions[1]
   )
   const noiseDimensions = new Vector3(
-    EVE_WEATHER_ASSETS.noise.dimensions[0],
-    EVE_WEATHER_ASSETS.noise.dimensions[1],
-    EVE_WEATHER_ASSETS.noise.dimensions[2]
+    VOLUMETRIC_WEATHER_ASSETS.noise.dimensions[0],
+    VOLUMETRIC_WEATHER_ASSETS.noise.dimensions[1],
+    VOLUMETRIC_WEATHER_ASSETS.noise.dimensions[2]
   )
   const tables = snapshot.profileTables
   return Object.freeze({
-    eveWeatherGeneration: new Uniform(snapshot.generation),
-    eveWeatherVisualTimeS: new Uniform(snapshot.visualTimeS),
-    eveWeatherMotionTimeS: new Uniform(motion.timeSeconds),
-    eveWeatherMotionAngleRad: new Uniform(motion.angleRad),
-    eveWeatherMotionEnabled: new Uniform(motion.enabled ? 1 : 0),
-    eveWeatherPlanetRadiusM: new Uniform(snapshot.planetRadiusM),
-    eveWeatherNorthAxisECEF: new Uniform(northAxis),
-    eveWeatherSunDirectionECEF: new Uniform(sunDirection),
-    eveWeatherAltitudeBoundsM: new Uniform(bounds),
-    eveWeatherSupportDisplacementM: new Uniform(snapshot.bounds.maxWeatherDisplacementM),
-    eveWeatherMapDimensions: new Uniform(mapDimensions),
-    eveWeatherReferenceMapDimensions: new Uniform(referenceMapDimensions),
-    eveWeatherNoiseDimensions: new Uniform(noiseDimensions),
-    eveWeatherReferenceBoundsDeg: new Uniform(referenceBounds),
-    eveWeatherReferenceFieldEnabled: new Uniform(textures.referenceField ? 1 : 0),
-    eveWeatherCoverageTexture: new Uniform(textures.coverage ?? null),
-    eveWeatherTypeFieldTexture: new Uniform(textures.typeField ?? null),
-    eveWeatherReferenceFieldTexture: new Uniform(textures.referenceField ?? null),
-    eveWeatherNoiseTexture: new Uniform(textures.noise ?? null),
-    eveCloudBaseAltitudeM: new Uniform(new Vector4(...tables.baseAltitudeM)),
-    eveCloudTopAltitudeM: new Uniform(new Vector4(...tables.topAltitudeM)),
-    eveCloudPrimaryNoiseScaleM: new Uniform(new Vector4(...tables.primaryNoiseScaleM)),
-    eveCloudDetailNoiseScaleM: new Uniform(new Vector4(...tables.detailNoiseScaleM)),
-    eveCloudPrimaryWorleyMix: new Uniform(EVE_CLOUD_NOISE_SHAPE.primaryWorleyMix),
-    eveCloudDetailSupportMix: new Uniform(EVE_CLOUD_NOISE_SHAPE.detailSupportMix),
-    eveCloudErosionWorleyMix: new Uniform(EVE_CLOUD_NOISE_SHAPE.erosionWorleyMix),
-    eveCloudErosionDepth: new Uniform(new Vector4(...tables.erosionDepth)),
-    eveCloudBaseNoiseThreshold: new Uniform(new Vector4(...tables.baseNoiseThreshold)),
-    eveCloudBaseNoiseSoftness: new Uniform(new Vector4(...tables.baseNoiseSoftness)),
-    eveCloudCoverageEdgeSoftness: new Uniform(EVE_CLOUD_COVERAGE_EDGE_SOFTNESS),
-    eveCloudErosionThreshold: new Uniform(new Vector4(...tables.erosionThreshold)),
-    eveCloudErosionSoftness: new Uniform(new Vector4(...tables.erosionSoftness)),
-    eveCloudSupportFade01: new Uniform(new Vector4(...tables.supportFade01)),
-    eveCloudScatteringCoefficientMInv: new Uniform(new Vector4(...tables.scatteringCoefficientMInv)),
-    eveCloudAbsorptionCoefficientMInv: new Uniform(new Vector4(...tables.absorptionCoefficientMInv)),
-    eveCloudPhaseAnisotropyX: new Uniform(new Vector4(...tables.phaseAnisotropyX)),
-    eveCloudPhaseAnisotropyY: new Uniform(new Vector4(...tables.phaseAnisotropyY)),
-    eveCloudPhaseMix: new Uniform(new Vector4(...tables.phaseMix)),
-    eveCloudCoverageKnots: new Uniform(vector4Table(tables.coverageKnots)),
-    eveCloudCoverageValues: new Uniform(vector4Table(tables.coverageValues)),
-    eveCloudDensityKnots: new Uniform(vector4Table(tables.densityKnots)),
-    eveCloudDensityValues: new Uniform(vector4Table(tables.densityValues))
+    volumetricWeatherGeneration: new Uniform(snapshot.generation),
+    volumetricWeatherVisualTimeS: new Uniform(snapshot.visualTimeS),
+    volumetricWeatherMotionTimeS: new Uniform(motion.timeSeconds),
+    volumetricWeatherMotionAngleRad: new Uniform(motion.angleRad),
+    volumetricWeatherMotionEnabled: new Uniform(motion.enabled ? 1 : 0),
+    volumetricWeatherPlanetRadiusM: new Uniform(snapshot.planetRadiusM),
+    volumetricWeatherNorthAxisECEF: new Uniform(northAxis),
+    volumetricWeatherSunDirectionECEF: new Uniform(sunDirection),
+    volumetricWeatherAltitudeBoundsM: new Uniform(bounds),
+    volumetricWeatherSupportDisplacementM: new Uniform(snapshot.bounds.maxWeatherDisplacementM),
+    volumetricWeatherMapDimensions: new Uniform(mapDimensions),
+    volumetricWeatherReferenceMapDimensions: new Uniform(referenceMapDimensions),
+    volumetricWeatherNoiseDimensions: new Uniform(noiseDimensions),
+    volumetricWeatherReferenceBoundsDeg: new Uniform(referenceBounds),
+    volumetricWeatherReferenceFieldEnabled: new Uniform(textures.referenceField ? 1 : 0),
+    volumetricWeatherCoverageTexture: new Uniform(textures.coverage ?? null),
+    volumetricWeatherTypeFieldTexture: new Uniform(textures.typeField ?? null),
+    volumetricWeatherReferenceFieldTexture: new Uniform(textures.referenceField ?? null),
+    volumetricWeatherNoiseTexture: new Uniform(textures.noise ?? null),
+    volumetricCloudBaseAltitudeM: new Uniform(new Vector4(...tables.baseAltitudeM)),
+    volumetricCloudTopAltitudeM: new Uniform(new Vector4(...tables.topAltitudeM)),
+    volumetricCloudPrimaryNoiseScaleM: new Uniform(new Vector4(...tables.primaryNoiseScaleM)),
+    volumetricCloudDetailNoiseScaleM: new Uniform(new Vector4(...tables.detailNoiseScaleM)),
+    volumetricCloudPrimaryWorleyMix: new Uniform(VOLUMETRIC_CLOUD_NOISE_SHAPE.primaryWorleyMix),
+    volumetricCloudDetailSupportMix: new Uniform(VOLUMETRIC_CLOUD_NOISE_SHAPE.detailSupportMix),
+    volumetricCloudErosionWorleyMix: new Uniform(VOLUMETRIC_CLOUD_NOISE_SHAPE.erosionWorleyMix),
+    volumetricCloudErosionDepth: new Uniform(new Vector4(...tables.erosionDepth)),
+    volumetricCloudBaseNoiseThreshold: new Uniform(new Vector4(...tables.baseNoiseThreshold)),
+    volumetricCloudBaseNoiseSoftness: new Uniform(new Vector4(...tables.baseNoiseSoftness)),
+    volumetricCloudCoverageEdgeSoftness: new Uniform(VOLUMETRIC_CLOUD_COVERAGE_EDGE_SOFTNESS),
+    volumetricCloudErosionThreshold: new Uniform(new Vector4(...tables.erosionThreshold)),
+    volumetricCloudErosionSoftness: new Uniform(new Vector4(...tables.erosionSoftness)),
+    volumetricCloudSupportFade01: new Uniform(new Vector4(...tables.supportFade01)),
+    volumetricCloudScatteringCoefficientMInv: new Uniform(new Vector4(...tables.scatteringCoefficientMInv)),
+    volumetricCloudAbsorptionCoefficientMInv: new Uniform(new Vector4(...tables.absorptionCoefficientMInv)),
+    volumetricCloudPhaseAnisotropyX: new Uniform(new Vector4(...tables.phaseAnisotropyX)),
+    volumetricCloudPhaseAnisotropyY: new Uniform(new Vector4(...tables.phaseAnisotropyY)),
+    volumetricCloudPhaseMix: new Uniform(new Vector4(...tables.phaseMix)),
+    volumetricCloudCoverageKnots: new Uniform(vector4Table(tables.coverageKnots)),
+    volumetricCloudCoverageValues: new Uniform(vector4Table(tables.coverageValues)),
+    volumetricCloudDensityKnots: new Uniform(vector4Table(tables.densityKnots)),
+    volumetricCloudDensityValues: new Uniform(vector4Table(tables.densityValues))
   })
 }
 
-export const EVE_DEFAULT_PLANET_RADIUS_M = DEFAULT_PLANET_RADIUS_M
-export const EVE_NORTH_AXIS_ECEF = NORTH_AXIS_ECEF
-export const EVE_DEGREES_PER_RADIAN = DEGREES_PER_RADIAN
-export const EVE_RADIANS_PER_DEGREE = RADIANS_PER_DEGREE
+export const VOLUMETRIC_DEFAULT_PLANET_RADIUS_M = DEFAULT_PLANET_RADIUS_M
+export const VOLUMETRIC_NORTH_AXIS_ECEF = NORTH_AXIS_ECEF
+export const VOLUMETRIC_DEGREES_PER_RADIAN = DEGREES_PER_RADIAN
+export const VOLUMETRIC_RADIANS_PER_DEGREE = RADIANS_PER_DEGREE

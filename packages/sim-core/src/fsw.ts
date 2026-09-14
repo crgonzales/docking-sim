@@ -187,6 +187,7 @@ export function createFsw(config: FswConfig): FswTick {
   let controlMode: ControlMode = 'AUTO';
   let manualSubMode: ManualSubMode = 'RATE';
   let manualCommand: ManualCommand = { translation: [0, 0, 0], rotation: [0, 0, 0] };
+  let manualHoldPending = false;
   let lastAppliedMode: ControlMode = 'AUTO';
   let lastAppliedSubMode: ManualSubMode = 'RATE';
   let mpc: MpcController | null = null;
@@ -278,6 +279,7 @@ export function createFsw(config: FswConfig): FswTick {
       abortRequested = true;
       abortElapsed_s = 0;
     }
+    if (abortState !== 'ARMED') manualHoldPending = false;
     const translationController: StateController = selectedController === 'PID' ? pid : lqr;
     let commandedForce_hill_N: Vec3;
     let commandedTorque_body_Nm: Vec3 = [...ZERO_VECTOR];
@@ -326,7 +328,9 @@ export function createFsw(config: FswConfig): FswTick {
       }
       commandedTorque_body_Nm = attitudeController.stepAuto(att_diag.q_ref_BI, sensor.t_s, omega_est_body_rps);
     } else if (manualSubMode === 'RATE') {
-      if (lastAppliedMode !== 'MANUAL' || lastAppliedSubMode !== 'RATE') {
+      const captureRequested = manualHoldPending;
+      manualHoldPending = false;
+      if (captureRequested || lastAppliedMode !== 'MANUAL' || lastAppliedSubMode !== 'RATE') {
         attitudeController.captureReference(
           [q_BH[0], q_BH[1], q_BH[2], q_BH[3]],
           [nav_diag.state[0], nav_diag.state[1], nav_diag.state[2]],
@@ -452,6 +456,7 @@ export function createFsw(config: FswConfig): FswTick {
   tick.setControlMode = (mode: ControlMode) => {
     if (mode !== 'AUTO' && mode !== 'MANUAL') throw new RangeError('control mode must be AUTO or MANUAL');
     controlMode = mode;
+    if (mode !== 'MANUAL') manualHoldPending = false;
     if (mode === 'MANUAL') {
       guidanceFrozen = false;
       frozenGuidanceReference = null;
@@ -464,10 +469,17 @@ export function createFsw(config: FswConfig): FswTick {
   tick.setManualSubMode = (mode: ManualSubMode) => {
     if (mode !== 'RATE' && mode !== 'PULSE') throw new RangeError('manual sub-mode must be RATE or PULSE');
     manualSubMode = mode;
+    if (mode !== 'RATE') manualHoldPending = false;
   };
   tick.setManualCommand = (command: ManualCommand) => {
     validateManualCommand(command);
     manualCommand = cloneManualCommand(command);
+  };
+  tick.holdManualPosition = () => {
+    if (controlMode !== 'MANUAL' || abortState !== 'ARMED') return;
+    manualCommand = { translation: [0, 0, 0], rotation: [0, 0, 0] };
+    manualSubMode = 'RATE';
+    manualHoldPending = true;
   };
   tick.setManualAuthority = (level: ManualAuthority) => {
     attitudeController.setAuthority(level);

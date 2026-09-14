@@ -7,10 +7,15 @@ export interface Binding {
   label: string;
   group: BindingGroup;
   description: string;
+  lessonOnly?: boolean;
 }
 
 /** The single source of truth for keyboard and camera controls. */
 export const BINDINGS: readonly Binding[] = [
+  { id: 'lessonHold', code: 'Space', label: 'SPACE', group: 'SAFETY', description: 'brake and hold position', lessonOnly: true },
+  { id: 'lessonPrecision', code: 'KeyX', label: 'X', group: 'MODE', description: 'toggle precision thrust', lessonOnly: true },
+  { id: 'lessonPause', code: 'KeyP', label: 'P', group: 'MODE', description: 'pause / resume flight', lessonOnly: true },
+  { id: 'lessonRetry', code: 'KeyR', label: 'R', group: 'MODE', description: 'restart the approach', lessonOnly: true },
   { id: 'toggleControlMode', code: 'KeyM', label: 'M', group: 'MODE', description: 'toggle AUTO / MANUAL' },
   { id: 'toggleManualSubMode', code: 'KeyT', label: 'T', group: 'MODE', description: 'toggle RATE / PULSE' },
   { id: 'toggleManualAuthority', code: 'KeyG', label: 'G', group: 'MODE', description: 'toggle LOW / HIGH manual authority' },

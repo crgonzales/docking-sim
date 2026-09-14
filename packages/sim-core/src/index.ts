@@ -19,3 +19,4 @@ export * from './monitors.js';
 export * from './fsw.js';
 export * from './sim.js';
 export * from './flight.js';
+export * from './crewDragon.js';

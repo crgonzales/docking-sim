@@ -10,7 +10,7 @@ import type { CloudConformanceResult } from './CloudConformanceFixture';
 import type { CloudConformanceResources } from './CloudConformanceResources';
 import { createWeatherBindingUniforms, createWeatherSnapshot, sampleWeatherField, sampleWeatherFieldWithMotion } from './cloudWeather';
 import { loadCloudWeatherAssets, type CloudWeatherAssets } from './cloudWeatherAssets';
-import { EVE_REFERENCE_REGION } from './cloudConfig';
+import { VOLUMETRIC_REFERENCE_REGION } from './cloudConfig';
 import {
   canonicalWeatherPositionECEFM, createWeatherMotionState, rotateWeatherEcefAroundNorth,
   sampleSeededWeatherFront,
@@ -74,7 +74,7 @@ function noiseTexture(): Data3DTexture {
   return texture;
 }
 
-// The unused distant lighting ABI is constant. eveReadColumn, radial column
+// The unused distant lighting ABI is constant. volumetricReadColumn, radial column
 // integration, weather lookup, front generation, and media are all production.
 const fieldFragment = `precision highp float;
 precision highp int; precision highp sampler2D; precision highp sampler3D;
@@ -92,7 +92,8 @@ const float minHeight = 1000.0, maxHeight = 14000.0;
 const vec3 altitudeCorrection = vec3(0.0), sunDirection = vec3(1.0, 0.0, 0.0);
 vec3 GetSunAndSkyScalarIrradiance(vec3 p, vec3 s, out vec3 sky) { sky = vec3(1.0); return vec3(0.0); }
 float approximateMultipleScattering(float t, float c, vec2 a, float m) { return 0.0; }
-float eveSkyVisibility(vec3 p, float f) { return 1.0; }
+float phaseFunction(float c, float t, vec2 a, float m) { return 0.0; }
+float volumetricSkyVisibility(vec3 p, float f) { return 1.0; }
 ${distantGLSL}
 float cloudSunOpticalDepth(const vec3 p, const float f, const float l, const float j, out CloudLightingSample light) {
   light.valid = 1.0; light.skyIrradiance = vec3(1.0); return 0.0;
@@ -103,15 +104,15 @@ uniform int fixtureMode;
 out vec4 result;
 void main() {
   if (fixtureMode != 4 && int(gl_FragCoord.x) == 1) { result = vec4(7.0, 11.0, 13.0, 17.0); return; }
-  if (fixtureMode == 0) result = vec4(eveSeededWeatherFront(eveWeatherCanonicalPositionECEFM(fixturePosition)), 0.0, 7.0);
-  else if (fixtureMode == 1) result = vec4(eveSampleWeather(fixturePosition, 0.0, 0.0), 0.0, 7.0);
+  if (fixtureMode == 0) result = vec4(volumetricSeededWeatherFront(volumetricWeatherCanonicalPositionECEFM(fixturePosition)), 0.0, 7.0);
+  else if (fixtureMode == 1) result = vec4(volumetricSampleWeather(fixturePosition, 0.0, 0.0), 0.0, 7.0);
   else if (fixtureMode == 2) {
     MediaSample media = sampleCloudMedia(fixturePosition, 0.0, 0.0, 0.5);
     result = vec4(media.density, 1000.0 * media.extinction, 1000.0 * media.scattering, 7.0);
-  } else if (fixtureMode == 3) result = eveReadColumn(fixturePosition, 0.0);
-  else if (fixtureMode == 4) result = eveIntegrateRadialColumn(eveColumnDirectionFromUv(gl_FragCoord.xy / eveColumnDimensions), 32, 0.0);
-  else if (fixtureMode == 5) result = textureLod(eveColumnTexture, fixtureAtlasUv, 0.0);
-  else result = eveIntegrateRadialColumn(normalize(fixturePosition), 32, 0.0);
+  } else if (fixtureMode == 3) result = volumetricReadColumn(fixturePosition, 0.0);
+  else if (fixtureMode == 4) result = volumetricIntegrateRadialColumn(volumetricColumnDirectionFromUv(gl_FragCoord.xy / volumetricColumnDimensions), 32, 0.0);
+  else if (fixtureMode == 5) result = textureLod(volumetricColumnTexture, fixtureAtlasUv, 0.0);
+  else result = volumetricIntegrateRadialColumn(normalize(fixturePosition), 32, 0.0);
 }`;
 
 async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceResources, record: RecordCase): Promise<void> {
@@ -120,7 +121,7 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
   const reference = mapTexture(32, 16, (u, v) => [0.2 + 0.6 * u, 0.1 + 0.7 * v, 0, 1]);
   const solid = mapTexture(1, 1, () => [1, 0, 0, 1]);
   const noise = noiseTexture();
-  const zone = EVE_REFERENCE_REGION.zones.deepGroup;
+  const zone = VOLUMETRIC_REFERENCE_REGION.zones.deepGroup;
   const oraclePosition = at(zone.latitudeDeg * Math.PI / 180, zone.longitudeDeg * Math.PI / 180);
   const authored = sampleWeatherField(oraclePosition);
   const oracleCoverage = mapTexture(1, 1, () => [authored.coverage, 0, 0, 1]);
@@ -130,8 +131,8 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
   const uniforms: Record<string, Uniform<unknown>> = {
     ...createWeatherBindingUniforms(snapshot, { coverage, typeField: type, referenceField: reference, noise }),
     fixturePosition: new Uniform(new Vector3()), fixtureAtlasUv: new Uniform(new Vector2()), fixtureMode: new Uniform(0),
-    eveColumnTexture: new Uniform(solid), eveColumnDimensions: new Uniform(new Vector2(32, 16)),
-    eveColumnReady: new Uniform(1), eveColumnGeneration: new Uniform(0),
+    volumetricColumnTexture: new Uniform(solid), volumetricColumnDimensions: new Uniform(new Vector2(32, 16)),
+    volumetricColumnReady: new Uniform(1), volumetricColumnGeneration: new Uniform(0),
   };
   const material = new RawShaderMaterial({ glslVersion: GLSL3, depthTest: false, depthWrite: false,
     blending: NoBlending, uniforms, vertexShader, fragmentShader: fieldFragment });
@@ -141,9 +142,9 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
   atlas.texture.wrapS = RepeatWrapping;
   const setMotion = (time: number, enabled = true) => {
     const motion = createWeatherMotionState(time, radius, enabled);
-    uniforms.eveWeatherMotionEnabled.value = enabled ? 1 : 0;
-    uniforms.eveWeatherMotionAngleRad.value = motion.angleRad;
-    uniforms.eveWeatherMotionTimeS.value = time;
+    uniforms.volumetricWeatherMotionEnabled.value = enabled ? 1 : 0;
+    uniforms.volumetricWeatherMotionAngleRad.value = motion.angleRad;
+    uniforms.volumetricWeatherMotionTimeS.value = time;
     return motion;
   };
   const read = async (mode: number, position: Position, time: number, enabled = true): Promise<number[]> => {
@@ -181,9 +182,9 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
     // Sample the actual verified weather assets at the user's site, in addition
     // to front-only parity. The CPU reference map does not cover this location.
     assets = await loadCloudWeatherAssets();
-    uniforms.eveWeatherCoverageTexture.value = assets.textures.coverage;
-    uniforms.eveWeatherTypeFieldTexture.value = assets.textures.typeField;
-    uniforms.eveWeatherReferenceFieldTexture.value = assets.textures.referenceField;
+    uniforms.volumetricWeatherCoverageTexture.value = assets.textures.coverage;
+    uniforms.volumetricWeatherTypeFieldTexture.value = assets.textures.typeField;
+    uniforms.volumetricWeatherReferenceFieldTexture.value = assets.textures.referenceField;
     for (const [lat, lon] of [[6.9, -0.08], [7, 0.02], [7.1, 0.12]]) {
       const p = at(lat * Math.PI / 180, lon * Math.PI / 180);
       const series: number[][] = [];
@@ -203,15 +204,15 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
         [0, 1].map(c => Number(spread(weatherSeries.map(v => v[c]!)) > 0.15)), [1, 1]);
       record(`actual-weather-base7degN-${lat}-${lon}-paused-repeat`, await read(1, p, day), weatherSeries[24]!);
     }
-    uniforms.eveWeatherCoverageTexture.value = coverage;
-    uniforms.eveWeatherTypeFieldTexture.value = type;
-    uniforms.eveWeatherReferenceFieldTexture.value = reference;
+    uniforms.volumetricWeatherCoverageTexture.value = coverage;
+    uniforms.volumetricWeatherTypeFieldTexture.value = type;
+    uniforms.volumetricWeatherReferenceFieldTexture.value = reference;
 
     const time = day * 0.75;
     const angle = createWeatherMotionState(time, radius).angleRad;
     const mapPoints = [at(0.12, 0.00035, 2500), at(-0.5, 2, 4000), at(40.5 * Math.PI / 180, -75 * Math.PI / 180, 3000)];
     for (const enabledReference of [0, 1]) {
-      uniforms.eveWeatherReferenceFieldEnabled.value = enabledReference;
+      uniforms.volumetricWeatherReferenceFieldEnabled.value = enabledReference;
       const values: number[][] = [];
       for (const [i, p] of mapPoints.entries()) {
         const baseline = await read(1, p, 0);
@@ -227,36 +228,36 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
     // Independent CPU/GPU agreement for the APPLIED coverage/type modulation,
     // with identical authored inputs. This catches a stale CPU mirror even if
     // the seeded-front function alone agrees perfectly.
-    uniforms.eveWeatherCoverageTexture.value = oracleCoverage;
-    uniforms.eveWeatherTypeFieldTexture.value = oracleType;
-    uniforms.eveWeatherReferenceFieldEnabled.value = 0;
+    uniforms.volumetricWeatherCoverageTexture.value = oracleCoverage;
+    uniforms.volumetricWeatherTypeFieldTexture.value = oracleType;
+    uniforms.volumetricWeatherReferenceFieldEnabled.value = 0;
     for (const timeS of [0, day * 0.5, day]) {
       const motion = createWeatherMotionState(timeS, radius);
       const live = rotateWeatherEcefAroundNorth(oraclePosition, motion.angleRad);
       const expected = sampleWeatherFieldWithMotion(live, motion);
       record(`applied-front-cpu-gpu-${timeS}`, await read(1, live, timeS), [expected.coverage, expected.typeField, 0, 7], 3e-5);
     }
-    uniforms.eveWeatherTypeFieldTexture.value = type;
+    uniforms.volumetricWeatherTypeFieldTexture.value = type;
 
     // Isolate each actual texture domain inside sampleCloudMedia. Broad support
     // and identical profile tables prevent empty/thin layers hiding a regression.
-    uniforms.eveWeatherCoverageTexture.value = solid;
-    uniforms.eveWeatherReferenceFieldEnabled.value = 0;
-    for (const [name, value] of Object.entries({ eveCloudBaseAltitudeM: 1000, eveCloudTopAltitudeM: 9000,
-      eveCloudPrimaryNoiseScaleM: 160_000, eveCloudDetailNoiseScaleM: 73_000,
-      eveCloudBaseNoiseThreshold: 0.5, eveCloudBaseNoiseSoftness: 0.5, eveCloudErosionDepth: 0 })) {
+    uniforms.volumetricWeatherCoverageTexture.value = solid;
+    uniforms.volumetricWeatherReferenceFieldEnabled.value = 0;
+    for (const [name, value] of Object.entries({ volumetricCloudBaseAltitudeM: 1000, volumetricCloudTopAltitudeM: 9000,
+      volumetricCloudPrimaryNoiseScaleM: 160_000, volumetricCloudDetailNoiseScaleM: 73_000,
+      volumetricCloudBaseNoiseThreshold: 0.5, volumetricCloudBaseNoiseSoftness: 0.5, volumetricCloudErosionDepth: 0 })) {
       (uniforms[name]!.value as Vector4).setScalar(value);
     }
     // Put the noise witness on the coverage shoulder rather than the saturated
     // clear/solid plateaus. The production smoothstep then exposes changes in
     // the selected texture domain instead of letting front coverage hide them.
-    uniforms.eveCloudCoverageEdgeSoftness.value = 0.25;
-    for (const curve of uniforms.eveCloudCoverageValues.value as Vector4[]) curve.setScalar(0.5);
-    for (const curve of uniforms.eveCloudDensityValues.value as Vector4[]) curve.setScalar(1);
+    uniforms.volumetricCloudCoverageEdgeSoftness.value = 0.25;
+    for (const curve of uniforms.volumetricCloudCoverageValues.value as Vector4[]) curve.setScalar(0.5);
+    for (const curve of uniforms.volumetricCloudDensityValues.value as Vector4[]) curve.setScalar(1);
     const densityPoints = Array.from({ length: 12 }, (_, i) => at(0.12 + i * 0.025, -0.15 + i * 0.027, 4200));
     for (const [name, detailMix] of [['primary', 0], ['detail', 1], ['both', 0.4]] as const) {
-      uniforms.eveCloudDetailSupportMix.value = detailMix;
-      (uniforms.eveCloudErosionDepth.value as Vector4).setScalar(name === 'both' ? 0.34 : 0);
+      uniforms.volumetricCloudDetailSupportMix.value = detailMix;
+      (uniforms.volumetricCloudErosionDepth.value as Vector4).setScalar(name === 'both' ? 0.34 : 0);
       const baseline: number[][] = [], frozen: number[][] = [];
       for (const [i, point] of densityPoints.entries()) {
         const before = await read(2, point, 0);
@@ -276,8 +277,8 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
         // A coordinate identity alone could pass if one domain were omitted or
         // aliased to the other. Perturb each domain's physical scale separately
         // and require only the selected domain to affect the actual density.
-        const selected = uniforms[name === 'primary' ? 'eveCloudPrimaryNoiseScaleM' : 'eveCloudDetailNoiseScaleM']!.value as Vector4;
-        const other = uniforms[name === 'primary' ? 'eveCloudDetailNoiseScaleM' : 'eveCloudPrimaryNoiseScaleM']!.value as Vector4;
+        const selected = uniforms[name === 'primary' ? 'volumetricCloudPrimaryNoiseScaleM' : 'volumetricCloudDetailNoiseScaleM']!.value as Vector4;
+        const other = uniforms[name === 'primary' ? 'volumetricCloudDetailNoiseScaleM' : 'volumetricCloudPrimaryNoiseScaleM']!.value as Vector4;
         const originalSelected = selected.clone(), originalOther = other.clone();
         const selectedDifferences: number[] = [];
         other.multiplyScalar(1.27);
@@ -297,11 +298,11 @@ async function verifyField(renderer: WebGLRenderer, resources: CloudConformanceR
     // A tiny probe atlas, baked once in the canonical frame by the production
     // radial integrator. This checks actual distant lookup addressing without
     // allocating or rebuilding the full production atlas during conformance.
-    (uniforms.eveCloudErosionDepth.value as Vector4).setScalar(0);
+    (uniforms.volumetricCloudErosionDepth.value as Vector4).setScalar(0);
     setMotion(0);
     uniforms.fixtureMode.value = 4;
     resources.draw(() => pass.render(renderer, null, atlas));
-    uniforms.eveColumnTexture.value = atlas.texture;
+    uniforms.volumetricColumnTexture.value = atlas.texture;
     const columns: number[][] = [];
     for (const [x, y] of [[8, 6], [16, 8], [23, 10], [30, 7]]) {
       const uv = [(x + 0.5) / 32, (y + 0.5) / 16] as const;

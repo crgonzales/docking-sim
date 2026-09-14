@@ -25,13 +25,13 @@ export async function verifyCloudLightVolume(
     sunDirectionECEF: [1, 0, 0] as const, layout };
   const shaderHooks = createCloudShaderHooks({ mediaGLSL: params.shaderHooks!.mediaGLSL,
     uniforms: { ...params.shaderHooks!.uniforms, ...volume.uniforms,
-      eveCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)) },
+      volumetricCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)) },
     lightingGLSL: `${transport}\n${lookup}
 CloudLightingSample sampleCloudLighting(vec3 p, float footprint, float startM) {
   CloudLightingSample light;
-  light.directTransmittance = eveSunTransmittance(p, startM, footprint);
+  light.directTransmittance = volumetricSunTransmittance(p, startM, footprint);
   light.skyIrradiance = vec3(0.0); light.valid = 1.0;
-  light.stockFallback = 0.0; light.generation = eveLightGeneration;
+  light.stockFallback = 0.0; light.generation = volumetricLightGeneration;
   return light;
 }` });
   const material = new CloudsMaterial({ ...params, shaderHooks }, atmosphere);
@@ -39,10 +39,10 @@ CloudLightingSample sampleCloudLighting(vec3 p, float footprint, float startM) {
   try {
     volume.request(inputs, params.shaderHooks!.uniforms);
     volume.update(renderer, inputs);
-    record('light-volume-no-partial-publication', [volume.uniforms.eveLightValid.value], [0]);
+    record('light-volume-no-partial-publication', [volume.uniforms.volumetricLightValid.value], [0]);
     volume.update(renderer, inputs);
     if (volume.status.state === 'unsupported' || volume.status.state === 'failed') throw new Error(volume.status.error);
-    record('light-volume-complete-publication', [volume.uniforms.eveLightValid.value, volume.status.generation], [1, 1]);
+    record('light-volume-complete-publication', [volume.uniforms.volumetricLightValid.value, volume.status.generation], [1, 1]);
     material.shadowLength = false;
     material.temporalUpscale = false;
     material.depthPacking = BasicDepthPacking;
@@ -137,7 +137,7 @@ export async function verifyThresholdedCloudLightVolume(
   const mode = new Uniform(0);
   const material = new RawShaderMaterial({ glslVersion: GLSL3, depthTest: false, depthWrite: false,
     uniforms: { ...volume.uniforms, ...uniforms,
-      bottomRadius: new Uniform(radius), eveCloudAltitudeBoundsM: new Uniform(new Vector2(base, top)),
+      bottomRadius: new Uniform(radius), volumetricCloudAltitudeBoundsM: new Uniform(new Vector2(base, top)),
       sunDirection: new Uniform(new Vector3(1, 0, 0)), fixtureMode: mode,
       fixtureDensePosition: new Uniform(new Vector3(...dense)),
       fixtureClearPosition: new Uniform(new Vector3(...clear)), fixtureFilterFootprintM: new Uniform(footprint) },
@@ -159,16 +159,16 @@ export async function verifyThresholdedCloudLightVolume(
           // manufacture a passing result from neighbouring clear/cloudy cells.
           ivec2 cell = ivec2(${cell});
           color = vec4(
-            texelFetch(eveLightVolumeTexture, ivec3(cell, 0), 0).r,
-            texelFetch(eveLightVolumeTexture, ivec3(cell, eveLightSlices), 0).r,
-            texelFetch(eveLightVolumeTexture, ivec3(cell, eveLightSlices - 1), 0).r,
-            texelFetch(eveLightVolumeTexture, ivec3(cell, 2 * eveLightSlices - 1), 0).r);
+            texelFetch(volumetricLightVolumeTexture, ivec3(cell, 0), 0).r,
+            texelFetch(volumetricLightVolumeTexture, ivec3(cell, volumetricLightSlices), 0).r,
+            texelFetch(volumetricLightVolumeTexture, ivec3(cell, volumetricLightSlices - 1), 0).r,
+            texelFetch(volumetricLightVolumeTexture, ivec3(cell, 2 * volumetricLightSlices - 1), 0).r);
         } else {
           color = vec4(
-            eveDirectIntegration(fixtureDensePosition, sunDirection, 0.0, 32, 0.0),
-            eveDirectIntegration(fixtureClearPosition, sunDirection, 0.0, 32, 0.0),
-            eveDirectIntegration(fixtureDensePosition, sunDirection, 0.0, 32, fixtureFilterFootprintM),
-            eveDirectIntegration(fixtureClearPosition, sunDirection, 0.0, 32, fixtureFilterFootprintM));
+            volumetricDirectIntegration(fixtureDensePosition, sunDirection, 0.0, 32, 0.0),
+            volumetricDirectIntegration(fixtureClearPosition, sunDirection, 0.0, 32, 0.0),
+            volumetricDirectIntegration(fixtureDensePosition, sunDirection, 0.0, 32, fixtureFilterFootprintM),
+            volumetricDirectIntegration(fixtureClearPosition, sunDirection, 0.0, 32, fixtureFilterFootprintM));
         }
       }`,
   });
@@ -180,7 +180,7 @@ export async function verifyThresholdedCloudLightVolume(
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     }
     if (volume.status.state !== 'ready') throw new Error(`Threshold light fixture: ${volume.status.state}: ${volume.status.error}`);
-    record('light-volume-thresholded-publication', [volume.uniforms.eveLightValid.value], [1]);
+    record('light-volume-thresholded-publication', [volume.uniforms.volumetricLightValid.value], [1]);
     resources.draw(() => pass.render(renderer, null, resources.output));
     const cached = await resources.readCenter();
     record('light-volume-thresholded-half-cell-direct-visibility', [cached[0]!], [direct]);

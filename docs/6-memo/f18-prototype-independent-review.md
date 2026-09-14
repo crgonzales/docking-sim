@@ -1,10 +1,10 @@
 # F/A-18 prototype — independent review
 
-2026-09-10 · `/Users/carlosgonzales/dev/docking-sim-f18` · branch `codex/f18-flight-prototype`, base `153957b`, including the uncommitted prototype.
+2026-09-10 · `docking-sim-f18` · branch `codex/f18-flight-prototype`, base `153957b`, including the uncommitted prototype.
 
 **Status: all three findings resolved after user-authorized fixes. Recommendation: ready for further isolated user testing.** No blocking sign, unit, or default-trim defect was found. Fixes and focused regressions were implemented in this checkout by the original reviewer; no further agent or integration was involved.
 
-Reviewed [ARCHI](../ARCHI.md), the [handoff](f18-flight-prototype.md), [plan](../1-plans/F_0.13.0_f18-flight-prototype.plan.md), existing test report, new dynamics/tests, flight session/frame/UI, and mode/export changes. Applied the project's [TRIP review criteria](/Users/carlosgonzales/dev/docking-sim/.agents/skills/TRIP-review/checklist.md) within the requested scope. Existing full-suite/build/browser results are prior author evidence, not independently rerun results.
+Reviewed [ARCHI](../ARCHI.md), the [handoff](f18-flight-prototype.md), [plan](../1-plans/F_0.13.0_f18-flight-prototype.plan.md), existing test report, new dynamics/tests, flight session/frame/UI, and mode/export changes. Applied the project's TRIP review criteria within the requested scope. Existing full-suite/build/browser results are prior author evidence, not independently rerun results.
 
 ## Findings — resolved
 

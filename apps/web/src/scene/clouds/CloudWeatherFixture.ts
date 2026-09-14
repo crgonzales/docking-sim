@@ -8,7 +8,7 @@ import {
 import type { CloudMediaQuery } from './CloudBackend';
 import type { CloudConformanceResult } from './CloudConformanceFixture';
 import type { CloudConformanceResources } from './CloudConformanceResources';
-import { EVE_CLOUD_PROFILES, EVE_CLOUD_PROFILE_TABLES, interpolateCloudProfile } from './cloudConfig';
+import { VOLUMETRIC_CLOUD_PROFILES, VOLUMETRIC_CLOUD_PROFILE_TABLES, interpolateCloudProfile } from './cloudConfig';
 import {
   cloudDetailNoisePositionECEFM, createWeatherBindingUniforms, createWeatherSnapshot, evaluateCloudLayerMedia,
   weatherMapLods,
@@ -52,10 +52,10 @@ uniform int fixtureMode;
 out vec4 fixtureOutput;
 void main() {
   if (fixtureMode == 1) {
-    vec2 weather = eveSampleWeather(fixturePositionECEFM, fixtureFootprintM, fixtureWeatherLod);
-    fixtureOutput = vec4(weather, eveWeatherUv(fixturePositionECEFM).y, ${DRAW_MARKER}.0);
+    vec2 weather = volumetricSampleWeather(fixturePositionECEFM, fixtureFootprintM, fixtureWeatherLod);
+    fixtureOutput = vec4(weather, volumetricWeatherUv(fixturePositionECEFM).y, ${DRAW_MARKER}.0);
   } else if (fixtureMode == 2) {
-    fixtureOutput = textureLod(eveWeatherNoiseTexture, fixturePositionECEFM, 0.0);
+    fixtureOutput = textureLod(volumetricWeatherNoiseTexture, fixturePositionECEFM, 0.0);
   } else {
     MediaSample media = sampleCloudMedia(
       fixturePositionECEFM, fixtureFootprintM, fixtureWeatherLod, fixtureJitter);
@@ -240,7 +240,7 @@ export async function runCloudWeatherConformance(
     // Five cases per datum. The second run must remain populated with the
     // atmosphere bottom 11 km lower: using bottomRadius in GLSL fails loudly.
     const types = [
-      ...EVE_CLOUD_PROFILES.map((profile, index) => ({ name: profile.id, typeField: index / 3 })),
+      ...VOLUMETRIC_CLOUD_PROFILES.map((profile, index) => ({ name: profile.id, typeField: index / 3 })),
       { name: 'interpolated-deep-stratus', typeField: 0.5 },
     ];
     let interpolatedBaseline: number[] = [];
@@ -306,10 +306,10 @@ export async function runCloudWeatherConformance(
     // instead moves the noise phase. Keep the raw-asset CPU oracle so this
     // remains sensitive to the domain fix when density authoring changes.
     const detailPosition = cloudDetailNoisePositionECEFM(middle.positionECEFM);
-    const leftNoise = sampleNoiseAtScale(actualNoise, middle.positionECEFM, EVE_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[1]);
-    const rightNoise = sampleNoiseAtScale(actualNoise, middle.positionECEFM, EVE_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[2]);
-    const leftDetail = sampleNoiseAtScale(actualNoise, detailPosition, EVE_CLOUD_PROFILE_TABLES.detailNoiseScaleM[1]);
-    const rightDetail = sampleNoiseAtScale(actualNoise, detailPosition, EVE_CLOUD_PROFILE_TABLES.detailNoiseScaleM[2]);
+    const leftNoise = sampleNoiseAtScale(actualNoise, middle.positionECEFM, VOLUMETRIC_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[1]);
+    const rightNoise = sampleNoiseAtScale(actualNoise, middle.positionECEFM, VOLUMETRIC_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[2]);
+    const leftDetail = sampleNoiseAtScale(actualNoise, detailPosition, VOLUMETRIC_CLOUD_PROFILE_TABLES.detailNoiseScaleM[1]);
+    const rightDetail = sampleNoiseAtScale(actualNoise, detailPosition, VOLUMETRIC_CLOUD_PROFILE_TABLES.detailNoiseScaleM[2]);
     const mixNoise = (a: CloudNoiseSample, b: CloudNoiseSample, blend: number): CloudNoiseSample => {
       const mix = (channel: number) => a[channel]! + (b[channel]! - a[channel]!) * blend;
       return [mix(0), mix(1), mix(2), mix(3)];
@@ -346,10 +346,10 @@ export async function runCloudWeatherConformance(
       record(`assets-filtered-noise-${label}`, measured, expected);
       return measured as unknown as CloudNoiseSample;
     };
-    const filteredLeft = await filteredNoise('primary-left', middle.positionECEFM, EVE_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[1], leftNoise);
-    const filteredRight = await filteredNoise('primary-right', middle.positionECEFM, EVE_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[2], rightNoise);
-    const filteredDetailLeft = await filteredNoise('detail-left', detailPosition, EVE_CLOUD_PROFILE_TABLES.detailNoiseScaleM[1], leftDetail);
-    const filteredDetailRight = await filteredNoise('detail-right', detailPosition, EVE_CLOUD_PROFILE_TABLES.detailNoiseScaleM[2], rightDetail);
+    const filteredLeft = await filteredNoise('primary-left', middle.positionECEFM, VOLUMETRIC_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[1], leftNoise);
+    const filteredRight = await filteredNoise('primary-right', middle.positionECEFM, VOLUMETRIC_CLOUD_PROFILE_TABLES.primaryNoiseScaleM[2], rightNoise);
+    const filteredDetailLeft = await filteredNoise('detail-left', detailPosition, VOLUMETRIC_CLOUD_PROFILE_TABLES.detailNoiseScaleM[1], leftDetail);
+    const filteredDetailRight = await filteredNoise('detail-right', detailPosition, VOLUMETRIC_CLOUD_PROFILE_TABLES.detailNoiseScaleM[2], rightDetail);
     probeUniforms.fixtureMode.value = 0;
     const coverageNoise = mixNoise(filteredLeft, filteredRight, 0.5);
     const coverageDetail = mixNoise(filteredDetailLeft, filteredDetailRight, 0.5);

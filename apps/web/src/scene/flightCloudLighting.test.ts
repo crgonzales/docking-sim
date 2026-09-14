@@ -25,29 +25,29 @@ describe('flight local PBR cloud-lighting bridge', () => {
     materials.push(material);
     const release = bridge.registerMaterial(material);
     const initial = compile(material);
-    expect(initial.vertexShader).toContain('eveLocalPositionECEFM');
-    expect(initial.fragmentShader).toContain('eveSunTransmittance');
-    expect(initial.fragmentShader).toContain('eveSkyVisibility');
-    expect(initial.fragmentShader).toContain('directLight.color *= eveLocalDirectCloudVisibility');
-    expect(initial.fragmentShader).toContain('irradiance *= eveLocalSkyCloudVisibility');
+    expect(initial.vertexShader).toContain('volumetricLocalPositionECEFM');
+    expect(initial.fragmentShader).toContain('volumetricSunTransmittance');
+    expect(initial.fragmentShader).toContain('volumetricSkyVisibility');
+    expect(initial.fragmentShader).toContain('directLight.color *= volumetricLocalDirectCloudVisibility');
+    expect(initial.fragmentShader).toContain('irradiance *= volumetricLocalSkyCloudVisibility');
     expect(material.defines?.LIBRARY_LIGHTING).toBeUndefined();
 
     const sun = new Uniform(new Vector3(1, 0, 0));
-    bridge.setBindings({ eveWeatherSunDirectionECEF: sun });
+    bridge.setBindings({ volumetricWeatherSunDirectionECEF: sun });
     bridge.setEnabled(true);
     // A cached Three program does not call onBeforeCompile again. The already
     // compiled map must adopt the borrowed identity, then drop it on clear.
-    expect(initial.uniforms.eveWeatherSunDirectionECEF).toBe(sun);
+    expect(initial.uniforms.volumetricWeatherSunDirectionECEF).toBe(sun);
     sun.value.set(0, 1, 0);
-    expect(initial.uniforms.eveWeatherSunDirectionECEF.value).toEqual(new Vector3(0, 1, 0));
+    expect(initial.uniforms.volumetricWeatherSunDirectionECEF.value).toEqual(new Vector3(0, 1, 0));
     bridge.clearBindings();
-    expect(initial.uniforms.eveWeatherSunDirectionECEF).not.toBe(sun);
-    expect(initial.uniforms.eveLocalCloudLightingEnabled.value).toBe(0);
+    expect(initial.uniforms.volumetricWeatherSunDirectionECEF).not.toBe(sun);
+    expect(initial.uniforms.volumetricLocalCloudLightingEnabled.value).toBe(0);
     const replacement = new Uniform(new Vector3(0, 0, 1));
-    bridge.setBindings({ eveWeatherSunDirectionECEF: replacement });
+    bridge.setBindings({ volumetricWeatherSunDirectionECEF: replacement });
     bridge.setEnabled(true);
-    expect(initial.uniforms.eveWeatherSunDirectionECEF).toBe(replacement);
-    expect(bridge.uniforms.eveLocalCloudLightingEnabled?.value).toBe(1);
+    expect(initial.uniforms.volumetricWeatherSunDirectionECEF).toBe(replacement);
+    expect(bridge.uniforms.volumetricLocalCloudLightingEnabled?.value).toBe(1);
 
     release();
     expect(material.defines?.LIBRARY_LIGHTING).toBeUndefined();
@@ -56,11 +56,11 @@ describe('flight local PBR cloud-lighting bridge', () => {
   it('disables and removes borrowed bindings before a replay cleanup', () => {
     const bridge = createFlightCloudLightingBridge();
     const sun = new Uniform(new Vector3(1, 0, 0));
-    bridge.setBindings({ eveWeatherSunDirectionECEF: sun });
+    bridge.setBindings({ volumetricWeatherSunDirectionECEF: sun });
     bridge.setEnabled(true);
     bridge.clearBindings();
-    expect(bridge.uniforms.eveWeatherSunDirectionECEF).not.toBe(sun);
-    expect(bridge.uniforms.eveLocalCloudLightingEnabled?.value).toBe(0);
+    expect(bridge.uniforms.volumetricWeatherSunDirectionECEF).not.toBe(sun);
+    expect(bridge.uniforms.volumetricLocalCloudLightingEnabled?.value).toBe(0);
   });
 
   it.each([false, true])('releases duplicate owners in either order, once each (%s)', (reverse) => {
@@ -77,7 +77,7 @@ describe('flight local PBR cloud-lighting bridge', () => {
     expect(material.onBeforeCompile).toBe(originalCompile);
     expect(material.customProgramCacheKey).toBe(originalKey);
     const finalRelease = bridge.registerMaterial(material);
-    expect(compile(material).uniforms.eveLocalCloudLightingEnabled.value).toBe(0);
+    expect(compile(material).uniforms.volumetricLocalCloudLightingEnabled.value).toBe(0);
     finalRelease();
   });
 

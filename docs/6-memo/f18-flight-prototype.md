@@ -15,7 +15,7 @@ run only in SANDBOX/MISSION as before. Leaving and reentering FLIGHT creates a
 fresh flight. No settings or session persistence.
 
 ```bash
-cd /Users/carlosgonzales/dev/docking-sim-flight-integrated
+cd docking-sim-flight-integrated
 pnpm install --frozen-lockfile
 pnpm --filter @docking/web exec vite --host 127.0.0.1 --port 5175 --strictPort
 ```

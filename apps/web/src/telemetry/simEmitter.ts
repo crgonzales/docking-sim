@@ -1,5 +1,6 @@
 import {
   FSW_HZ,
+  CREW_DRAGON_THRUSTERS,
   createSimLoop,
   type ControlMode,
   type ManualCommand,
@@ -9,12 +10,14 @@ import {
   type SimLoop,
 } from '@docking/sim-core';
 import { getLatestFrame, useTelemetryBus } from './bus';
+import { useAppModeStore } from '../appModeStore';
 
 export const SIM_SEED = 20260806;
 const SIM_DT_S = 1 / FSW_HZ;
 const INITIAL_STATE: [number, number, number, number, number, number] = [0, -250, 12, 0, 0, 0];
 
 export const SIM_CONFIG: SimConfig = {
+  thrusters: { specs: CREW_DRAGON_THRUSTERS },
   initial: {
     r_hill_m: [0, -250, 12],
     v_hill_mps: [0, 0, 0],
@@ -93,4 +96,19 @@ export function cycleController(): void {
 
 export function commandAbort(): void {
   sim?.commandAbort();
+}
+
+/** Explicit development nozzle inspection; uses real failure injection and
+ * truth integration, never fabricated render duty. Reset isolates every jet,
+ * then opening one exercises its force/torque without an AUTO counter-burn.
+ */
+export function inspectThruster(id: string | null): void {
+  if (!import.meta.env.DEV || useAppModeStore.getState().mode !== 'SANDBOX') return;
+  if (id !== null && !CREW_DRAGON_THRUSTERS.some(jet => jet.id === id)) return;
+  stopSimEmitter(); startSimEmitter();
+  sim?.setControlMode('MANUAL');
+  sim?.setManualCommand({ translation: [0, 0, 0], rotation: [0, 0, 0] });
+  for (const jet of CREW_DRAGON_THRUSTERS) sim?.isolateThruster(jet.id);
+  if (id !== null) sim?.injectThrusterStuck(id, 'OPEN');
+  if (sim !== null) useTelemetryBus.getState().publishRenderState(sim.getRenderState());
 }

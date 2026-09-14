@@ -174,7 +174,7 @@ export interface CloudsProps {
 }
 
 /**
- * Render-only EVE-style cloud shells. The rotation is deliberately kept in a
+ * Render-only VOLUMETRIC-style cloud shells. The rotation is deliberately kept in a
  * ref owned by the Earth render tree: it is not sim time and never enters a
  * zustand store or telemetry channel.
  */

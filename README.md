@@ -1,8 +1,9 @@
 # Orbital Docking GNC Lab
 
-**v0.8.0** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.14.0** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
-cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim
+cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim ·
+Live: https://docking-sim.pages.dev
 
 Inside:
 
@@ -45,11 +46,27 @@ Inside:
   ambient hum, contact thump, outcome stingers)
 - Sky overhaul (v0.8.0): **physically-based atmosphere** (baked
   transmittance/multiple-scattering LUTs driving the limb glow, surface aerial
-  perspective, and sun extinction tint), **EVE-style cloud stack** (flat deck +
+  perspective, and sun extinction tint), **volumetric cloud stack** (flat deck +
   cirrus + 12,000 volumetric puffs placed from a seeded NASA coverage mask, all
   sharing one coverage function so clouds and their shadows agree), GEBCO
   terrain relief, orbit-correct ocean glint, a camera-relative sun at optical
   infinity, and a **debug camera** with an FPS counter
+- Space-to-ground world (v0.14.0): **quadtree terrain LOD** from NOAA ETOPO 2022
+  with USGS 1/3-arc-second hero DEMs for KSC and Boca Chica, inside-atmosphere
+  sky and aerial perspective from the same baked LUTs, worker-built height fields
+- Volumetric weather (v0.14.0): library renderer hosted on Takram's Bruneton
+  atmosphere and Three-clouds passes — **canonical world-fixed cloud density**
+  feeding local raymarched volumes, a shared light cache and an orbital column
+  atlas, depth-validated temporal reconstruction, weather advecting at 15 m/s
+  (`renderer=library&cloudSystem=volumetric` for diagnostics; FLIGHT uses it by default)
+- FLIGHT mode (v0.14.0): **F/A-18C-style 6-DOF flight** with a CC BY 4.0 Hornet
+  model, an airfield with runway/apron/hangars/tower and an **on-foot start**
+  beside the parked jet, real-time daylight clock, Balanced/High graphics presets,
+  final SMAA — an engineering approximation, not a validated flight model
+- First docking (v0.14.0): **Crew Dragon** (CC BY 4.0) with RCS mouths registered
+  from the mesh, and `FIRST_DOCKING_01` — a six-metre **manual practice mission**
+  with a guidance HUD, station-anchored target, position hold, pause and seeded
+  retry; emissive exhaust pass and RCS audio lifecycle fixes
 - Project docs under `docs/` — architecture, plans, changelogs, code reviews
 - CI workflow (install + test)
 
@@ -84,25 +101,23 @@ the browser may close the tab before the page sees the keystroke.
 
 ```bash
 pnpm install
-pnpm test        # oracle + consistency suites (sim-core) and web tests
+pnpm test        # oracle + consistency suites (sim-core, scenario) and web tests
 pnpm dev         # live closed-loop approach at localhost:5173
+pnpm build       # type-check + Vite build; provisions the pinned Takram
+                 # renderer assets (gitignored) into apps/web/public/vendor/takram first
 ```
 
-## Optional F/A-18-style flight prototype
+## Optional F/A-18-style flight mode
 
-Select **FLIGHT**, or open `http://127.0.0.1:5175/?mode=flight` after starting
-the isolated checkout with:
-
-```bash
-pnpm --filter @docking/web exec vite --host 127.0.0.1 --port 5175 --strictPort
-```
-
-Start airborne at 1,500 m and 180 m/s. W/S (or arrow up/down) pitches the nose down/up;
+Select **FLIGHT** in the mode bar, or open the app with `?mode=flight`. Ordinary
+flight starts on foot beside a parked, gear-down Hornet at the airfield; walk up
+and board it, or add `start=airborne` for the legacy airborne start at 1,500 m
+and 180 m/s. W/S (or arrow up/down) pitches the nose down/up;
 Q/E (or left/right arrows) rolls; A/D yaws; Shift/Ctrl changes throttle; brackets
 change pitch trim. P pauses, R resets and C switches chase/nose view. Buttons
 and a throttle slider also work. Losing focus pauses the flight.
 
-This uses the stabilized EVE cloud/atmosphere/terrain renderer and a
+This uses the stabilized volumetric cloud/atmosphere/terrain renderer and a
 licensed textured F/A-18C aircraft. The dynamics are an engineering approximation, **not a validated F/A-18 flight model**. It runs within
 a 50 km local ocean area, below 20 km and Mach 0.95. Contact or leaving that
 domain stops the run. It has no landing model, avionics or weapons. Default
@@ -118,5 +133,6 @@ and changelog for every version kept under `docs/`.
 
 ## Roadmap
 
-See `docs/ARCHI.md` (authoritative). Phases 1–5 complete. Next: portfolio
-video (manual), then backlog (visual pass, guidance tuning UI).
+See `docs/ARCHI.md` (authoritative). Roadmap items 1–8 complete through v0.14.0.
+Next: portfolio video (manual), then backlog (guidance tuning UI, JSBSim flight
+backend seam, further visual polish).

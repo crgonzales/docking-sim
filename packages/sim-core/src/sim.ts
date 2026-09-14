@@ -64,6 +64,7 @@ export interface SimLoop {
   clearGuidanceFault(): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
+  holdManualPosition(): void;
   setManualAuthority(level: ManualAuthority): void;
   isolateThruster(id: string): void;
   injectThrusterStuck(id: string, state: 'OPEN' | 'CLOSED'): void;
@@ -187,6 +188,8 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     prop_kg: config.initial.prop_kg,
   };
   let truthTickIndex = 0;
+  let gyroWindow_s = 0;
+  let gyroIntegral: Vec3 = [0, 0, 0];
   let remainingOnTimes: ThrusterCommand = {};
   let accumulatedActiveOnTime_s: Record<string, number> = Object.fromEntries(specs.map((spec) => [spec.id, 0]));
   let latchedThrusterDuty: Record<string, number> = Object.fromEntries(specs.map((spec) => [spec.id, 0]));
@@ -202,12 +205,15 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     const q_HB = conjugateQuaternion(q_BH);
     const chaserPort_hill_m = truth.r_hill_m.map((value, index) => value + rotateVector(q_HB, CHASER_PORT_BODY)[index]!) as Vec3;
     const portDelta_hill_m = subtract(chaserPort_hill_m, STATION_PORT_HILL);
-    if (Math.hypot(...portDelta_hill_m) > 0.05) return;
+    // Contact is crossing the docking face, not entering a 5 cm sphere about
+    // its center. That sphere silently made the advertised 10 cm lateral
+    // capture envelope impossible to use between 5 and 10 cm of offset.
+    const lateral_m = Math.hypot(portDelta_hill_m[0], portDelta_hill_m[2]);
+    if (Math.abs(portDelta_hill_m[1]) > 0.05 || lateral_m > 0.85) return;
     const dockingAxis_hill = rotateVector(q_HB, [0, 1, 0]);
     // Closing = motion along the docking axis toward the station: the axis
     // points +ŷ (into the port), so a positive projection is closing.
     const closing_mps = dot(truth.v_hill_mps, dockingAxis_hill);
-    const lateral_m = Math.hypot(portDelta_hill_m[0], portDelta_hill_m[2]);
     // Misalign = FULL attitude error from the aligned (identity-q_BH) docked
     // orientation — matching FSW telemetry. An axis-only angle would let a
     // craft rolled 180° about its docking axis pass as perfectly aligned;
@@ -250,6 +256,8 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
       // would drift at orbital rate and contradict the pinned w_body_rps.
       const t_next = truth.t_s + TRUTH_TICK_S;
       truth = { ...truth, t_s: t_next, q_BI: dockingQBi(t_next, meanMotionRadS) };
+      for (let axis = 0; axis < 3; axis++) gyroIntegral[axis]! += truth.w_body_rps[axis]! * TRUTH_TICK_S;
+      gyroWindow_s += TRUTH_TICK_S;
       truthTickIndex += 1;
       return;
     }
@@ -276,6 +284,7 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
       accumulatedActiveOnTime_s[spec.id] = (accumulatedActiveOnTime_s[spec.id] ?? 0)
         + (application.activeOnTime_s[spec.id] ?? 0);
     }
+    const previousRate = truth.w_body_rps;
     truth = stepTruth(truth, {
       dt_s: TRUTH_TICK_S,
       externalSpecificForce_body_mps2: application.specificForce_body_mps2,
@@ -283,6 +292,10 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
       inertia_kg_m2: config.inertia_kg_m2,
       propellantRate_kg_s: application.propellantRate_kg_s,
     });
+    for (let axis = 0; axis < 3; axis++) {
+      gyroIntegral[axis]! += 0.5 * (previousRate[axis]! + truth.w_body_rps[axis]!) * TRUTH_TICK_S;
+    }
+    gyroWindow_s += TRUTH_TICK_S;
     evaluateContact();
     for (const spec of specs) {
       if ((states[spec.id] ?? 'nominal') === 'nominal') {
@@ -301,7 +314,15 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
   };
 
   const runFswTick = (): TelemetryFrame => {
-    const output = fsw({ ...sensorModel.sample(truth), t_s: truth.t_s });
+    const sensor = sensorModel.sample(truth);
+    // Model the IMU's accumulated rotation between FSW updates. Sampling only
+    // the rate at the END of a PWM window aliases short torque pulses into a
+    // persistent attitude/bias error. Preserve sensor bias/noise in this mean;
+    // no truth attitude or position is exposed to navigation.
+    if (gyroWindow_s > 0) sensor.gyro_mean_rps = gyroIntegral.map((angle, axis) =>
+      angle / gyroWindow_s + sensor.gyro_rps[axis]! - truth.w_body_rps[axis]!) as Vec3;
+    gyroIntegral = [0, 0, 0]; gyroWindow_s = 0;
+    const output = fsw(sensor);
     remainingOnTimes = { ...output.thrusters };
     output.telemetry.nees = computeNees(truth, output.nav_diag.state, output.nav_diag.covariance);
     output.telemetry.att_nees = computeAttitudeNees(truth, output.att_diag, sensorModel.getTrueGyroBias());
@@ -352,6 +373,9 @@ export function createSimLoop(config: SimConfig, seed: number): SimLoop {
     },
     setManualCommand(command) {
       fsw.setManualCommand(command);
+    },
+    holdManualPosition() {
+      fsw.holdManualPosition();
     },
     setManualAuthority(level) {
       fsw.setManualAuthority(level);

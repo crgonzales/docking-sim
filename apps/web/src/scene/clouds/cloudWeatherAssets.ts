@@ -5,7 +5,7 @@ import {
 } from 'three'
 
 import {
-  EVE_WEATHER_ASSETS, type WeatherAssetDescriptor, type WeatherTextureBindings
+  VOLUMETRIC_WEATHER_ASSETS, type WeatherAssetDescriptor, type WeatherTextureBindings
 } from './cloudWeather'
 
 export interface CloudWeatherAssets {
@@ -30,7 +30,7 @@ function mipmappedBytes(descriptor: WeatherAssetDescriptor): number {
 }
 
 /** Allocation reservation and loaded-asset reporting share the same mip count. */
-export const CLOUD_WEATHER_GPU_BYTES = Object.values(EVE_WEATHER_ASSETS)
+export const CLOUD_WEATHER_GPU_BYTES = Object.values(VOLUMETRIC_WEATHER_ASSETS)
   .reduce((sum, descriptor) => sum + mipmappedBytes(descriptor), 0)
 
 async function loadBytes(descriptor: WeatherAssetDescriptor, signal: AbortSignal): Promise<Uint8Array<ArrayBuffer>> {
@@ -97,7 +97,7 @@ export async function loadCloudWeatherAssets(
   })
 
   try {
-    const descriptors = Object.entries(EVE_WEATHER_ASSETS)
+    const descriptors = Object.entries(VOLUMETRIC_WEATHER_ASSETS)
     // No texture is created until every fetch and hash succeeds. Late completion
     // after a failure/abort can therefore never leak an unpublished GPU resource.
     const sources = await Promise.race([
@@ -111,7 +111,7 @@ export async function loadCloudWeatherAssets(
         ? new DataTexture(sources[index], width, height, FORMATS[descriptor.format], UnsignedByteType)
         : new Data3DTexture(sources[index], width, height, depth)
       owned.push(texture)
-      texture.name = `EVE weather ${name}`
+      texture.name = `VOLUMETRIC weather ${name}`
       texture.format = FORMATS[descriptor.format]
       texture.internalFormat = descriptor.format
       texture.type = UnsignedByteType

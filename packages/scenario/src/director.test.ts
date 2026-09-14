@@ -47,6 +47,7 @@ function makePort(nextFrame: (t_s: number) => TelemetryFrame): ScenarioSimPort &
     injectGuidanceFault: vi.fn(),
     clearGuidanceFault: vi.fn(),
     setManualSubMode: vi.fn(),
+    holdManualPosition: vi.fn(),
     setManualCommand: vi.fn(),
     setManualAuthority: vi.fn(),
     isolateThruster: vi.fn(),

@@ -12,7 +12,7 @@ export async function runCloudPresentationConformance(
   const radius = 6_371_000;
   const uniforms = {
     ...createCloudPresentationUniforms(),
-    eveCloudPlanetRadiusM: new Uniform(radius),
+    volumetricCloudPlanetRadiusM: new Uniform(radius),
     fixtureCamera: new Uniform(new Vector3()),
     fixtureRay: new Uniform(new Vector3()),
     fixtureDistance: new Uniform(0),
@@ -21,14 +21,14 @@ export async function runCloudPresentationConformance(
     glslVersion: GLSL3, depthTest: false, depthWrite: false, uniforms,
     vertexShader: 'precision highp float; in vec3 position; void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: `precision highp float;
-      uniform float eveCloudPlanetRadiusM;
+      uniform float volumetricCloudPlanetRadiusM;
       uniform vec3 fixtureCamera, fixtureRay;
       uniform float fixtureDistance;
       ${presentationGLSL}
       layout(location = 0) out vec4 fixtureOutput;
       layout(location = 1) out vec4 fixtureMetadata;
       void main() {
-        float visibility = eveCloudHorizonVisibility(fixtureCamera, fixtureRay, fixtureDistance);
+        float visibility = volumetricCloudHorizonVisibility(fixtureCamera, fixtureRay, fixtureDistance);
         fixtureOutput = vec4(visibility, 2.0 * visibility, 0.8 * visibility, 7.0);
         fixtureMetadata = vec4(0.0);
       }`,
@@ -50,7 +50,7 @@ export async function runCloudPresentationConformance(
       uniforms.fixtureCamera.value.set(radius + altitude, 0, 0);
       uniforms.fixtureRay.value.set(Math.sin(elevation), Math.cos(elevation), 0);
       uniforms.fixtureDistance.value = distance;
-      uniforms.eveHorizonThinning.value = strength;
+      uniforms.volumetricHorizonThinning.value = strength;
       resources.draw(() => pass.render(renderer, null, resources.output));
       const measured = await resources.readCenter();
       const expected = [visibility, 2 * visibility, 0.8 * visibility, 7];

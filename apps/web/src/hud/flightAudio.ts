@@ -4,46 +4,24 @@ import { useScenarioStore } from '../telemetry/scenarioStore';
 import { useTelemetryBus } from '../telemetry/bus';
 import type { RenderState, TelemetryFrame } from '@docking/sim-core';
 import { getAudioContext, getExistingAudioContext, getMasterGain } from './audioContext';
+import { connectRcsListener, createRcsAudioBank, type RcsAudioBank } from './rcsAudio';
+import { THRUSTER_NOZZLES } from '../scene/thrusterPresentation';
 
-const RCS_GAIN = 0.18;
-const RCS_ONSET_THRESHOLD = 0.01;
 const AMBIENT_GAIN = 0.018;
 
 interface FlightVoices {
-  rcsSource: AudioBufferSourceNode;
-  rcsGain: GainNode;
+  rcs: RcsAudioBank;
+  disconnectListener: () => void;
   ambientOscillator: OscillatorNode;
   ambientGain: GainNode;
 }
 
 type FlightOutcome = 'DOCKED' | 'COLLISION' | 'PASSIVE_ABORT' | 'WINDOW_MISSED';
 
-function aggregateDuty(renderState: RenderState | null): number {
-  if (renderState === null) return 0;
-  let total = 0;
-  for (const value of Object.values(renderState.thruster_duty)) total += Math.max(0, value);
-  return Math.min(1, total / 4);
-}
-
-function createNoiseBuffer(audio: AudioContext): AudioBuffer {
-  const buffer = audio.createBuffer(1, Math.floor(audio.sampleRate * 2), audio.sampleRate);
-  const samples = buffer.getChannelData(0);
-  for (let index = 0; index < samples.length; index += 1) samples[index] = Math.random() * 2 - 1;
-  return buffer;
-}
-
-function createVoices(audio: AudioContext, output: GainNode, initialDuty: number): FlightVoices {
-  const rcsSource = audio.createBufferSource();
-  const rcsFilter = audio.createBiquadFilter();
-  const rcsGain = audio.createGain();
-  rcsSource.buffer = createNoiseBuffer(audio);
-  rcsSource.loop = true;
-  rcsFilter.type = 'bandpass';
-  rcsFilter.frequency.value = 950;
-  rcsFilter.Q.value = 0.8;
-  rcsGain.gain.value = RCS_GAIN * initialDuty;
-  rcsSource.connect(rcsFilter).connect(rcsGain).connect(output);
-  rcsSource.start();
+function createVoices(audio: AudioContext, output: GainNode, initialState: RenderState | null): FlightVoices {
+  const rcs = createRcsAudioBank(audio, output);
+  for (const nozzle of THRUSTER_NOZZLES) rcs.setDuty(nozzle.id, initialState?.thruster_duty[nozzle.id] ?? 0);
+  const disconnectListener = connectRcsListener(rcs);
 
   const ambientOscillator = audio.createOscillator();
   const ambientGain = audio.createGain();
@@ -53,11 +31,7 @@ function createVoices(audio: AudioContext, output: GainNode, initialDuty: number
   ambientOscillator.connect(ambientGain).connect(output);
   ambientOscillator.start();
 
-  return { rcsSource, rcsGain, ambientOscillator, ambientGain };
-}
-
-function updateRcsGain(voices: FlightVoices, audio: AudioContext, duty: number): void {
-  voices.rcsGain.gain.setTargetAtTime(RCS_GAIN * duty, audio.currentTime, 0.035);
+  return { rcs, disconnectListener, ambientOscillator, ambientGain };
 }
 
 function playTone(
@@ -80,10 +54,6 @@ function playTone(
   oscillator.connect(gain).connect(output);
   oscillator.start(start);
   oscillator.stop(start + duration_s + 0.01);
-}
-
-function playRcsAttack(audio: AudioContext, output: GainNode): void {
-  playTone(audio, output, 1200, 500, 0.06, 0.055, 'triangle');
 }
 
 function playContactThump(audio: AudioContext, output: GainNode, collision: boolean): void {
@@ -109,28 +79,30 @@ function playOutcomeStinger(audio: AudioContext, output: GainNode, outcome: Flig
 
 function stopVoices(voices: FlightVoices | null): void {
   if (voices === null) return;
-  voices.rcsSource.stop();
-  voices.rcsSource.disconnect();
-  voices.rcsGain.disconnect();
+  voices.disconnectListener();
+  voices.rcs.dispose();
   voices.ambientOscillator.stop();
   voices.ambientOscillator.disconnect();
   voices.ambientGain.disconnect();
 }
 
-function startFlightAudio(): () => void {
+export function startFlightAudio(mode: AppMode): () => void {
   let disposed = false;
   let voices: FlightVoices | null = null;
   let latestRenderState = useTelemetryBus.getState().renderState;
-  let previousDuty = aggregateDuty(latestRenderState);
   let previousTelemetryOutcome: TelemetryFrame['outcome'] = useTelemetryBus.getState().frame?.outcome ?? 'NONE';
   let previousScenarioOutcome = useScenarioStore.getState().state?.outcome ?? null;
+  const rcsActive = (): boolean => {
+    const scenario = useScenarioStore.getState();
+    return mode !== 'MISSION' || (scenario.phase === 'RUNNING' && !scenario.paused);
+  };
 
   const ensureVoices = (): void => {
     if (disposed || voices !== null) return;
     const audio = getExistingAudioContext();
     const output = getMasterGain();
     if (audio === null || output === null || audio.state !== 'running') return;
-    voices = createVoices(audio, output, aggregateDuty(latestRenderState));
+    voices = createVoices(audio, output, rcsActive() ? latestRenderState : null);
   };
 
   const onUserGesture = (): void => {
@@ -145,18 +117,14 @@ function startFlightAudio(): () => void {
 
   const onRenderState = (renderState: RenderState | null): void => {
     latestRenderState = renderState;
-    const duty = aggregateDuty(renderState);
     if (voices !== null) {
-      const audio = getAudioContext();
-      if (audio !== null) {
-        updateRcsGain(voices, audio, duty);
-        if (duty > RCS_ONSET_THRESHOLD && previousDuty <= RCS_ONSET_THRESHOLD) {
-          const output = getMasterGain();
-          if (output !== null) playRcsAttack(audio, output);
-        }
+      // Paused and finished missions retain the last truth window for drawing.
+      // A looping audio voice must not replay that frozen firing indefinitely.
+      const audibleState = rcsActive() ? renderState : null;
+      for (const nozzle of THRUSTER_NOZZLES) {
+        voices.rcs.setDuty(nozzle.id, audibleState?.thruster_duty[nozzle.id] ?? 0);
       }
     }
-    previousDuty = duty;
   };
 
   const onTelemetry = (frame: TelemetryFrame | null): void => {
@@ -175,6 +143,7 @@ function startFlightAudio(): () => void {
   };
 
   const onScenarioState = (state: ReturnType<typeof useScenarioStore.getState>['state']): void => {
+    onRenderState(latestRenderState);
     const outcome = state?.outcome ?? null;
     const isScenarioStinger = outcome === 'PASSIVE_ABORT' || outcome === 'WINDOW_MISSED';
     if (isScenarioStinger && outcome !== previousScenarioOutcome && voices !== null) {
@@ -209,6 +178,6 @@ function startFlightAudio(): () => void {
 export function useFlightAudio(mode: AppMode): void {
   useEffect(() => {
     if (mode !== 'SANDBOX' && mode !== 'MISSION') return undefined;
-    return startFlightAudio();
+    return startFlightAudio(mode);
   }, [mode]);
 }

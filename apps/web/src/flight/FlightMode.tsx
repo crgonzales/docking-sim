@@ -184,7 +184,7 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
     <LibraryEffects
       worldFrame={frame}
       exposureRef={exposureRef}
-      cloudSystem="eve"
+      cloudSystem="volumetric"
       quality={graphics.quality}
       exposure={graphics.exposure}
       dpr={graphics.dpr}

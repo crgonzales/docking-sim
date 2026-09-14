@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AerialPerspectiveEffect, LightingMaskPass } from '@takram/three-atmosphere';
 import type { DepthMaskMaterial } from 'postprocessing';
-import { PerspectiveCamera, Scene, Texture } from 'three';
+import { BackSide, BufferGeometry, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial,
+  PerspectiveCamera, Scene, Texture, type ColorRepresentation, type WebGLRenderer } from 'three';
 import { stableLightingMaskDepth, StableLightingMaskPass } from './libraryLightingMask';
 import { CAMERA_NEAR, CAMERA_FAR } from './sky/skyConfig';
 
@@ -14,6 +15,82 @@ function oldComparisonDepth(depth: number) {
 }
 const shaderMaterial = (pass: LightingMaskPass) =>
   (pass as unknown as { depthMaskMaterial: DepthMaskMaterial }).depthMaskMaterial;
+
+describe('lighting exclusion surface coverage', () => {
+  it.each(['none', 'clear', 'draw'])('preserves material groups, selection, and caller state after %s failure', failure => {
+    const scene = new Scene(), camera = new PerspectiveCamera();
+    camera.layers.enable(7);
+    const sources = [FrontSide, BackSide, DoubleSide].map(side => new MeshBasicMaterial({ side }));
+    sources.push(new MeshBasicMaterial({ transparent: true, depthWrite: false }), new MeshBasicMaterial({ visible: false }));
+    const geometry = new BufferGeometry();
+    sources.forEach((_, i) => geometry.addGroup(i * 3, 3, i));
+    const mesh = new Mesh(geometry, sources), unselected = new Mesh(geometry, sources[0]);
+    scene.add(mesh, unselected);
+    const pass = new StableLightingMaskPass(scene, camera);
+    pass.selection.add(mesh);
+    scene.overrideMaterial = sources[0]; scene.background = new Color(0x123456);
+    const background = scene.background, cameraMask = camera.layers.mask, meshMask = mesh.layers.mask;
+    const color = new Color(0x654321), savedColor = color.clone(); let alpha = 0.3;
+    const draw = vi.fn((drawScene: Scene, drawCamera: PerspectiveCamera) => {
+      if (drawScene !== scene) return;
+      expect(drawCamera).toBe(camera); expect(camera.layers.mask).toBe(1 << pass.selectionLayer);
+      expect(scene.overrideMaterial).toBeNull(); expect(scene.background).toBeNull();
+      expect(mesh.material).not.toBe(sources);
+      expect(mesh.material.map(m => m.side)).toEqual(sources.map(m => m.side));
+      expect(mesh.material.map(m => m.visible)).toEqual([true, true, true, false, false]);
+      expect(unselected.material).toBe(sources[0]);
+      if (failure === 'draw' && first) { first = false; throw new Error('draw failed'); }
+    });
+    let first = true;
+    const stub = {
+      autoClear: true, shadowMap: { enabled: true, autoUpdate: true },
+      getClearColor: (target: Color) => target.copy(color), getClearAlpha: () => alpha,
+      setClearColor: (value: ColorRepresentation, a?: number) => { color.set(value); if (a !== undefined) alpha = a; },
+      setClearAlpha: (a: number) => { alpha = a; }, setRenderTarget: vi.fn(), render: draw,
+      clear: () => { if (failure === 'clear' && first) { first = false; throw new Error('clear failed'); } },
+    };
+    const render = () => pass.render(stub as unknown as WebGLRenderer, null, null);
+    try {
+      if (failure === 'none') render(); else expect(render).toThrow(`${failure} failed`);
+      expect(mesh.material).toBe(sources); expect(unselected.material).toBe(sources[0]);
+      expect(scene.overrideMaterial).toBe(sources[0]); expect(scene.background).toBe(background);
+      expect(camera.layers.mask).toBe(cameraMask); expect(mesh.layers.mask).toBe(meshMask);
+      expect(stub.autoClear).toBe(true); expect(stub.shadowMap).toEqual({ enabled: true, autoUpdate: true });
+      expect(color).toEqual(savedColor); expect(alpha).toBe(0.3);
+      sources[0].side = BackSide;
+      render();
+      expect(mesh.material).toBe(sources);
+      expect(pass.selection.has(mesh)).toBe(true);
+    } finally { pass.dispose(); geometry.dispose(); sources.forEach(m => m.dispose()); }
+  });
+
+  it('follows scene/camera changes and releases cached replacements/listeners exactly once', () => {
+    const pass = new StableLightingMaskPass(new Scene(), new PerspectiveCamera());
+    const scene = new Scene(), camera = new PerspectiveCamera(), source = new MeshBasicMaterial({ side: DoubleSide });
+    const geometry = new BufferGeometry(), mesh = new Mesh(geometry, source); scene.add(mesh);
+    pass.mainScene = scene; pass.mainCamera = camera; pass.selection.add(mesh);
+    const add = vi.spyOn(source, 'addEventListener'), remove = vi.spyOn(source, 'removeEventListener');
+    let active!: MeshBasicMaterial;
+    const renderer = {
+      autoClear: true, shadowMap: { enabled: true, autoUpdate: true },
+      getClearColor: (c: Color) => c.set(0), getClearAlpha: () => 1,
+      setClearColor() {}, setClearAlpha() {}, setRenderTarget() {}, clear() {},
+      render(s: Scene, c: PerspectiveCamera) { if (s === scene) { expect(c).toBe(camera); active = mesh.material; } },
+    } as unknown as WebGLRenderer;
+    try {
+      pass.render(renderer, null, null); const original = active;
+      const dispose = vi.spyOn(original, 'dispose');
+      pass.render(renderer, null, null); expect(active).toBe(original); expect(add).toHaveBeenCalledTimes(1);
+      source.dispose(); source.dispose(); expect(dispose).toHaveBeenCalledTimes(1);
+      expect(remove).toHaveBeenCalledTimes(1);
+      pass.render(renderer, null, null); expect(active).not.toBe(original);
+      const nextDispose = vi.spyOn(active, 'dispose'), sourceDispose = vi.spyOn(source, 'dispose');
+      pass.dispose(); pass.dispose();
+      expect(nextDispose).toHaveBeenCalledTimes(1); expect(sourceDispose).not.toHaveBeenCalled();
+      expect(remove).toHaveBeenCalledTimes(2); expect(mesh.material).toBe(source);
+    } finally { pass.dispose(); geometry.dispose(); source.dispose(); }
+  });
+});
 
 describe('mixed-lighting mask at planetary depth ranges', () => {
   it('keeps terrain unmasked when no selected object covers it, including cleared depth', () => {

@@ -1,0 +1,18 @@
+Implemented Phase 1 measurement instrumentation only.
+
+Files changed:
+
+- [renderTimings.ts](docking-sim-eve-clouds/apps/web/src/scene/renderTimings.ts) — bounded opt-in CPU/GPU timing collector and renderer context.
+- [LibraryEffects.tsx](docking-sim-eve-clouds/apps/web/src/scene/LibraryEffects.tsx) — composer pass, first-use, and cloud scheduling wrappers.
+- [RenderProbe.tsx](docking-sim-eve-clouds/apps/web/src/scene/RenderProbe.tsx) — timing evidence fields and ascending sweep.
+- [renderProbeConfig.ts](docking-sim-eve-clouds/apps/web/src/scene/renderProbeConfig.ts) — `profile=1` opt-in switch.
+- [TerrainPatches.tsx](docking-sim-eve-clouds/apps/web/src/scene/terrain/TerrainPatches.tsx) — terrain selection, reconciliation, geometry, and pending-count diagnostics.
+- [terrainWorker.ts](docking-sim-eve-clouds/apps/web/src/scene/terrain/terrainWorker.ts) — dispatch/round-trip timing and optional worker `diagnostics.cpuBuildMs`.
+
+Evidence fields are `sample.profile`, `sample.videoRecording`, `sample.run`, and `sample.timings`, including CPU/GPU aggregates, GPU support status, renderer/device/buffer context, disjoint counters, and terrain pending counts. Metric keys include `terrain.*`, `composer.*`, and `cloud.schedule.*`.
+
+Deviations: no tests, browser runs, plan edits/checkmarks, package/build wiring, cloud/vendor files, assets, or concurrent worktree changes were touched, per instruction. Actual profiling and phase completion remain with the parent task.
+
+Status: `pnpm --filter @docking/web build` passed. No lint script exists. Vite emitted only the existing large-chunk warning.
+
+IMPLEMENTATION_COMPLETE

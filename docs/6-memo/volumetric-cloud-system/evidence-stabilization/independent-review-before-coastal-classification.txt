@@ -1,0 +1,31 @@
+All three prior `[Major]` findings are addressed. No new blocking issues found in the scoped delta.
+
+### Prior findings
+
+1. **“Grazing high-cloud rays disappear before the atlas is sampled.” — Addressed.**  
+   Searches now begin at each outer-support crossing, resolve the local profile shell, and fall back to the actual segment midpoint when the first-event sphere is missed: [distantCloud.glsl:65](<docking-sim-eve-clouds/apps/web/src/scene/clouds/shaders/distantCloud.glsl:65>), [distantCloud.glsl:94](<docking-sim-eve-clouds/apps/web/src/scene/clouds/shaders/distantCloud.glsl:94>), [distantCloud.glsl:97](<docking-sim-eve-clouds/apps/web/src/scene/clouds/shaders/distantCloud.glsl:97>). Production GPU fixtures cover both global-midpoint and first-event grazing cases at [CloudDistantFixture.ts:139](<docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudDistantFixture.ts:139>) and [CloudDistantFixture.ts:150](<docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudDistantFixture.ts:150>).
+
+2. **“Sky-side limb rays ignore the second shell crossing.” — Addressed.**  
+   Both disjoint shell halves are evaluated, scene/planet depth clips the far half, and results use premultiplied alpha-over with opacity-weighted depth: [distantCloud.glsl:160](<docking-sim-eve-clouds/apps/web/src/scene/clouds/shaders/distantCloud.glsl:160>), [distantCloud.glsl:169](<docking-sim-eve-clouds/apps/web/src/scene/clouds/shaders/distantCloud.glsl:169>), [distantCloud.glsl:176](<docking-sim-eve-clouds/apps/web/src/scene/clouds/shaders/distantCloud.glsl:176>). Far-side-only, planet-occlusion, and two-crossing composition fixtures are at [CloudDistantFixture.ts:179](<docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudDistantFixture.ts:179>) and [CloudDistantFixture.ts:195](<docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudDistantFixture.ts:195>).
+
+3. **“Context restoration republishes a lost atlas without rebuilding.” — Addressed.**  
+   Context loss now unpublishes the texture, disposes its target, resets generation guards, and clears readiness: [CloudColumnAtlas.ts:380](<docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudColumnAtlas.ts:380>). The system resets the transition ramp at [EveCloudSystem.ts:198](<docking-sim-eve-clouds/apps/web/src/scene/clouds/EveCloudSystem.ts:198>), with lost/restored listeners at [LibraryEffects.tsx:73](<docking-sim-eve-clouds/apps/web/src/scene/LibraryEffects.tsx:73>). Same-generation rebuilding is exercised at [CloudColumnFixture.ts:77](<docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudColumnFixture.ts:77>).
+
+### New issues
+
+None found.
+
+Checklist pass:
+
+- Functional requirements: far projection, crossings, depth, premultiplied composition, full-far scheduling, terrain detail, and coastline classification conform to this bounded phase.
+- Code quality: responsibilities and coordinate conversions remain explicit; no problematic duplication or typing issue found.
+- Architecture: cloud work stays behind the EVE selector and existing composer; terrain color/normal paths share phases and uniforms.
+- Error handling: atlas failure/context states are explicit and unpublished data cannot remain active.
+- Security: no applicable new security boundary.
+- Performance: terrain noise is one bounded shared allocation with cache-owned normal materials and explicit disposal; the near march is skipped at full far weight at [clouds.frag:1075](<docking-sim-eve-clouds/apps/web/src/scene/clouds/vendor/takram/src/shaders/clouds.frag:1075>).
+
+The reported gate is green: workspace build, 231 affected tests, and 342 GPU cases. The three production fixture groups are registered at [CloudConformanceFixture.ts:341](<docking-sim-eve-clouds/apps/web/src/scene/clouds/CloudConformanceFixture.ts:341>).
+
+Pending evidence, not a code finding: broader multi-altitude appearance/elevation checks and weaker-hardware measurements remain open; no release or default-renderer promotion is claimed.
+
+APPROVED

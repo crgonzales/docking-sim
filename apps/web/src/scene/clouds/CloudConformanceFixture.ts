@@ -6,7 +6,7 @@ import { StableAerialPerspectiveEffect } from '../libraryDepth';
 import { EARTH_RADIUS_M } from '../sky/skyConfig';
 import { CloudConformanceResources, homogeneousCloudExpected } from './CloudConformanceResources';
 import { verifyCloudLightVolume } from './CloudLightVolumeFixture';
-import { runCloudTemporalConformance } from './CloudTemporalFixture';
+import { runCloudTemporalConformance, runCloudSilhouetteConformance, runCloudOverlaySilhouetteConformance } from './CloudTemporalFixture';
 import { runCloudWeatherConformance } from './CloudWeatherFixture';
 import { runCloudMotionConformance } from './CloudMotionFixture';
 import { runCloudPresentationConformance } from './CloudPresentationFixture';
@@ -349,6 +349,8 @@ export async function runCloudConformance(renderer: WebGLRenderer): Promise<Clou
     await verifyWaterReflectionContinuity(renderer, resources, record);
     cases.push(...await runCloudSamplingConformance(renderer, resources));
     cases.push(...await runCloudTemporalConformance(renderer, resources, tolerance));
+    cases.push(...await runCloudSilhouetteConformance(renderer, resources, tolerance));
+    cases.push(...await runCloudOverlaySilhouetteConformance(renderer, resources, tolerance));
     cases.push(...await runCloudWeatherConformance(renderer, resources, tolerance));
     cases.push(...await runCloudMotionConformance(renderer, resources, tolerance));
     cases.push(...await runCloudPresentationConformance(renderer, resources, tolerance));

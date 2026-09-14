@@ -1,5 +1,6 @@
-import { EveCloudSystem } from './clouds/EveCloudSystem';
-import { EveAerialPerspectiveEffect } from './clouds/EveAerialPerspectiveEffect';
+import { VolumetricCloudSystem } from './clouds/VolumetricCloudSystem';
+import { resolveCloudSystem } from './clouds/cloudSystemSelection';
+import { VolumetricAerialPerspectiveEffect } from './clouds/VolumetricAerialPerspectiveEffect';
 import { configureCloudSampling } from './libraryCloudSampling';
 import { configureCloudLighting } from './libraryCloudLighting';
 import { configureCloudTemporal } from './libraryCloudTemporal';
@@ -7,6 +8,8 @@ import { configureCloudFootprint, configureCloudNoiseMipmaps } from './libraryCl
 import { CloudReprojectionFrame } from './libraryCloudReprojection';
 import { StableLightingMaskPass } from './libraryLightingMask';
 import { SurfaceNormalPass } from './librarySurfaceNormalPass';
+import { createSceneSmaa, onSceneSmaaLoad, sceneSmaaReady } from './librarySmaa';
+import { SpacecraftExhaustPass } from './SpacecraftExhaustPass';
 import { isolateComposerDepthStorage } from './libraryComposerDepth';
 import { configureCloudShadowStorage } from './libraryCloudShadowStorage';
 import { configureCloudShadowRange, type CloudShadowRange } from './libraryCloudShadowRange';
@@ -32,7 +35,7 @@ import type { FlightCloudLightingBridge } from './flightCloudLighting';
 
 export const libraryStatus = {
   state: 'loading', error: '', shadowRange: null as CloudShadowRange | null, shadowTexelM: [] as number[],
-  lightingSelection: [0, 0, 0], eve: null as EveCloudSystem['status'] | null,
+  lightingSelection: [0, 0, 0], volumetric: null as VolumetricCloudSystem['status'] | null,
   graphics: {
     preset: null as 'balanced' | 'high' | null,
     quality: null as CloudLightQuality | null,
@@ -41,7 +44,7 @@ export const libraryStatus = {
     drawingBuffer: [0, 0] as [number, number],
     scenePixels: 0,
     maxTextureSize: null as number | null,
-    smaa: { enabled: false, preset: null as 'medium' | 'high' | null },
+    smaa: { enabled: false, ready: false, preset: null as 'medium' | 'high' | null },
     passes: [] as { name: string; enabled: boolean; swap: boolean; screen: boolean }[],
   },
 };
@@ -64,7 +67,7 @@ export interface LibraryEffectsProps {
   readonly worldFrame: WorldFrame;
   readonly exposureRef: { current: number };
   /** Omitted preserves SceneRoot's existing query-selected cloud backend. */
-  readonly cloudSystem?: 'legacy' | 'eve';
+  readonly cloudSystem?: 'legacy' | 'volumetric';
   /** Omitted preserves the existing diagnostic query default. */
   readonly quality?: CloudLightQuality;
   /** Omitted preserves the existing diagnostic query default. */
@@ -73,7 +76,7 @@ export interface LibraryEffectsProps {
   readonly dpr?: number;
   /** Optional FLIGHT graphics label for evidence; omitted for SceneRoot. */
   readonly graphicsPreset?: 'balanced' | 'high';
-  /** Explicit final SMAA configuration; omitted preserves SceneRoot identity defaults. */
+  /** Omitted uses high at every DPR; explicit medium/disabled requests are preserved. */
   readonly smaa?: { readonly enabled?: boolean; readonly preset: 'medium' | 'high' };
   /** Optional FLIGHT-owned daylight state; omitted preserves static SceneRoot lighting. */
   readonly environment?: FlightEnvironmentSource;
@@ -88,12 +91,12 @@ export interface LibraryEffectsProps {
 export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, exposure, dpr, graphicsPreset, smaa, environment, sunTransmittanceRef, skyIrradianceRef, cloudLighting }: LibraryEffectsProps) {
   const { gl, scene, camera, size, viewport, invalidate } = useThree();
   const query = new URLSearchParams(window.location.search);
-  const selectedCloudSystem = cloudSystem ?? (query.get('cloudSystem') === 'eve' ? 'eve' : 'legacy');
+  const selectedCloudSystem = resolveCloudSystem(cloudSystem ?? query.get('cloudSystem'));
   const selectedQuality = quality ?? PROBE_QUALITY;
   const selectedExposure = exposure ?? PROBE_EXPOSURE;
   const selectedDpr = dpr ?? PROBE_DPR;
   const selectedSmaaPreset = smaa?.enabled === false || ((import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV && query.get('sceneAA') === 'off')
-    ? null : smaa?.preset ?? null;
+    ? null : smaa?.preset ?? 'high';
   const hasSmaa = selectedSmaaPreset !== null;
   const selectedSmaaPresetRef = useRef(selectedSmaaPreset);
   selectedSmaaPresetRef.current = selectedSmaaPreset;
@@ -104,7 +107,7 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
   const sunECEF = useRef(new Vector3());
   const environmentDiscontinuity = useRef(environment?.state.discontinuityRevision ?? 0);
   latestSize.current = size;
-  const live = useRef<{ composer: EffectComposer; aerial: ShadowDiagnosticAerialEffect; clouds?: CloudsEffect; eve?: EveCloudSystem; mask: LightingMaskPass; smaa?: SMAAEffect; smaaPass?: EffectPass; originalShadow?: { maxFar: number | null; splitLambda: number }; firstUsePending: boolean }>();
+  const live = useRef<{ composer: EffectComposer; aerial: ShadowDiagnosticAerialEffect; clouds?: CloudsEffect; volumetric?: VolumetricCloudSystem; mask: LightingMaskPass; smaa?: SMAAEffect; smaaPass?: EffectPass; originalShadow?: { maxFar: number | null; splitLambda: number }; firstUsePending: boolean }>();
   useEffect(() => {
     let disposed = false;
     cloudLighting?.clearBindings();
@@ -125,27 +128,30 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
     composer.addPass(mask);
     const ellipsoid = new Ellipsoid(EARTH_RADIUS_M, EARTH_RADIUS_M, EARTH_RADIUS_M);
     const stage = new URLSearchParams(window.location.search).get('stage') ?? 'full';
-    const eveEnabled = selectedCloudSystem === 'eve';
+    const volumetricEnabled = selectedCloudSystem === 'volumetric';
     const initialSunRender = environment
       ? new Vector3().fromArray(environment.state.sunDirection)
       : SUN_DIR.clone();
     const initialSunECEF = directionToECEF(initialSunRender);
-    const eve = PROBE_CLOUDS && eveEnabled ? new EveCloudSystem(camera, selectedQuality, initialSunECEF) : undefined;
-    const invalidateEve = () => eve?.invalidateGraphicsContext();
-    gl.domElement.addEventListener('webglcontextlost', invalidateEve);
-    gl.domElement.addEventListener('webglcontextrestored', invalidateEve);
-    libraryStatus.eve = eve?.status ?? null;
-    const Aerial = eve ? EveAerialPerspectiveEffect : ShadowDiagnosticAerialEffect;
+    const volumetric = PROBE_CLOUDS && volumetricEnabled ? new VolumetricCloudSystem(camera, selectedQuality, initialSunECEF) : undefined;
+    const invalidateVolumetric = () => volumetric?.invalidateGraphicsContext();
+    gl.domElement.addEventListener('webglcontextlost', invalidateVolumetric);
+    gl.domElement.addEventListener('webglcontextrestored', invalidateVolumetric);
+    libraryStatus.volumetric = volumetric?.status ?? null;
+    const Aerial = volumetric ? VolumetricAerialPerspectiveEffect : ShadowDiagnosticAerialEffect;
     const aerial = new Aerial(camera, {
       ellipsoid, correctAltitude: true, correctGeometricError: true,
       transmittance: stage === 'full', inscatter: stage === 'full',
       normalBuffer: normals.texture, reconstructNormal: false, sunLight: true, skyLight: true, sky: true, moon: false,
     });
-    if (eve && aerial instanceof EveAerialPerspectiveEffect) aerial.installCloudLighting(eve.lightingUniforms);
+    if (volumetric && aerial instanceof VolumetricAerialPerspectiveEffect) {
+      aerial.installCloudLighting(volumetric.lightingUniforms);
+      aerial.cloudOverlayDepthSource = () => volumetric.effect.cloudsPass.outputDepthBuffer;
+    }
     aerial.normalBuffer = normals.texture; // The pinned constructor does not set HAS_NORMALS.
     aerial.sunDirection.copy(initialSunECEF);
     aerial.lightingMask = { map: mask.texture, channel: 'r' };
-    const clouds = PROBE_CLOUDS && !eve ? new CloudsEffect(camera) : undefined;
+    const clouds = PROBE_CLOUDS && !volumetric ? new CloudsEffect(camera) : undefined;
     if (clouds) {
       const cloudSetupStartedAt = renderTimings.start('cloud.setup');
       try {
@@ -176,21 +182,26 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
         renderTimings.end('cloud.setup', cloudSetupStartedAt);
       }
     }
-    if (eve) eve.effect.events.addEventListener('change', () => {
-      aerial.overlay = eve.effect.atmosphereOverlay;
+    if (volumetric) volumetric.effect.events.addEventListener('change', () => {
+      aerial.overlay = volumetric.effect.atmosphereOverlay;
     });
-    const cloudEffect = eve?.effect ?? clouds;
+    const cloudEffect = volumetric?.effect ?? clouds;
     const cloudPass = cloudEffect ? new EffectPass(camera, cloudEffect) : undefined;
     if (cloudPass) composer.addPass(cloudPass);
-    const atmosphereToneMappingPass = new EffectPass(camera, ...(stage === 'albedo' ? [] : [aerial]),
-      new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }));
-    composer.addPass(atmosphereToneMappingPass);
+    const atmospherePass = stage === 'albedo' ? undefined : new EffectPass(camera, aerial);
+    if (atmospherePass) composer.addPass(atmospherePass);
+    const exhaustPass = new SpacecraftExhaustPass(scene, camera);
+    composer.addPass(exhaustPass);
+    const toneMappingPass = new EffectPass(camera, new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }));
+    composer.addPass(toneMappingPass);
     // Keep SMAA in a separate final pass so its edge detector receives the
     // already-tonemapped image rather than the atmosphere pass's HDR input.
-    const smaaEffect = selectedSmaaPresetRef.current === null ? undefined : new SMAAEffect({
-      preset: selectedSmaaPresetRef.current === 'high' ? SMAAPreset.HIGH : SMAAPreset.MEDIUM,
-    });
+    const smaaEffect = selectedSmaaPresetRef.current === null ? undefined : createSceneSmaa(selectedSmaaPresetRef.current);
+    // Lookup images load independently of the atmosphere assets. A paused view
+    // needs a new frame when they arrive, otherwise its first image can lack AA.
+    const removeSmaaLoad = smaaEffect ? onSceneSmaaLoad(smaaEffect, () => invalidate()) : undefined;
     const smaaPass = smaaEffect ? new EffectPass(camera, smaaEffect) : undefined;
+    if (smaaPass) smaaPass.name = 'SceneSmaaPass';
     if (smaaPass) composer.addPass(smaaPass);
     isolateComposerDepthStorage(composer);
     const passTimingCleanup = installComposerPassTimings(composer, renderTimings, [
@@ -198,7 +209,9 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
       [normals, 'composer.pass.surfaceNormals'],
       [mask, 'composer.pass.lightingMask'],
       ...(cloudPass ? [[cloudPass, 'composer.pass.clouds'] as const] : []),
-      [atmosphereToneMappingPass, 'composer.pass.atmosphereToneMapping'],
+      ...(atmospherePass ? [[atmospherePass, 'composer.pass.atmosphere'] as const] : []),
+      [exhaustPass, 'composer.pass.exhaust'],
+      [toneMappingPass, 'composer.pass.toneMapping'],
       ...(smaaPass ? [[smaaPass, 'composer.pass.finalSmaa'] as const] : []),
     ]);
     renderTimings.end('composer.setup', composerSetupStartedAt);
@@ -218,11 +231,11 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
     };
     // Attach rejection handling immediately: StrictMode/HMR can cancel weather
     // before the atmosphere LUT promise settles.
-    const eveAssets = eve?.load().then(() => null, error => error);
+    const volumetricAssets = volumetric?.load().then(() => null, error => error);
     Promise.all([textures, stbn, ...(clouds ? [PROBE_WEATHER === 'global' ? new TextureLoader().loadAsync('/vendor/earth-weather/global-coverage.png').then(own).then(texture => disposed ? texture : configureGlobalWeatherTexture(texture, { mode: PROBE_WEATHER_STRUCTURE })).then(own) : noise2D('local_weather'), noise2D('turbulence'), noise3D('shape', 128), noise3D('shape_detail', 32)] : [])])
       .then(async ([lut, blueNoise, weather, turbulence, shape, detail]) => {
-        const eveAssetError = await eveAssets;
-        if (eveAssetError && !disposed) throw eveAssetError;
+        const volumetricAssetError = await volumetricAssets;
+        if (volumetricAssetError && !disposed) throw volumetricAssetError;
         // Tuple spread's heterogeneous inference is narrowed at this isolated loader boundary.
         const luts = lut as Awaited<typeof textures>;
         if (disposed) return;
@@ -231,7 +244,7 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
           Object.assign(aerial, luts); aerial.stbnTexture = blueNoise as Data3DTexture;
           if (sunTransmittanceRef) sunTransmittanceRef.current = luts.transmittanceTexture;
           if (skyIrradianceRef) skyIrradianceRef.current = luts.irradianceTexture;
-          if (eve) { Object.assign(eve.effect, luts); eve.effect.stbnTexture = blueNoise as Data3DTexture; }
+          if (volumetric) { Object.assign(volumetric.effect, luts); volumetric.effect.stbnTexture = blueNoise as Data3DTexture; }
           if (clouds) {
             Object.assign(clouds, luts);
             clouds.stbnTexture = blueNoise as Data3DTexture;
@@ -239,11 +252,11 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
             clouds.turbulenceTexture = turbulence as Awaited<ReturnType<typeof noise2D>>;
             clouds.shapeTexture = shape as Data3DTexture; clouds.shapeDetailTexture = detail as Data3DTexture;
           }
-          if (cloudLighting && eve) {
-            // Eve.load() and the atmosphere LUT promise have both settled.
+          if (cloudLighting && volumetric) {
+            // Volumetric.load() and the atmosphere LUT promise have both settled.
             // Borrow the exact live Uniform instances; the bridge owns no
             // cloud texture or lighting-cache resource.
-            cloudLighting.setBindings(eve.lightingUniforms);
+            cloudLighting.setBindings(volumetric.lightingUniforms);
             cloudLighting.setEnabled(true);
           }
         } finally {
@@ -252,11 +265,11 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
         smaaEffect?.applyPreset(selectedSmaaPresetRef.current === 'high' ? SMAAPreset.HIGH : SMAAPreset.MEDIUM);
         composer.setSize(latestSize.current.width, latestSize.current.height, false);
         publishComposerBufferContext(composer);
-        live.current = { composer, aerial, clouds, eve, mask, smaa: smaaEffect, smaaPass, originalShadow: clouds ? { maxFar: clouds.shadow.maxFar, splitLambda: clouds.shadow.splitLambda } : undefined, firstUsePending: true };
+        live.current = { composer, aerial, clouds, volumetric, mask, smaa: smaaEffect, smaaPass, originalShadow: clouds ? { maxFar: clouds.shadow.maxFar, splitLambda: clouds.shadow.splitLambda } : undefined, firstUsePending: true };
         libraryStatus.state = 'ready';
         invalidate(); // A paused flight renders on demand; show completed asset loading too.
       }).catch(error => { if (!disposed) { libraryStatus.state = 'failed'; libraryStatus.error = String(error); console.error(error); } });
-    return () => { disposed = true; if (sunTransmittanceRef) sunTransmittanceRef.current = null; if (skyIrradianceRef) skyIrradianceRef.current = null; cloudLighting?.clearBindings(); gl.domElement.removeEventListener('webglcontextlost', invalidateEve); gl.domElement.removeEventListener('webglcontextrestored', invalidateEve); eve?.dispose(); live.current = undefined; passTimingCleanup(); renderTimings.detachRenderer(gl); composer.dispose(); owned.forEach(texture => texture.dispose()); owned.clear(); };
+    return () => { disposed = true; if (sunTransmittanceRef) sunTransmittanceRef.current = null; if (skyIrradianceRef) skyIrradianceRef.current = null; cloudLighting?.clearBindings(); gl.domElement.removeEventListener('webglcontextlost', invalidateVolumetric); gl.domElement.removeEventListener('webglcontextrestored', invalidateVolumetric); removeSmaaLoad?.(); volumetric?.dispose(); live.current = undefined; passTimingCleanup(); renderTimings.detachRenderer(gl); composer.dispose(); owned.forEach(texture => texture.dispose()); owned.clear(); };
   }, [gl, scene, camera, worldFrame, selectedCloudSystem, selectedQuality, hasSmaa, invalidate, environment, sunTransmittanceRef, skyIrradianceRef, cloudLighting]);
   useEffect(() => {
     const value = live.current;
@@ -289,13 +302,13 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
       drawingBuffer: [gl.domElement.width, gl.domElement.height] as [number, number],
       scenePixels: gl.domElement.width * gl.domElement.height,
       maxTextureSize: gl.capabilities.maxTextureSize,
-      smaa: { enabled: selectedSmaaPreset !== null, preset: selectedSmaaPreset },
+      smaa: { enabled: live.current?.smaaPass?.enabled === true, ready: sceneSmaaReady(live.current?.smaa), preset: selectedSmaaPreset },
       passes: live.current?.composer.passes.map(pass => ({ name: pass.name, enabled: pass.enabled,
         swap: pass.needsSwap, screen: pass.renderToScreen })) ?? [],
     };
     const value = live.current;
     if (!value) { gl.render(scene, camera); return; }
-    cloudLighting?.setEnabled(value.eve !== undefined && cloudShadowProbe.mode !== 'off');
+    cloudLighting?.setEnabled(value.volumetric !== undefined && cloudShadowProbe.mode !== 'off');
     value.aerial.shadowStrength.value = cloudShadowProbe.mode === 'off' ? 0 : 1;
     value.aerial.shadowDiagnostic.value = ({ mask: 1, lighting: 2, normals: 3 } as Record<string, number>)[cloudShadowProbe.mode] ?? 0;
     value.aerial.cloudOverlay.value = cloudShadowProbe.overlay ? 1 : 0;
@@ -313,11 +326,11 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
       value.clouds?.sunDirection.copy(sunECEF.current);
       // Weather time owns the one discontinuity invalidation; daylight itself
       // remains a live light input without restarting compatible history.
-      value.eve?.setSunDirection(sunECEF.current, false);
-      value.eve?.setEnvironmentTime(state.timeSeconds, discontinuity);
+      value.volumetric?.setSunDirection(sunECEF.current, false);
+      value.volumetric?.setEnvironmentTime(state.timeSeconds, discontinuity);
       environmentSunDelta = state.paused ? 0 : delta;
     }
-    value.eve?.beforeRender(gl, value.aerial.worldToECEFMatrix, worldFrame.anchor, SKY_CONFIG.renderScaleMPerUnit, environmentSunDelta);
+    value.volumetric?.beforeRender(gl, value.aerial.worldToECEFMatrix, worldFrame.anchor, SKY_CONFIG.renderScaleMPerUnit, environmentSunDelta);
     if (value.clouds) {
       const shadowRangeStartedAt = renderTimings.start('cloud.schedule.shadowRange');
       try {
@@ -349,6 +362,9 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
       scene.traverse(object => {
         if (!(object instanceof Mesh)) return;
         const materials = Array.isArray(object.material) ? object.material : [object.material];
+        // No opaque mask for alpha-only exhaust/decals: its override material
+        // would mask the planet through the otherwise invisible plume bounds.
+        if (materials.every(material => material.transparent && !material.depthWrite)) return;
         if (materials.every(material => !(material instanceof ShaderMaterial) || !material.defines.LIBRARY_LIGHTING)) { value.mask.selection.add(object); excluded++; }
         else lit++;
       });
@@ -360,7 +376,7 @@ export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, 
     const firstUseStartedAt = value.firstUsePending ? renderTimings.start('composer.firstUseCpuWall') : -1;
     try {
       value.composer.render(delta);
-      value.eve?.afterRender(worldFrame.anchor);
+      value.volumetric?.afterRender(worldFrame.anchor);
     } finally {
       renderTimings.end('composer.renderCpuWall', renderStartedAt);
       if (value.firstUsePending) {

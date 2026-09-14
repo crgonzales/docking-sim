@@ -1,8 +1,9 @@
-import { ShaderPass } from 'postprocessing';
+import { EffectPass, ShaderPass } from 'postprocessing';
 import {
   DataTexture, FloatType, GLSL3, HalfFloatType, NearestFilter, RawShaderMaterial,
-  RedFormat, RGBAFormat, Uniform, WebGLRenderTarget, type WebGLRenderer,
+  RedFormat, RGFormat, RGBAFormat, Uniform, WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
+import { VolumetricAerialPerspectiveEffect } from './VolumetricAerialPerspectiveEffect';
 import type { CloudConformanceResult } from './CloudConformanceFixture';
 import type { CloudConformanceResources } from './CloudConformanceResources';
 import { CloudsResolveMaterial, bayerOffsets } from './takramCloudBackend';
@@ -109,6 +110,8 @@ class TemporalFixture {
       attachment.format = RedFormat;
       attachment.internalFormat = 'R16F';
     }
+    this.output.textures[1]!.format = RGFormat;
+    this.output.textures[1]!.internalFormat = 'RG16F';
     // Three r170 cannot select an MRT attachment in its async readback API.
     // Copy every attachment without filtering into a separate RGBA32F target.
     this.packed = new WebGLRenderTarget(this.width * 2, this.height, {
@@ -672,6 +675,110 @@ async function runCloudSpatialReconstructionConformance(
         record(valid ? 'moving-gap-edge' : 'cut-gap-edge', errors);
       }
     } finally { fixture.dispose(); }
+  }
+  return cases;
+}
+
+/** Foreground silhouettes use real full-resolution depth through every Bayer
+ * phase. Also move the occluder while the camera and cloud field stay still. */
+export async function runCloudSilhouetteConformance(
+  renderer: WebGLRenderer, resources: CloudConformanceResources, tolerance: number,
+): Promise<CloudConformanceResult[]> {
+  const cases: CloudConformanceResult[] = [];
+  for (const logDepth of [false, true]) for (const upscale of [false, true]) {
+    const f = new TemporalFixture(upscale, false, [17, 13]);
+    const scene = inputTexture(f.width, f.height, 1);
+    const u = f.material.uniforms;
+    u.sceneDepthEnabled.value = true; u.sceneDepthBuffer.value = scene;
+    u.sceneLogDepth.value = logDepth; u.sceneCameraRange.value.set(1, 100000);
+    u.historyEnabled.value = true; u.historyValid.value = false;
+    const encode = (metres: number) => logDepth ? Math.log2(metres + 1) / Math.log2(100001)
+      : (100000 - 100000 / metres) / 99999;
+    const cloud = [0.5, 0.25, 0.125, 0.5];
+    const record = (name: string, errors: number[]) => cases.push({
+      name: `silhouette-${logDepth ? 'log' : 'linear'}-${upscale ? 'bayer' : 'native'}-${name}`,
+      measured: errors, expected: errors.map(() => 0), maxError: Math.max(...errors),
+      passed: errors.every(e => Number.isFinite(e) && e <= tolerance),
+    });
+    const input = (edge: number, phase: number) => {
+      fill(scene, x => [x < edge ? encode(10) : 1]);
+      const dx = upscale ? Math.floor(bayerOffsets[phase]!.x * 4) : 0;
+      fill(f.color, x => (upscale ? x * 4 + dx : x) < edge ? [0, 0, 0, 0] : cloud);
+      fill(f.depthVelocity, x => (upscale ? x * 4 + dx : x) < edge ? [0, 0, 0, 0] : [1, 0, 0, 1]);
+    };
+    const measure = (pixels: Float32Array, edge: number) => {
+      const error = [0, 0, 0, 0, 0];
+      for (let y = 1; y < 12; y++) for (let x = 1; x < 16; x++) {
+        const expected = x < edge ? [0, 0, 0, 0, 0] : [...cloud, 1];
+        f.measured(pixels, { output: [x, y], input: [0, 0] }).forEach((v, i) => {
+          error[i] = Math.max(error[i]!, Math.abs(v - expected[i]!));
+        });
+      }
+      return error;
+    };
+    try {
+      const all = [0, 0, 0, 0, 0];
+      for (let phase = 0; phase < (upscale ? 16 : 1); phase++) {
+        u.frame.value = phase; input(7, phase);
+        measure(await f.read(renderer, resources), 7).forEach((v, i) => { all[i] = Math.max(all[i]!, v); });
+      }
+      record('opaque-edge-no-bleed-or-halo', all);
+      u.frame.value = 0; input(7, 0);
+      await f.read(renderer, resources); f.advanceHistory();
+      // Reveal two columns previously occupied by the capsule without changing
+      // the camera. Neither black history nor a ghost outline may survive.
+      input(5, 0); u.stationaryCamera.value = true;
+      record('moving-object-reveals-clouds', measure(await f.read(renderer, resources), 5));
+      // An entering object must cover old cloud history immediately.
+      f.advanceHistory(); input(9, 0);
+      record('moving-object-occludes-clouds', measure(await f.read(renderer, resources), 9));
+    } finally { f.dispose(); scene.dispose(); }
+  }
+  return cases;
+}
+
+/** Final cloud resampling is independently depth-aware when the scene has
+ * more pixels than the cloud budget. Exercise real log-depth terrain writes. */
+export async function runCloudOverlaySilhouetteConformance(
+  renderer: WebGLRenderer, resources: CloudConformanceResources, tolerance: number,
+): Promise<CloudConformanceResult[]> {
+  const cases: CloudConformanceResult[] = [];
+  const color = inputTexture(2, 2, 4), depth = inputTexture(2, 2, 4);
+  const far = resources.camera.far;
+  resources.camera.far = 1e8; resources.camera.updateProjectionMatrix();
+  const aerial = new VolumetricAerialPerspectiveEffect(resources.camera, {
+    correctAltitude: false, correctGeometricError: false,
+    sunLight: false, skyLight: false, transmittance: false, inscatter: false,
+    sky: false, sun: false, moon: false,
+    transmittanceTexture: resources.one2D, irradianceTexture: resources.zero2D,
+    scatteringTexture: resources.zero3D,
+  });
+  aerial.overlay = { map: color }; aerial.cloudOverlayDepthSource = () => depth;
+  const pass = new EffectPass(resources.camera, aerial);
+  const target = new WebGLRenderTarget(9, 9, { type: FloatType, depthBuffer: false });
+  const background = [0.2, 0.3, 0.4] as const, cloud = [0.5, 0.25, 0.125, 0.5];
+  try {
+    pass.initialize(renderer, true, FloatType); pass.setSize(9, 9);
+    pass.setDepthTexture(resources.depth.depthTexture!);
+    for (const distance of [10, 1000, 400000, 750000, 1000000]) {
+      resources.renderTerrain(distance, background);
+      // A 2x2 cloud texture has two near-object taps and two background taps.
+      // Its center straddles them; the scene's actual center belongs to only
+      // one surface. Ordinary bilinear sampling would create a 50% halo.
+      fill(color, x => x === 0 ? [0, 0, 0, 0] : cloud);
+      fill(depth, x => x === 0 ? [0, 0.001, 0, 0] : [0.0005, distance * 1e-4, 0, 0]);
+      // For the close object, move the two cloud taps to a far background.
+      if (distance === 10) fill(depth, x => x === 0 ? [0, 0.001, 0, 0] : [1, 40, 0, 0]);
+      resources.draw(() => pass.render(renderer, resources.depth, target, 0, false));
+      const measured = (await resources.readCenter(target)).slice(0, 3);
+      const expected = distance === 10 ? [...background] : background.map((v, i) => v * 0.5 + cloud[i]!);
+      const maxError = Math.max(...measured.map((v, i) => Math.abs(v - expected[i]!)));
+      cases.push({ name: `cloud-overlay-depth-edge-${distance}m`, measured, expected, maxError,
+        passed: Number.isFinite(maxError) && maxError <= tolerance });
+    }
+  } finally {
+    pass.dispose(); target.dispose(); color.dispose(); depth.dispose();
+    resources.camera.far = far; resources.camera.updateProjectionMatrix();
   }
   return cases;
 }

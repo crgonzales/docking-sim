@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.14.0` | 7   | feat: first docking mission, Crew Dragon RCS model, volumetric weather naming & audited flight/cloud fixes |
 | `0.8.0` | 2    | feat: physically-based sky overhaul — atmospheric scattering LUTs, volumetric clouds, terrain relief & debug camera |
 | `0.7.0` | 2    | feat: flight feel — selectable manual authority, truth-driven thruster plumes & procedural RCS audio |
 | `0.6.0` | 1    | feat: Phase 5 guided scenario mode, Monte Carlo analysis & mission switch panel |
@@ -14,6 +15,15 @@
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
+
+- **v0.14.0 (First Docking + Volumetric Weather + Flight - Week 7, 14-09-2026)**:
+  - **Mission**: `FIRST_DOCKING_01` — a prepared six-metre manual docking on a Crew Dragon with a guidance HUD, station-anchored target, `holdManualPosition()`, pause and seeded retry; the emergency scenario remains selectable
+  - **Vehicle**: CC BY 4.0 Dragon 2 GLB with RCS mouths registered from the mesh, revised allocation/IMU propagation, truth-side contact, emissive exhaust, final SMAA
+  - **Renderer**: volumetric weather system (canonical cloud density, shared light cache, orbital column atlas, temporal reconstruction, 15 m/s advection) under neutral naming with a legacy URL alias; space-to-ground quadtree terrain from ETOPO/USGS DEMs
+  - **FLIGHT**: F/A-18C-style 6-DOF flight with the CC BY 4.0 Hornet, airfield with on-foot start, real-time daylight clock, Balanced/High presets; shadow-band and cloud-shimmer fixes
+  - **Fixes**: inspection could start a competing sandbox simulation; paused/inactive missions sustained stale RCS audio — both SANDBOX/RUNNING-gated with regression tests
+  - **Packaging**: web build provisions and checksum-verifies the ignored Takram runtime assets so Cloudflare Pages builds from a fresh checkout
+  - **Review**: independent loop, 2 audit rounds + 1 consolidation round -> APPROVED (`CR_w7_v0.14.0.md`); 825 tests
 
 - **v0.8.0 (Sky Overhaul - Week 2, 16-08-2026)**:
   - **Atmosphere**: baked Hillaire transmittance/multiple-scattering LUTs drive a 12-step limb raymarch, surface aerial perspective, and sun extinction tint; fixed the WebGL2 unfilterable-RGB-float bug that had left the shell invisible since Phase B

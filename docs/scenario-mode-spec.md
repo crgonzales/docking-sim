@@ -1,5 +1,11 @@
 # Guided Scenario Mode — Spec v1 ("Mission Mode")
 
+This remains the specification for the advanced `FINAL_APPROACH_01` emergency
+mission. The mission picker also offers `FIRST_DOCKING_01`, an introductory
+manual flight without failures, with a six-metre start and a separately labelled
+two-metre practice restart. Its controls, pause/input ownership and validation
+are documented in `6-memo/first-docking-gameplay.md` and the v0.14.0 gameplay plan.
+
 Input document for Phase 5 planning. Defines the scenario schema, the
 `FINAL_APPROACH_01` script, ScenarioDirector semantics, switch-panel bindings,
 and acceptance tests.

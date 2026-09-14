@@ -53,9 +53,9 @@ function driveRun(scenario: Scenario, seed: number): ScenarioUiState {
   bot.step(state, state.telemetry);
   // Ten-Hz stepping matches sim-core's telemetry cadence and keeps all
   // operator actions sim-time driven; there is no wall-clock pacing here.
-  const tick_s = 0.1;
-  for (let t_s = tick_s; t_s <= scenario.clock.duration_s && state.outcome === null; t_s += tick_s) {
-    state = director.tick(Math.min(t_s, scenario.clock.duration_s));
+  const ticks = Math.ceil(scenario.clock.duration_s * 10);
+  for (let tick = 1; tick <= ticks && state.outcome === null; tick++) {
+    state = director.tick(Math.min(tick / 10, scenario.clock.duration_s));
     bot.step(state, state.telemetry);
   }
   if (state.outcome === null) state = director.tick(scenario.clock.duration_s);

@@ -35,7 +35,7 @@ This is illustrative procedural weather, not inferred meteorology. The new field
 
 `evidence-material-weather/manifest.json` identifies captures, JSON context, videos, test/build output and performance summaries. Earlier static images precede diagnostic-only changes; the final cold pair uses the result source tree. The initial cloud-size comparison is kept separately under the spike's `.evidence.local/material-weather/initial`.
 
-## Continue in Claude
+## Continuation
 
 Read this note and the previous handoff before changing the renderer. Preserve imported staged work; review/apply patch 06 after 05 as a separate increment. Use port 5174, never 5173. Confirm the real map orientation and preserve the material-alpha/normal-coverage contract. First profile the cold terrain engagement stalls, then improve coastal geometry and cloud shape/distant appearance using the existing library. Keep the structured weather opt-in until the same orbital, descent and shoreline views actually improve. Do not claim the renderer is finished because tests pass.
 

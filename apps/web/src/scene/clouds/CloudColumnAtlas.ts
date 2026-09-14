@@ -114,7 +114,7 @@ function frozenBindingCopy(source: WeatherBindingUniforms, generation: number): 
   for (const [name, uniform] of Object.entries(source)) {
     copy[name] = new Uniform(cloneUniformValue(uniform.value));
   }
-  copy.eveWeatherGeneration = new Uniform(generation);
+  copy.volumetricWeatherGeneration = new Uniform(generation);
   return Object.freeze(copy);
 }
 
@@ -130,7 +130,7 @@ function errorMessage(error: unknown): string {
 
 function hasRequiredMediaContract(mediaGLSL: string): boolean {
   return /\bMediaSample\s+sampleCloudMedia\s*\(/.test(mediaGLSL) &&
-    /\bvec2\s+eveSampleWeather\s*\(/.test(mediaGLSL);
+    /\bvec2\s+volumetricSampleWeather\s*\(/.test(mediaGLSL);
 }
 
 interface RendererState {
@@ -189,10 +189,10 @@ function restoreRendererState(renderer: WebGLRenderer, state: RendererState): vo
  */
 export class CloudColumnAtlas {
   readonly uniforms: {
-    readonly eveColumnTexture: Uniform<Texture | null>;
-    readonly eveColumnDimensions: Uniform<Vector2>;
-    readonly eveColumnReady: Uniform<number>;
-    readonly eveColumnGeneration: Uniform<number>;
+    readonly volumetricColumnTexture: Uniform<Texture | null>;
+    readonly volumetricColumnDimensions: Uniform<Vector2>;
+    readonly volumetricColumnReady: Uniform<number>;
+    readonly volumetricColumnGeneration: Uniform<number>;
   };
   readonly status: CloudColumnAtlasStatus;
   /** Exact target reservation, including the complete mip chain. */
@@ -227,7 +227,7 @@ export class CloudColumnAtlas {
     finiteNonNegativeInteger(requestedMaxCloudBytes, 'Cloud column atlas maxCloudBytes');
     const mediaGLSL = options.mediaGLSL ?? defaultMediaGLSL;
     if (!hasRequiredMediaContract(mediaGLSL)) {
-      throw new Error('Cloud column atlas requires canonical eveSampleWeather and sampleCloudMedia GLSL hooks');
+      throw new Error('Cloud column atlas requires canonical volumetricSampleWeather and sampleCloudMedia GLSL hooks');
     }
 
     this.config = config;
@@ -242,14 +242,14 @@ export class CloudColumnAtlas {
       error: '',
     };
     this.uniforms = {
-      eveColumnTexture: new Uniform<Texture | null>(null),
-      eveColumnDimensions: new Uniform(new Vector2(config.width, config.height)),
-      eveColumnReady: new Uniform(0),
-      eveColumnGeneration: new Uniform(-1),
+      volumetricColumnTexture: new Uniform<Texture | null>(null),
+      volumetricColumnDimensions: new Uniform(new Vector2(config.width, config.height)),
+      volumetricColumnReady: new Uniform(0),
+      volumetricColumnGeneration: new Uniform(-1),
     };
     this.baseUniforms = {
-      eveColumnAngularPixelRad: new Uniform(2 * Math.PI / config.width),
-      eveColumnSegmentCount: new Uniform(config.segmentCount),
+      volumetricColumnAngularPixelRad: new Uniform(2 * Math.PI / config.width),
+      volumetricColumnSegmentCount: new Uniform(config.segmentCount),
     };
     this.material = new RawShaderMaterial({
       glslVersion: GLSL3,
@@ -342,9 +342,9 @@ ${columnAtlasGLSL}`,
       if (finalBatch) {
         this.target.scissor.set(0, 0, this.config.width, this.config.height);
         this.target.scissorTest = false;
-        this.uniforms.eveColumnTexture.value = this.target.texture;
-        this.uniforms.eveColumnGeneration.value = this.requestedGeneration;
-        this.uniforms.eveColumnReady.value = 1;
+        this.uniforms.volumetricColumnTexture.value = this.target.texture;
+        this.uniforms.volumetricColumnGeneration.value = this.requestedGeneration;
+        this.uniforms.volumetricColumnReady.value = 1;
         this.status.state = 'ready';
       } else {
         this.status.state = 'building';
@@ -445,7 +445,7 @@ ${columnAtlasGLSL}`,
       depthBuffer: false,
       stencilBuffer: false,
     });
-    target.texture.name = `EVE cloud column atlas ${this.config.width}x${this.config.height}`;
+    target.texture.name = `VOLUMETRIC cloud column atlas ${this.config.width}x${this.config.height}`;
     target.viewport.set(0, 0, this.config.width, this.config.height);
     target.scissor.set(0, 0, this.config.width, this.config.height);
     target.scissorTest = false;
@@ -467,9 +467,9 @@ ${columnAtlasGLSL}`,
   }
 
   private unpublish(): void {
-    this.uniforms.eveColumnTexture.value = null;
-    this.uniforms.eveColumnReady.value = 0;
-    this.uniforms.eveColumnGeneration.value = -1;
+    this.uniforms.volumetricColumnTexture.value = null;
+    this.uniforms.volumetricColumnReady.value = 0;
+    this.uniforms.volumetricColumnGeneration.value = -1;
   }
 
   private unsupported(message: string): void {

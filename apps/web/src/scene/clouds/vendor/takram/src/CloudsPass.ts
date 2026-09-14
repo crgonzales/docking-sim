@@ -7,6 +7,7 @@ import {
   Matrix4,
   NearestFilter,
   RedFormat,
+  RGFormat,
   WebGLRenderTarget,
   type Camera,
   type DataArrayTexture,
@@ -57,7 +58,7 @@ function createRenderTarget(
   renderTarget.texture.name = name
 
   // Attachment 1 is always present: current RGBA depth/velocity, or resolved
-  // R16F positive view depth in units of 10 km. Shadow length stays at 2.
+  // RG16F cloud/opaque view depths in units of 10 km. Shadow length stays at 2.
   const depthBuffer = renderTarget.texture.clone()
   depthBuffer.isRenderTargetTexture = true
   depthBuffer.minFilter = NearestFilter
@@ -72,8 +73,8 @@ function createRenderTarget(
   } else {
     viewDepthBuffer = depthBuffer
     depthBuffer.name = `${name}.ViewDepth`
-    depthBuffer.format = RedFormat
-    depthBuffer.internalFormat = 'R16F'
+    depthBuffer.format = RGFormat
+    depthBuffer.internalFormat = 'RG16F'
     renderTarget.viewDepth = viewDepthBuffer
   }
   let shadowLengthBuffer
@@ -154,6 +155,11 @@ export class CloudsPass extends PassBase {
 
   copyCameraSettings(camera: Camera): void {
     this.currentMaterial.copyCameraSettings(camera)
+    const u = this.resolveMaterial.uniforms
+    u.sceneCameraRange.value.set(this.currentMaterial.uniforms.cameraNear.value,
+      this.currentMaterial.uniforms.cameraFar.value)
+    u.scenePerspective.value = this.currentMaterial.defines.PERSPECTIVE_CAMERA != null
+    u.sceneLogDepth.value = this.currentMaterial.defines.USE_LOGARITHMIC_DEPTH_BUFFER != null
   }
 
   /**
@@ -273,6 +279,7 @@ export class CloudsPass extends PassBase {
     this.updateStationaryCamera(frame)
 
     this.currentPass.render(renderer, null, this.currentRenderTarget)
+    this.resolveMaterial.uniforms.sceneLogDepth.value = renderer.capabilities.logarithmicDepthBuffer
     this.resolvePass.render(renderer, null, this.resolveRenderTarget)
 
     // Store the current view and projection matrices for the next reprojection.
@@ -358,6 +365,13 @@ export class CloudsPass extends PassBase {
   ): void {
     this.currentMaterial.depthBuffer = depthTexture
     this.currentMaterial.depthPacking = depthPacking ?? BasicDepthPacking
+    // The composer supplies an unfiltered native depth texture. Keep it at
+    // scene resolution; the cloud ray lattice is deliberately much coarser.
+    if ((depthPacking ?? BasicDepthPacking) !== BasicDepthPacking) {
+      throw new Error('Cloud reconstruction requires native scene depth')
+    }
+    this.resolveMaterial.uniforms.sceneDepthBuffer.value = depthTexture
+    this.resolveMaterial.uniforms.sceneDepthEnabled.value = true
   }
 
   get outputBuffer(): Texture {

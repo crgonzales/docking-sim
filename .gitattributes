@@ -1,2 +1,2 @@
 # Raw weather volumes are byte arrays, even when their samples contain no NUL.
-apps/web/public/assets/clouds/eve/*.bin binary
+apps/web/public/assets/clouds/volumetric/*.bin binary

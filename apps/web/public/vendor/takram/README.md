@@ -10,4 +10,10 @@ Project/license: https://github.com/takram-design-engineering/three-geospatial
 The atmosphere LUTs are for AtmosphereParameters.DEFAULT (6360 km bottom,
 6420 km top). The spike uses the library's ellipsoid altitude correction for
 the simulation's 6371 km sphere. Do not change the LUT parameters without
-rebaking them. These assets belong only to the isolated feasibility spike.
+rebaking them.
+
+The `atmosphere/`, `clouds/` and `stbn.bin` runtime files are Git-ignored.
+`scripts/setupRendererSpikeAssets.mjs` recreates them from the installed
+packages and the pinned upstream commit, verifies them against the committed
+`asset-checksums.json`, and runs first in `pnpm --filter @docking/web build`,
+so a fresh checkout (including the Cloudflare Pages build) provisions them.

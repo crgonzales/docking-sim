@@ -74,29 +74,29 @@ None.
 
 #### Verification gate initially incomplete
 
-- **Location:** [ground-weather-code-review.md:9](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:9)
+- **Location:** [ground-weather-code-review.md:9](docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:9)
 - **Description:** Round 1 found that GPU motion conformance, regressions, preview checks, and a complete build were still pending, with one new advection test initially failing.
-- **Disposition:** **Addressed.** The corrected suite records 591 web tests and 649 GPU cases passing, complete workspace and post-fix web builds, static-fixture/orbital regressions, 60x preview checks, and full-day visual inspection. [ground-weather-validation.md:31](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-validation.md:31) [ground-weather-validation.md:34](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-validation.md:34) [ground-weather-validation.md:40](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-validation.md:40)
+- **Disposition:** **Addressed.** The corrected suite records 591 web tests and 649 GPU cases passing, complete workspace and post-fix web builds, static-fixture/orbital regressions, 60x preview checks, and full-day visual inspection. [ground-weather-validation.md:31](docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-validation.md:31) [ground-weather-validation.md:34](docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-validation.md:34) [ground-weather-validation.md:40](docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-validation.md:40)
 
 #### Paused post-preview light cache did not refresh
 
-- **Location:** [ground-weather-code-review.md:63](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:63)
+- **Location:** [ground-weather-code-review.md:63](docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:63)
 - **Description:** A saved 60x preview showed a paused light cache aged 99.66 seconds, invalid and with no pending work, because the active-time cadence stopped when paused.
-- **Disposition:** **Addressed.** Paused dynamic weather now requests the final stopped timestamp exactly once without invalidating history or rebuilding the canonical atlas. [EveCloudSystem.ts:212](/Users/carlosgonzales/dev/docking-sim-flight-integrated/apps/web/src/scene/clouds/EveCloudSystem.ts:212) [EveCloudSystem.ts:224](/Users/carlosgonzales/dev/docking-sim-flight-integrated/apps/web/src/scene/clouds/EveCloudSystem.ts:224) The final paired capture preserves the same timestamp and generation 16 with valid age-zero lighting, no pending slices, all 1024 atlas rows ready, and no history reset. [flight-base-1789100598613.json:919](/Users/carlosgonzales/dev/docking-sim-flight-integrated/.evidence.local/flight-base-1789100598613.json:919) [flight-base-1789100598613.json:1030](/Users/carlosgonzales/dev/docking-sim-flight-integrated/.evidence.local/flight-base-1789100598613.json:1030)
+- **Disposition:** **Addressed.** Paused dynamic weather now requests the final stopped timestamp exactly once without invalidating history or rebuilding the canonical atlas. [EveCloudSystem.ts:212](docking-sim-flight-integrated/apps/web/src/scene/clouds/EveCloudSystem.ts:212) [EveCloudSystem.ts:224](docking-sim-flight-integrated/apps/web/src/scene/clouds/EveCloudSystem.ts:224) The final paired capture preserves the same timestamp and generation 16 with valid age-zero lighting, no pending slices, all 1024 atlas rows ready, and no history reset. [flight-base-1789100598613.json:919](docking-sim-flight-integrated/.evidence.local/flight-base-1789100598613.json:919) [flight-base-1789100598613.json:1030](docking-sim-flight-integrated/.evidence.local/flight-base-1789100598613.json:1030)
 
 ### Minor Issues
 
 #### DEV exercise reset bypassed environment reset
 
-- **Location:** [ground-weather-code-review.md:11](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:11)
+- **Location:** [ground-weather-code-review.md:11](docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:11)
 - **Description:** Character-enabled airborne exercise starts reset `FlightSession` directly while the environment listened only to `CharacterSession`.
-- **Disposition:** **Addressed.** Airborne routes subscribe to flight resets, while ground routes subscribe to character resets, yielding exactly one environment discontinuity. [flightEnvironment.ts:286](/Users/carlosgonzales/dev/docking-sim-flight-integrated/apps/web/src/flight/flightEnvironment.ts:286) Regression coverage includes keyboard, direct, exercise, and unsubscribe paths. [flightEnvironment.test.ts:69](/Users/carlosgonzales/dev/docking-sim-flight-integrated/apps/web/src/flight/flightEnvironment.test.ts:69)
+- **Disposition:** **Addressed.** Airborne routes subscribe to flight resets, while ground routes subscribe to character resets, yielding exactly one environment discontinuity. [flightEnvironment.ts:286](docking-sim-flight-integrated/apps/web/src/flight/flightEnvironment.ts:286) Regression coverage includes keyboard, direct, exercise, and unsubscribe paths. [flightEnvironment.test.ts:69](docking-sim-flight-integrated/apps/web/src/flight/flightEnvironment.test.ts:69)
 
 #### Light-cache diagnostics retained stale `ready` state
 
-- **Location:** [ground-weather-code-review.md:13](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:13)
+- **Location:** [ground-weather-code-review.md:13](docking-sim-flight-integrated/docs/6-memo/f18-integration/ground-weather-code-review.md:13)
 - **Description:** Cache invalidation cleared validity and generation but could continue reporting `ready` while fallback rendering and reconstruction were active.
-- **Disposition:** **Addressed.** Invalidation now reports `invalidated` while preserving terminal `failed`, `unsupported`, and `disposed` states. [CloudLightVolume.ts:248](/Users/carlosgonzales/dev/docking-sim-flight-integrated/apps/web/src/scene/clouds/CloudLightVolume.ts:248) [CloudLightVolume.ts:256](/Users/carlosgonzales/dev/docking-sim-flight-integrated/apps/web/src/scene/clouds/CloudLightVolume.ts:256)
+- **Disposition:** **Addressed.** Invalidation now reports `invalidated` while preserving terminal `failed`, `unsupported`, and `disposed` states. [CloudLightVolume.ts:248](docking-sim-flight-integrated/apps/web/src/scene/clouds/CloudLightVolume.ts:248) [CloudLightVolume.ts:256](docking-sim-flight-integrated/apps/web/src/scene/clouds/CloudLightVolume.ts:256)
 
 ### Suggestions
 
@@ -121,4 +121,4 @@ None.
 
 **APPROVED**
 
-All findings are closed; none were overridden or left open. The actual-GPU pause lifecycle remains documented in the coverage-debt ledger with a concrete browser regression path. [COVERAGE-DEBT.md:10](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/4-unit-tests/COVERAGE-DEBT.md:10) The final game tab was left paused at 10:00 and 1x with no post-reload errors. This is an unreleased local milestone-0.10.0 checkpoint; no release, tag, merge, or push is part of this checkpoint.
+All findings are closed; none were overridden or left open. The actual-GPU pause lifecycle remains documented in the coverage-debt ledger with a concrete browser regression path. [COVERAGE-DEBT.md:10](docking-sim-flight-integrated/docs/4-unit-tests/COVERAGE-DEBT.md:10) The final game tab was left paused at 10:00 and 1x with no post-reload errors. This is an unreleased local milestone-0.10.0 checkpoint; no release, tag, merge, or push is part of this checkpoint.

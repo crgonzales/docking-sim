@@ -1,4 +1,5 @@
-// Populate only this checkout from pinned, installed MIT library assets.
+// Populate this checkout from pinned, installed MIT library assets; runs first in the web build.
+// Files are verified against the committed asset-checksums.json when it is present.
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -28,5 +29,12 @@ for (const [file, url] of [
   const data = Buffer.from(await response.arrayBuffer()); await writeFile(path.join(destination, file), data);
   files.push({ file, url, sha256: createHash('sha256').update(data).digest('hex') });
 }
-await writeFile(path.join(destination, 'asset-checksums.json'), JSON.stringify(files, null, 2));
+const manifest = path.join(destination, 'asset-checksums.json');
+let expected = null;
+try { expected = new Map(JSON.parse(await readFile(manifest, 'utf8')).map((entry) => [entry.file, entry.sha256])); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+if (expected) for (const { file, sha256 } of files) {
+  const want = expected.get(file);
+  if (want && want !== sha256) throw new Error(`Checksum mismatch for ${file}: expected ${want}, got ${sha256}`);
+}
+await writeFile(manifest, JSON.stringify(files, null, 2));
 console.log(`Prepared ${files.length} pinned renderer assets in ${destination}`);

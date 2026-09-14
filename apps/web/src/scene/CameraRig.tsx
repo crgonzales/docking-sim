@@ -4,6 +4,8 @@ import { Vector3 } from 'three';
 import { conjugateQuaternion, rotateVector } from '@docking/sim-core';
 import { useTelemetryBus } from '../telemetry/bus';
 import { useViewStore } from '../viewStore';
+import { useAppModeStore } from '../appModeStore';
+import { useScenarioStore } from '../telemetry/scenarioStore';
 import {
   CAMERA_NEAR,
   CAMERA_FAR,
@@ -249,7 +251,8 @@ export function CameraRig({ worldFrame, terrainSourceRef }: CameraRigProps) {
       } else {
         // Keep the cinematic framing on the approach corridor rather than on
         // the vehicle alone: the target is 70% of the way from chaser to port.
-        const between = chaser.clone().lerp(STATION_PORT, 0.7);
+        const teaching = useAppModeStore.getState().mode === 'MISSION' && useScenarioStore.getState().selectedMission === 'FIRST_DOCKING';
+        const between = chaser.clone().lerp(STATION_PORT, teaching ? 0.2 : 0.7);
         const lookAt = worldFrame.toRender([between.x, between.y, between.z]);
         camera.lookAt(new Vector3(...lookAt));
       }

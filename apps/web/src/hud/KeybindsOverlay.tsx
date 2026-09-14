@@ -1,9 +1,14 @@
 import { BINDINGS, type BindingGroup } from '../input/bindings';
+import { useScenarioStore } from '../telemetry/scenarioStore';
+import { useAppModeStore } from '../appModeStore';
 import { useViewStore } from '../viewStore';
 
 const GROUPS: readonly BindingGroup[] = ['MODE', 'TRANSLATE', 'ROTATE', 'CAMERA', 'SAFETY'];
 
 export function KeybindsOverlay() {
+  const appMode = useAppModeStore(s => s.mode);
+  const first = useScenarioStore(s => s.selectedMission === 'FIRST_DOCKING');
+  const lesson = appMode === 'MISSION' && first;
   const open = useViewStore((state) => state.keybindsOpen);
   const viewMode = useViewStore((state) => state.mode);
   const debugSubmode = useViewStore((state) => state.debugSubmode);
@@ -25,7 +30,7 @@ export function KeybindsOverlay() {
       {GROUPS.map((group) => (
         <section className="hud-keybinds-group" key={group}>
           <div className="hud-keybinds-group-title">{group}</div>
-          {BINDINGS.filter((binding) => binding.group === group).map((binding) => (
+          {BINDINGS.filter((binding) => binding.group === group && (!binding.lessonOnly || lesson) && !(lesson && ['toggleControlMode', 'toggleManualSubMode', 'toggleManualAuthority', 'cycleController'].includes(binding.id))).map((binding) => (
             <div className="hud-keybind" key={binding.id}>
               <span className="hud-keybind-code">{binding.label}</span>
               <span>{descriptionFor(binding.id, binding.description)}</span>

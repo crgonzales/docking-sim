@@ -8,14 +8,19 @@ import { parseFlytoParam } from './flytoParam';
 import { useViewStore } from '../viewStore';
 import { LIBRARY_RENDERER, PROBE_CLOUDS, PROBE_DPR, PROBE_PROFILE, PROBE_QUALITY, PROBE_WEATHER, PROBE_WEATHER_STRUCTURE } from './renderProbeConfig';
 import { libraryStatus } from './LibraryEffects';
+import { resolveCloudSystem } from './clouds/cloudSystemSelection';
 import { cloudShadowProbe } from './libraryCloudShadowDiagnostics';
 import { renderTimings } from './renderTimings';
 import { renderEvidenceName } from './renderEvidenceName';
 import { runCloudConformance, type CloudConformanceReport } from './clouds/CloudConformanceFixture';
+import type { runSceneSmaaFixture } from './SceneSmaaFixture';
 
 const sites = { Reference: [40.5, -75], Formation: [40.88, -75.42], KSC: [28.6, -80.6], Mountains: [27.98, 86.92], Night: [-28.6, 99.4] } as const;
 const MAX_SAMPLES = 900; // Fifteen minutes at 1 Hz, including the planned ten-minute soak.
 type SweepDirection = 'descending' | 'ascending';
+type SceneAaCheck = { status: 'not-run' | 'running' } |
+  ({ status: 'complete' } & Awaited<ReturnType<typeof runSceneSmaaFixture>>) |
+  { status: 'error'; error: string };
 interface ProbeClock {
   last: number;
   start: number;
@@ -29,6 +34,7 @@ interface ProbeClock {
 }
 export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
   const renderer = useThree(state => state.gl);
+  const invalidate = useThree(state => state.invalidate);
   const query = new URLSearchParams(window.location.search);
   const flightQuery = new URLSearchParams(query);
   flightQuery.delete('fixture');
@@ -42,6 +48,8 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
   const [text, setText] = useState('Measuring…');
   const [conformance, setConformance] = useState<CloudConformanceReport>();
   const conformanceBusy = useRef(false);
+  const [sceneAa, setSceneAa] = useState<SceneAaCheck>({ status: 'not-run' });
+  const sceneAaBusy = useRef(false);
   const history = useRef<number[]>([]);
   const clock = useRef<ProbeClock>({ last: performance.now(), start: performance.now(), frames: 0, rebases: 0, anchor: worldFrame.anchor, runStart: 0, sweepDirection: null, contextReady: false, samples: [] });
   function pose(teleport = true) {
@@ -94,10 +102,10 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
     if (capture.current) {
       capture.current = false;
       const p = selected.current;
-      const backend = LIBRARY_RENDERER ? (query.get('cloudSystem') === 'eve' ? 'eve' : 'lib') : 'old';
+      const backend = LIBRARY_RENDERER ? (resolveCloudSystem(query.get('cloudSystem')) === 'volumetric' ? 'volumetric' : 'lib') : 'old';
       const name = renderEvidenceName(backend, PROBE_QUALITY, query.get('stage'));
       void fetch('/__render-evidence', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, image: gl.domElement.toDataURL('image/png'), samples: c.samples, context: { url: window.location.href, ...p, shadow: { ...cloudShadowProbe }, dpr: PROBE_DPR, profile: PROBE_PROFILE, videoRecording: recorder.current?.state === 'recording', sweep: c.sweepDirection, drawingBuffer: [gl.domElement.width, gl.domElement.height], userAgent: navigator.userAgent } })
+        body: JSON.stringify({ name, image: gl.domElement.toDataURL('image/png'), samples: c.samples, context: { url: window.location.href, ...p, shadow: { ...cloudShadowProbe }, dpr: PROBE_DPR, profile: PROBE_PROFILE, videoRecording: recorder.current?.state === 'recording', sweep: c.sweepDirection, drawingBuffer: [gl.domElement.width, gl.domElement.height], userAgent: navigator.userAgent, sceneAa } })
       }).then(r => r.ok ? setSaved(name) : setSaved('Capture failed'));
     }
     if (c.runStart) {
@@ -131,7 +139,7 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
       lightingSelection: libraryStatus.lightingSelection,
       // Status is mutated in place by the renderer. Retaining it here rewrites
       // every historical sample to the final frame's representation/state.
-      eve: structuredClone(libraryStatus.eve),
+      volumetric: structuredClone(libraryStatus.volumetric),
       timings: timingSnapshot, conformance,
     };
     c.samples.push(sample);
@@ -159,9 +167,9 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
     <div>{(['fitted', 'original'] as const).map(range => <button key={range} onClick={() => { cloudShadowProbe.range = range; }}>Shadow range {range}</button>)}</div>
     <div>{[true, false].map(enabled => <button key={String(enabled)} onClick={() => { cloudShadowProbe.waterReflections = enabled; }}>Water reflections {enabled ? 'on' : 'off'}</button>)}</div>
     <button onClick={() => { capture.current = true; }}>Capture evidence</button><span>{saved}</span>
-    {query.get('cloudSystem') === 'eve' && <>
-      <button disabled={conformanceBusy.current} onClick={() => {
-        if (conformanceBusy.current) return;
+    {resolveCloudSystem(query.get('cloudSystem')) === 'volumetric' && <>
+      <button disabled={conformanceBusy.current || sceneAaBusy.current} onClick={() => {
+        if (conformanceBusy.current || sceneAaBusy.current) return;
         conformanceBusy.current = true;
         setSaved('Running production cloud shader fixtures');
         void runCloudConformance(renderer).then(setConformance).finally(() => {
@@ -171,10 +179,31 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
       }}>Run cloud conformance</button>
       <output data-testid="cloud-conformance" style={{ display: 'block', maxHeight: 140, overflow: 'auto' }}>{JSON.stringify(conformance ?? { status: 'not-run' })}</output>
     </>}
+    {(import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV && <>
+      <button disabled={sceneAaBusy.current || conformanceBusy.current} onClick={() => {
+        if (sceneAaBusy.current || conformanceBusy.current) return;
+        sceneAaBusy.current = true;
+        setSceneAa({ status: 'running' });
+        setSaved('Running scene AA check');
+        // Load only on explicit dev UI request; reuse the current renderer.
+        void import('./SceneSmaaFixture').then(({ runSceneSmaaFixture }) => runSceneSmaaFixture(renderer))
+          .then(report => {
+            setSceneAa({ status: 'complete', ...report });
+            setSaved(report.passed ? 'Scene AA check passed' : 'Scene AA check failed');
+          }).catch(error => {
+            setSceneAa({ status: 'error', error: String(error) });
+            setSaved('Scene AA check error');
+          }).finally(() => {
+            sceneAaBusy.current = false;
+            invalidate();
+          });
+      }}>Run scene AA check</button>
+      <output data-testid="scene-aa-check" style={{ display: 'block', maxHeight: 140, overflow: 'auto', overflowWrap: 'anywhere' }}>{JSON.stringify(sceneAa)}</output>
+    </>}
     <button onClick={() => {
       const name = `timings-${PROBE_CLOUDS ? 'clouds' : 'clear'}-${Date.now()}`;
       void fetch('/__render-evidence', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, samples: clock.current.samples, context: { url: window.location.href, ...selected.current, profile: PROBE_PROFILE, videoRecording: false, sampleLimit: MAX_SAMPLES } })
+        body: JSON.stringify({ name, samples: clock.current.samples, context: { url: window.location.href, ...selected.current, profile: PROBE_PROFILE, videoRecording: false, sampleLimit: MAX_SAMPLES, sceneAa } })
       }).then(r => setSaved(r.ok ? name : 'Timing save failed'));
     }}>Save timing evidence</button>
     <button onClick={() => {

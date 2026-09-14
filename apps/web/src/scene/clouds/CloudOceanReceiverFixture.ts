@@ -2,11 +2,11 @@ import { EffectPass } from 'postprocessing';
 import { BasicDepthPacking, DataArrayTexture, FloatType, Matrix3, RGBAFormat,
   Uniform, Vector2, Vector3, WebGLRenderTarget, type WebGLRenderer } from 'three';
 import { Ellipsoid } from '@takram/three-geospatial';
-import { EveAerialPerspectiveEffect } from './EveAerialPerspectiveEffect';
+import { VolumetricAerialPerspectiveEffect } from './VolumetricAerialPerspectiveEffect';
 import type { CloudsMaterial } from './takramCloudBackend';
 import type { CloudConformanceResources } from './CloudConformanceResources';
 
-class OceanReceiverDiagnostic extends EveAerialPerspectiveEffect {
+class OceanReceiverDiagnostic extends VolumetricAerialPerspectiveEffect {
   readonly originalReceiver = new Uniform(0);
   observeReceiver(): void {
     const source = this.getFragmentShader();
@@ -16,7 +16,7 @@ class OceanReceiverDiagnostic extends EveAerialPerspectiveEffect {
     this.uniforms.set('fixtureOriginalReceiver', this.originalReceiver);
     this.setFragmentShader('uniform float fixtureOriginalReceiver;\n' + source.replace(correction,
       'if (fixtureOriginalReceiver < 0.5 && waterOpaque && waterFraction > 0.0)').replace('  vec3 radiance;',
-      '  outputColor = vec4(eveSurfaceSkyVisibility, sunTransmittance, waterFraction, 1.0); return;\n  vec3 radiance;'));
+      '  outputColor = vec4(volumetricSurfaceSkyVisibility, sunTransmittance, waterFraction, 1.0); return;\n  vec3 radiance;'));
   }
 }
 
@@ -48,12 +48,12 @@ export async function verifyOceanShadowReceiver(
   const pass = new EffectPass(resources.camera, aerial);
   try {
     aerial.installCloudLighting({
-      eveWeatherSunDirectionECEF: new Uniform(new Vector3(1, 0, 0)),
-      eveCloudPlanetRadiusM: new Uniform(radius), eveCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
-      eveLightVolumeTexture: new Uniform(cache),
-      eveLightFrame: new Uniform(new Matrix3().set(0, 0, 1, 1, 0, 0, 0, 1, 0)),
-      eveLightCapRadius: new Uniform(1), eveLightAltitudeBoundsM: new Uniform(new Vector2(0, 2000)),
-      eveLightSlices: new Uniform(2), eveLightValid: new Uniform(1), eveLightGeneration: new Uniform(1),
+      volumetricWeatherSunDirectionECEF: new Uniform(new Vector3(1, 0, 0)),
+      volumetricCloudPlanetRadiusM: new Uniform(radius), volumetricCloudAltitudeBoundsM: new Uniform(new Vector2(1000, 2000)),
+      volumetricLightVolumeTexture: new Uniform(cache),
+      volumetricLightFrame: new Uniform(new Matrix3().set(0, 0, 1, 1, 0, 0, 0, 1, 0)),
+      volumetricLightCapRadius: new Uniform(1), volumetricLightAltitudeBoundsM: new Uniform(new Vector2(0, 2000)),
+      volumetricLightSlices: new Uniform(2), volumetricLightValid: new Uniform(1), volumetricLightGeneration: new Uniform(1),
     }, `MediaSample sampleCloudMedia(const vec3 p, const float footprintM, const float lod, const float jitter) {
       MediaSample m; m.density = 0.0; m.weight = vec4(0.0); m.scattering = 0.0;
       m.extinction = 0.0; m.phaseAnisotropy = vec2(0.0); m.phaseMix = 0.0; return m;

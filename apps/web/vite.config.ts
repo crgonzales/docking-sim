@@ -9,7 +9,7 @@ function renderEvidence(): Plugin {
       if (req.method !== 'POST') { res.statusCode = 405; res.end(); return; }
       try {
         let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 65000000) throw new Error('Capture too large'); }
-        const { name, image, video, samples, context } = JSON.parse(body);
+        const { name, image, video, audio, samples, context } = JSON.parse(body);
         if (!/^[a-zA-Z0-9_-]{1,100}$/.test(name)) throw new Error('Invalid capture name');
         const dir = fileURLToPath(new URL('../../.evidence.local/', import.meta.url));
         await mkdir(dir, { recursive: true });
@@ -20,6 +20,10 @@ function renderEvidence(): Plugin {
         if (video) {
           if (!video.startsWith('data:video/webm;base64,')) throw new Error('Expected WebM');
           await writeFile(`${dir}/${name}.webm`, Buffer.from(video.slice('data:video/webm;base64,'.length), 'base64'));
+        }
+        if (audio) {
+          if (!audio.startsWith('data:audio/wav;base64,')) throw new Error('Expected WAV');
+          await writeFile(`${dir}/${name}.wav`, Buffer.from(audio.slice('data:audio/wav;base64,'.length), 'base64'));
         }
         await writeFile(`${dir}/${name}.json`, JSON.stringify({ context, samples }, null, 2));
         res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ saved: name }));

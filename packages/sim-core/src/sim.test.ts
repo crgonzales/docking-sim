@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { hillToBody, rotateVector, smallAngleExp } from './attitude.js';
+import { errorQuaternion, hillToBody, rotateVector, smallAngleExp, smallAngleLog } from './attitude.js';
+import { CREW_DRAGON_THRUSTERS } from './crewDragon.js';
 import { createSimLoop, type SimConfig } from './sim.js';
 import { propagateCW } from './cw.js';
 import { MEAN_MOTION_RAD_S, stepTruth } from './dynamics.js';
@@ -43,6 +44,30 @@ function holdDistance(state: ReturnType<ReturnType<typeof createSimLoop>['getTru
 }
 
 describe('SimLoop', () => {
+  it.each([[0.08, 'DOCKED'], [0.15, 'COLLISION'], [0.9, 'NONE']] as const)(
+    'evaluates the physical port face and capture envelope at %s m lateral offset', (offset, outcome) => {
+      const base = config();
+      const sim = createSimLoop({ ...base, initial: { ...base.initial,
+        r_hill_m: [offset, -10.44, 0], v_hill_mps: [0, 0.05, 0] } }, 1007);
+      sim.setControlMode('MANUAL'); sim.setManualCommand({ translation: [0, 0, 0], rotation: [0, 0, 0] });
+      expect(sim.stepTo(0.1).at(-1)!.outcome).toBe(outcome);
+    });
+
+  it('integrates short torque pulses through the IMU window while navigating on gyros', () => {
+    const base = config();
+    const sim = createSimLoop({ ...base, thrusters: { specs: CREW_DRAGON_THRUSTERS },
+      sensors: { ...base.sensors, gyro_bias_random_walk_rps_sqrt_s: 0 },
+      fsw: { ...base.fsw, mekfConfig: { initial_q_ref_BI: [1, 0, 0, 0] } } }, 1008);
+    sim.setControlMode('MANUAL'); sim.setManualSubMode('PULSE'); sim.setNavSource('BACKUP');
+    let maxAngle = 0;
+    for (let tick = 1; tick <= 100; tick++) {
+      sim.setManualCommand({ translation: [0, 0, 0], rotation: [tick % 8 < 4 ? 0.3 : -0.3, 0.2, -0.1] });
+      const frame = sim.stepTo(tick / 10).at(-1)!;
+      const error = errorQuaternion(sim.getRenderState().q_BH, frame.q_BH_est);
+      maxAngle = Math.max(maxAngle, Math.hypot(...smallAngleLog(error)));
+    }
+    expect(maxAngle).toBeLessThan(1e-5);
+  });
   it('is deterministic and returns exactly the crossed FSW frames', () => {
     const first = createSimLoop(config(), 20260806);
     const second = createSimLoop(config(), 20260806);
@@ -193,9 +218,16 @@ describe('SimLoop', () => {
 
     sim.stepTo(0.1);
     expect(Object.values(sim.getRenderState().thruster_duty).every((duty) => duty === 0)).toBe(true);
-    sim.stepTo(0.4);
-    const duty = Object.values(sim.getRenderState().thruster_duty);
-    expect(duty.some((value) => value > 0 && value < 1)).toBe(true);
+    // A bounded allocator can redistribute equivalent solutions between jets.
+    // Observe a full PWM cycle rather than assuming the fourth window fires.
+    const windows: number[][] = [];
+    for (let tick = 2; tick <= 10; tick++) {
+      sim.stepTo(tick / 10);
+      const duty = Object.values(sim.getRenderState().thruster_duty);
+      expect(duty.every(value => value >= 0 && value <= 1)).toBe(true);
+      windows.push(duty);
+    }
+    expect(windows.some(duty => duty.some(value => value > 0 && value < 1))).toBe(true);
   });
 
   it('reports a stuck-open truth jet even while FSW commands that jet closed', () => {

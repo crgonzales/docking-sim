@@ -1,6 +1,6 @@
 // Equirectangular radial-column preparation for the distant cloud path.
-// Requires the canonical cloudDensity.glsl include (eveSampleWeather,
-// sampleCloudMedia, profile tables and the EVE cloud media ABI).
+// Requires the canonical cloudDensity.glsl include (volumetricSampleWeather,
+// sampleCloudMedia, profile tables and the VOLUMETRIC cloud media ABI).
 //
 // Payload channels are all linearly mip-safe:
 //   R = column opacity (1 - T)
@@ -10,13 +10,13 @@
 // Consumers recover conditional means by dividing GBA by R when R > 0.
 
 
-const int EVE_COLUMN_MAX_SEGMENTS = 48;
+const int VOLUMETRIC_COLUMN_MAX_SEGMENTS = 48;
 
-vec3 eveColumnDirectionFromUv(const vec2 uv) {
+vec3 volumetricColumnDirectionFromUv(const vec2 uv) {
   float longitude = (uv.x - 0.5) * (2.0 * PI);
   float latitude = (uv.y - 0.5) * PI;
   float latitudeRadius = cos(latitude);
-  // This is the inverse of eveWeatherUv: north (+Z) is V=1 and longitude
+  // This is the inverse of volumetricWeatherUv: north (+Z) is V=1 and longitude
   // follows the same -X seam / +X midpoint convention.
   return vec3(
     latitudeRadius * cos(longitude),
@@ -25,9 +25,9 @@ vec3 eveColumnDirectionFromUv(const vec2 uv) {
   );
 }
 
-vec4 eveIntegrateRadialColumn(const vec3 radial, const int requestedSegments, const float footprintM) {
-  vec2 weather = eveSampleWeather(
-    radial * eveWeatherPlanetRadiusM,
+vec4 volumetricIntegrateRadialColumn(const vec3 radial, const int requestedSegments, const float footprintM) {
+  vec2 weather = volumetricSampleWeather(
+    radial * volumetricWeatherPlanetRadiusM,
     footprintM,
     0.0
   );
@@ -40,18 +40,18 @@ vec4 eveIntegrateRadialColumn(const vec3 radial, const int requestedSegments, co
   // Thus all 32/48 midpoint samples resolve even thin high-altitude profiles
   // instead of being spent across the complete multi-profile support range.
   float typeScalar = clamp(weather.y, 0.0, 1.0) *
-    float(EVE_CLOUD_PROFILE_COUNT - 1);
-  int leftIndex = min(EVE_CLOUD_PROFILE_COUNT - 1, int(floor(typeScalar)));
-  int rightIndex = min(EVE_CLOUD_PROFILE_COUNT - 1, leftIndex + 1);
+    float(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1);
+  int leftIndex = min(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1, int(floor(typeScalar)));
+  int rightIndex = min(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1, leftIndex + 1);
   float typeBlend = typeScalar - float(leftIndex);
   float baseAltitudeM = mix(
-    eveCloudBaseAltitudeM[leftIndex],
-    eveCloudBaseAltitudeM[rightIndex],
+    volumetricCloudBaseAltitudeM[leftIndex],
+    volumetricCloudBaseAltitudeM[rightIndex],
     typeBlend
   );
   float topAltitudeM = mix(
-    eveCloudTopAltitudeM[leftIndex],
-    eveCloudTopAltitudeM[rightIndex],
+    volumetricCloudTopAltitudeM[leftIndex],
+    volumetricCloudTopAltitudeM[rightIndex],
     typeBlend
   );
   float thicknessM = topAltitudeM - baseAltitudeM;
@@ -59,7 +59,7 @@ vec4 eveIntegrateRadialColumn(const vec3 radial, const int requestedSegments, co
     return vec4(0.0);
   }
 
-  int segmentCount = clamp(requestedSegments, 1, EVE_COLUMN_MAX_SEGMENTS);
+  int segmentCount = clamp(requestedSegments, 1, VOLUMETRIC_COLUMN_MAX_SEGMENTS);
   float segmentLengthM = thicknessM / float(segmentCount);
   float transmittance = 1.0;
   vec3 weightedMoments = vec3(0.0);
@@ -67,12 +67,12 @@ vec4 eveIntegrateRadialColumn(const vec3 radial, const int requestedSegments, co
   // Integrate from space toward the surface. Each segment uses the analytical
   // Beer solution for constant midpoint media, and its lost transmittance is
   // the probability weight of the first event in that segment.
-  for (int segment = 0; segment < EVE_COLUMN_MAX_SEGMENTS; ++segment) {
+  for (int segment = 0; segment < VOLUMETRIC_COLUMN_MAX_SEGMENTS; ++segment) {
     if (segment >= segmentCount) break;
     float altitudeM = topAltitudeM -
       (float(segment) + 0.5) * segmentLengthM;
     MediaSample media = sampleCloudMedia(
-      radial * (eveWeatherPlanetRadiusM + altitudeM),
+      radial * (volumetricWeatherPlanetRadiusM + altitudeM),
       footprintM,
       0.0,
       0.5

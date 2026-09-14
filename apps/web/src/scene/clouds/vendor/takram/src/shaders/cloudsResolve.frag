@@ -14,6 +14,11 @@ uniform bool historyValid;
 uniform bool historyEnabled;
 uniform bool stationaryCamera;
 uniform bool accumulateFreshSamples;
+uniform sampler2D sceneDepthBuffer;
+uniform bool sceneDepthEnabled;
+uniform vec2 sceneCameraRange;
+uniform bool sceneLogDepth;
+uniform bool scenePerspective;
 uniform float depthAbsoluteThresholdM;
 uniform float stationaryDepthAbsoluteThresholdM;
 uniform float depthRelativeThreshold;
@@ -33,7 +38,8 @@ uniform vec2 jitterOffset;
 in vec2 vUv;
 
 layout(location = 0) out vec4 outputColor;
-layout(location = 1) out float outputDepth;
+layout(location = 1) out vec2 outputDepth;
+float resolvedDepth;
 #ifdef SHADOW_LENGTH
 layout(location = 2) out float outputShadowLength;
 #endif // SHADOW_LENGTH
@@ -59,6 +65,36 @@ const ivec4[4] bayerIndices = ivec4[4](
 
 ivec2 clampCoord(const sampler2D inputBuffer, const ivec2 coord) {
   return clamp(coord, ivec2(0), textureSize(inputBuffer, 0) - 1);
+}
+
+// Full-resolution opaque depth owns the silhouette. The sparse cloud ray
+// lattice must never spread an occluded ray into neighboring background pixels.
+float sceneViewDepth(const vec2 uv) {
+  if (!sceneDepthEnabled) return 0.0;
+  float d = texture(sceneDepthBuffer, uv).r;
+  if (d >= 1.0 - 1e-7) return 0.0;
+  float n = sceneCameraRange.x, f = sceneCameraRange.y;
+  if (!scenePerspective) return n + d * (f - n);
+  if (sceneLogDepth) return exp2(d * log2(f + 1.0)) - 1.0;
+  return n * f / (f - d * (f - n));
+}
+
+bool sameOpaqueSurface(const float a, const float b) {
+  if (!sceneDepthEnabled) return true;
+  if (a == 0.0 || b == 0.0) return a == b;
+  return abs(a - b) <= max(0.5, 0.02 * b);
+}
+
+vec2 currentRayUv(const ivec2 tap) {
+  #ifdef TEMPORAL_UPSCALE
+  return (vec2(tap * 4) + jitterOffset + 2.0) * texelSize;
+  #else
+  return (vec2(tap) + 0.5) * texelSize;
+  #endif
+}
+
+bool compatibleRay(const ivec2 tap) {
+  return sameOpaqueSurface(sceneViewDepth(currentRayUv(tap)), sceneViewDepth(vUv));
 }
 
 bool positiveDepth(const float depth) {
@@ -119,17 +155,24 @@ vec4 boundedVarianceClipping(
   vec4 neighborhoodMin = current;
   vec4 neighborhoodMax = current;
   vec4 neighbor;
+  float count = 0.0;
+  ivec2 tap;
   #pragma unroll_loop_start
   for (int i = 0; i < 9; ++i) {
-    neighbor = texelFetch(inputBuffer, clampCoord(inputBuffer, coord + neighborOffsets[i]), 0);
-    moment1 += neighbor;
-    moment2 += neighbor * neighbor;
-    neighborhoodMin = min(neighborhoodMin, neighbor);
-    neighborhoodMax = max(neighborhoodMax, neighbor);
+    tap = clampCoord(inputBuffer, coord + neighborOffsets[i]);
+    if (compatibleRay(tap)) {
+      neighbor = texelFetch(inputBuffer, tap, 0);
+      count += 1.0;
+      moment1 += neighbor;
+      moment2 += neighbor * neighbor;
+      neighborhoodMin = min(neighborhoodMin, neighbor);
+      neighborhoodMax = max(neighborhoodMax, neighbor);
+    }
   }
   #pragma unroll_loop_end
-  vec4 mean = moment1 / 9.0;
-  vec4 sigma = sqrt(max(moment2 / 9.0 - mean * mean, 0.0)) * clamp(gamma, 0.0, 2.0);
+  if (count == 0.0) return current;
+  vec4 mean = moment1 / count;
+  vec4 sigma = sqrt(max(moment2 / count - mean * mean, 0.0)) * clamp(gamma, 0.0, 2.0);
   mean = clamp(mean, neighborhoodMin, neighborhoodMax);
   vec4 minColor = max(neighborhoodMin, mean - sigma);
   vec4 maxColor = min(neighborhoodMax, mean + sigma);
@@ -199,7 +242,11 @@ bool stationaryHistory(
   // Keep the complete tuple, including clear pixels and their zero depth. Do
   // not bilinearly mix surfaces or clip against today's other Bayer positions.
   color = texelFetch(colorHistoryBuffer, coord, 0);
-  depth = texelFetch(depthHistoryBuffer, coord, 0).r;
+  vec2 previousDepths = texelFetch(depthHistoryBuffer, coord, 0).rg;
+  depth = previousDepths.r;
+  // A stationary camera does not imply stationary vehicles. Reject their old
+  // occlusion immediately, including formerly clear pixels behind a moved ship.
+  if (!sameOpaqueSurface(previousDepths.g * 1e4, sceneViewDepth(vUv))) return false;
   shadowLength = 0.0;
   if (any(isnan(color)) || any(isinf(color)) || color.a < 0.0 || color.a > 1.0 ||
       (color.a > historyOpacityThreshold ? !positiveDepth(depth) : depth != 0.0)) {
@@ -231,6 +278,7 @@ void spatialCurrent(
   depthVelocity = vec4(0.0);
   shadowLength = 0.0;
   float depthWeight = 0.0;
+  float spatialWeight = 0.0;
   bool validReprojection = true;
   for (int y = 0; y < 2; ++y) {
     for (int x = 0; x < 2; ++x) {
@@ -238,6 +286,8 @@ void spatialCurrent(
         (y == 0 ? 1.0 - fraction.y : fraction.y);
       if (weight <= 0.0) continue;
       ivec2 tap = clampCoord(colorBuffer, baseCoord + ivec2(x, y));
+      if (!compatibleRay(tap)) continue;
+      spatialWeight += weight;
       vec4 sampleColor = texelFetch(colorBuffer, tap, 0);
       vec4 sampleDepth = texelFetch(depthVelocityBuffer, tap, 0);
       color += sampleColor * weight;
@@ -257,6 +307,10 @@ void spatialCurrent(
       }
     }
   }
+  if (spatialWeight > 0.0) {
+    color /= spatialWeight;
+    shadowLength /= spatialWeight;
+  }
   if (depthWeight > 0.0) depthVelocity /= depthWeight;
   // Do not turn a behind-camera/nonfinite contributing ray into valid history
   // by averaging its metadata with a valid neighbor.
@@ -274,7 +328,7 @@ void temporalUpscale(
   vec4 centerDepthVelocity = texelFetch(depthVelocityBuffer, lowResCoord, 0);
   bool currentCloud = currentColor.a > historyOpacityThreshold && positiveDepth(centerDepthVelocity.r);
   outputColor = currentColor;
-  outputDepth = currentCloud ? centerDepthVelocity.r : 0.0;
+  resolvedDepth = currentCloud ? centerDepthVelocity.r : 0.0;
   outputShadowLength = 0.0;
   #ifdef SHADOW_LENGTH
   vec4 currentShadowLength = vec4(texelFetch(shadowLengthBuffer, lowResCoord, 0).rgb, 1.0);
@@ -298,7 +352,7 @@ void temporalUpscale(
     if (validRay && validUv &&
         stationaryHistory(coord, retainedColor, retainedDepth, retainedShadow)) {
       outputColor = retainedColor;
-      outputDepth = retainedDepth;
+      resolvedDepth = retainedDepth;
       outputShadowLength = retainedShadow;
       return;
     }
@@ -308,7 +362,7 @@ void temporalUpscale(
     spatialCurrent(coord, currentColor, centerDepthVelocity, outputShadowLength);
     currentCloud = currentColor.a > historyOpacityThreshold && positiveDepth(centerDepthVelocity.r);
     outputColor = currentColor;
-    outputDepth = currentCloud ? centerDepthVelocity.r : 0.0;
+    resolvedDepth = currentCloud ? centerDepthVelocity.r : 0.0;
     #ifdef SHADOW_LENGTH
     currentShadowLength = vec4(outputShadowLength, 0.0, 0.0, 1.0);
     #endif // SHADOW_LENGTH
@@ -351,7 +405,7 @@ void temporalAntialiasing(const ivec2 coord, out vec4 outputColor, out float out
   vec4 centerDepthVelocity = texelFetch(depthVelocityBuffer, coord, 0);
   bool currentCloud = currentColor.a > historyOpacityThreshold && positiveDepth(centerDepthVelocity.r);
   outputColor = currentColor;
-  outputDepth = currentCloud ? centerDepthVelocity.r : 0.0;
+  resolvedDepth = currentCloud ? centerDepthVelocity.r : 0.0;
   outputShadowLength = 0.0;
   #ifdef SHADOW_LENGTH
   vec4 currentShadowLength = vec4(texelFetch(shadowLengthBuffer, coord, 0).rgb, 1.0);
@@ -404,9 +458,13 @@ void main() {
   temporalAntialiasing(coord, outputColor, outputShadowLength);
   #endif // TEMPORAL_UPSCALE
 
-  if (!(outputColor.a > historyOpacityThreshold)) {
-    outputDepth = 0.0;
+  float opaqueDepthM = sceneViewDepth(vUv);
+  if (sceneDepthEnabled && opaqueDepthM > 0.0 && resolvedDepth * 1e4 > opaqueDepthM + 0.5) {
+    outputColor = vec4(0.0);
+    outputShadowLength = 0.0;
   }
+  if (!(outputColor.a > historyOpacityThreshold)) resolvedDepth = 0.0;
+  outputDepth = vec2(resolvedDepth, opaqueDepthM * 1e-4);
 
   #if defined(SHADOW_LENGTH) && defined(DEBUG_SHOW_SHADOW_LENGTH)
   outputColor = vec4(turbo(outputShadowLength * 0.05), 1.0);

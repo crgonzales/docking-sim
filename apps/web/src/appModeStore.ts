@@ -7,7 +7,12 @@ interface AppModeState {
   setMode: (mode: AppMode) => void;
 }
 
+function initialMode(): AppMode {
+  const mode = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('mode') : null;
+  return mode === 'flight' ? 'FLIGHT' : mode === 'mission' ? 'MISSION' : 'SANDBOX';
+}
+
 export const useAppModeStore = create<AppModeState>((set) => ({
-  mode: typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'flight' ? 'FLIGHT' : 'SANDBOX',
+  mode: initialMode(),
   setMode: (mode) => set({ mode }),
 }));

@@ -7,11 +7,11 @@ import type { CloudConformanceResult } from './CloudConformanceFixture';
 // Homogeneous shell: analytic Beer opacity and first-event height are an
 // independent oracle for the actual production atlas builder and GPU mip chain.
 const mediaGLSL = `
-uniform float eveWeatherPlanetRadiusM;
-uniform vec4 eveCloudBaseAltitudeM, eveCloudTopAltitudeM;
+uniform float volumetricWeatherPlanetRadiusM;
+uniform vec4 volumetricCloudBaseAltitudeM, volumetricCloudTopAltitudeM;
 uniform float fixtureExtinction, fixtureSparse;
-const int EVE_CLOUD_PROFILE_COUNT = 4;
-vec2 eveSampleWeather(const vec3 p, const float footprintM, const float lod) {
+const int VOLUMETRIC_CLOUD_PROFILE_COUNT = 4;
+vec2 volumetricSampleWeather(const vec3 p, const float footprintM, const float lod) {
   return vec2(fixtureSparse > 0.5 && p.z < 0.0 ? 0.0 : 1.0, 0.0);
 }
 MediaSample sampleCloudMedia(const vec3 p, const float footprintM, const float lod, const float jitter) {
@@ -27,9 +27,9 @@ export async function runCloudColumnConformance(
 ): Promise<CloudConformanceResult[]> {
   const atlas = new CloudColumnAtlas({ quality: 'low', rowsPerFrame: 128, mediaGLSL });
   const uniforms = {
-    eveWeatherPlanetRadiusM: new Uniform(6_371_000),
-    eveCloudBaseAltitudeM: new Uniform(new Vector4(1000, 1000, 1000, 1000)),
-    eveCloudTopAltitudeM: new Uniform(new Vector4(2000, 2000, 2000, 2000)),
+    volumetricWeatherPlanetRadiusM: new Uniform(6_371_000),
+    volumetricCloudBaseAltitudeM: new Uniform(new Vector4(1000, 1000, 1000, 1000)),
+    volumetricCloudTopAltitudeM: new Uniform(new Vector4(2000, 2000, 2000, 2000)),
     fixtureExtinction: new Uniform(0.001), fixtureSparse: new Uniform(0),
   };
   const lod = new Uniform(0);
@@ -37,9 +37,9 @@ export async function runCloudColumnConformance(
     uniforms: { ...atlas.uniforms, fixtureLod: lod },
     vertexShader: 'precision highp float; in vec3 position; void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: `precision highp float;
-      uniform sampler2D eveColumnTexture; uniform float fixtureLod;
+      uniform sampler2D volumetricColumnTexture; uniform float fixtureLod;
       layout(location=0) out vec4 color; layout(location=1) out vec4 metadata;
-      void main() { color = textureLod(eveColumnTexture, vec2(0.5, 0.75), fixtureLod); metadata = vec4(0.0); }`,
+      void main() { color = textureLod(volumetricColumnTexture, vec2(0.5, 0.75), fixtureLod); metadata = vec4(0.0); }`,
   });
   const pass = new ShaderPass(material);
   const cases: CloudConformanceResult[] = [];
@@ -52,7 +52,7 @@ export async function runCloudColumnConformance(
     atlas.request(generation, uniforms);
     for (let i = 0; i < 4; ++i) {
       atlas.update(renderer);
-      if (i < 3) record(`generation-${generation}-unpublished-${i}`, [atlas.uniforms.eveColumnReady.value], [0]);
+      if (i < 3) record(`generation-${generation}-unpublished-${i}`, [atlas.uniforms.volumetricColumnReady.value], [0]);
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     }
     if (atlas.status.state !== 'ready') throw new Error(`Column fixture: ${atlas.status.state}: ${atlas.status.error}`);
@@ -69,13 +69,13 @@ export async function runCloudColumnConformance(
     const expected = [opacity, opacity * (2000 - meanDistanceM) / 1000, opacity, opacity * 0.5];
     await sample('homogeneous-opacity-and-moments', 0, expected);
     atlas.request(1, uniforms);
-    record('unchanged-generation-stays-ready', [atlas.uniforms.eveColumnReady.value, atlas.status.completedRows], [1, 512]);
+    record('unchanged-generation-stays-ready', [atlas.uniforms.volumetricColumnReady.value, atlas.status.completedRows], [1, 512]);
     uniforms.fixtureSparse.value = 1;
     await build(2);
     await sample('sparse-base-column', 0, expected);
     await sample('mips-average-opacity-not-optical-depth', 10, expected.map(v => v * 0.5));
     atlas.handleContextLoss();
-    record('context-loss-unpublishes', [atlas.uniforms.eveColumnReady.value, atlas.uniforms.eveColumnGeneration.value], [0, -1]);
+    record('context-loss-unpublishes', [atlas.uniforms.volumetricColumnReady.value, atlas.uniforms.volumetricColumnGeneration.value], [0, -1]);
     // Rebuild the same weather generation: context loss must invalidate the
     // generation guard as well as release the now-empty GPU render target.
     await build(2);
@@ -84,7 +84,7 @@ export async function runCloudColumnConformance(
     await build(3);
     await sample('empty-exact-zero', 0, [0, 0, 0, 0]);
     atlas.invalidate();
-    record('invalidation-unpublishes', [atlas.uniforms.eveColumnReady.value, atlas.uniforms.eveColumnGeneration.value], [0, -1]);
+    record('invalidation-unpublishes', [atlas.uniforms.volumetricColumnReady.value, atlas.uniforms.volumetricColumnGeneration.value], [0, -1]);
   } finally { atlas.dispose(); pass.dispose(); material.dispose(); }
   return cases;
 }

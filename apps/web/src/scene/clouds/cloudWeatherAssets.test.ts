@@ -6,7 +6,7 @@ import {
   RGBAFormat, RGFormat, Texture, UnsignedByteType
 } from 'three'
 
-import { EVE_WEATHER_ASSETS } from './cloudWeather'
+import { VOLUMETRIC_WEATHER_ASSETS } from './cloudWeather'
 import { loadCloudWeatherAssets } from './cloudWeatherAssets'
 
 function fileBytes(path: string): Uint8Array<ArrayBuffer> {
@@ -26,7 +26,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('owned EVE weather texture loading', () => {
+describe('owned VOLUMETRIC weather texture loading', () => {
   it('loads raw formats, reverses only global rows, and configures filtered periodic sampling', async () => {
     const fetcher = serveAssets()
     const assets = await loadCloudWeatherAssets()
@@ -35,7 +35,7 @@ describe('owned EVE weather texture loading', () => {
       const formats = { coverage: RedFormat, typeField: RedFormat, referenceField: RGFormat, noise: RGBAFormat }
       for (const name of ['coverage', 'typeField', 'referenceField', 'noise'] as const) {
         const texture = assets.textures[name] as DataTexture | Data3DTexture
-        const descriptor = EVE_WEATHER_ASSETS[name]
+        const descriptor = VOLUMETRIC_WEATHER_ASSETS[name]
         expect(texture).toBeInstanceOf(name === 'noise' ? Data3DTexture : DataTexture)
         expect(texture.format).toBe(formats[name])
         expect(texture.internalFormat).toBe(descriptor.format)
@@ -67,7 +67,7 @@ describe('owned EVE weather texture loading', () => {
       expect(assets.textures.referenceField?.wrapS).toBe(ClampToEdgeWrapping)
       expect(assets.textures.referenceField?.wrapT).toBe(ClampToEdgeWrapping)
       const noise = assets.textures.noise as Data3DTexture
-      expect(noise.image.depth).toBe(EVE_WEATHER_ASSETS.noise.dimensions[2])
+      expect(noise.image.depth).toBe(VOLUMETRIC_WEATHER_ASSETS.noise.dimensions[2])
       expect([noise.wrapS, noise.wrapT, noise.wrapR]).toEqual([RepeatWrapping, RepeatWrapping, RepeatWrapping])
       // Rectangular 2D chains include the final 1x1 level; the 3D chain shrinks
       // all three axes. Count explicit levels independently of loader helpers.
@@ -96,7 +96,7 @@ describe('owned EVE weather texture loading', () => {
     for (const name of ['coverage', 'typeField', 'referenceField', 'noise'] as const) {
       expect(first.textures[name]).not.toBe(second.textures[name])
       expect((first.textures[name] as DataTexture).image.data.byteLength).toBe(0)
-      expect((second.textures[name] as DataTexture).image.data.byteLength).toBe(EVE_WEATHER_ASSETS[name].bytes)
+      expect((second.textures[name] as DataTexture).image.data.byteLength).toBe(VOLUMETRIC_WEATHER_ASSETS[name].bytes)
     }
     expect(secondDisposal).not.toHaveBeenCalled()
     second.dispose()
@@ -138,7 +138,7 @@ describe('owned EVE weather texture loading', () => {
       const fetcher = serveAssets()
       const good = fetcher.getMockImplementation()!
       fetcher.mockImplementation(async (input, init) => {
-        if (String(input) !== EVE_WEATHER_ASSETS.typeField.path) return good(input, init)
+        if (String(input) !== VOLUMETRIC_WEATHER_ASSETS.typeField.path) return good(input, init)
         if (failure === 'network') throw new Error('network unavailable')
         if (failure === 'http') return new Response('missing', { status: 404 })
         if (failure === 'body') return { ok: true, arrayBuffer: async () => { throw new Error('body interrupted') } } as unknown as Response

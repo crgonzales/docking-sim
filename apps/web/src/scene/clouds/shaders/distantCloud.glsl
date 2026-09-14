@@ -1,36 +1,56 @@
 // A curved, preintegrated representation of the SAME medium as the near view.
 // Its mip chain averages finished opacity and weighted moments, never density
 // noise before the nonlinear coverage threshold. Lighting remains live.
-#define EVE_DISTANT_CLOUDS
-uniform sampler2D eveColumnTexture;
-uniform vec2 eveColumnDimensions;
-uniform float eveColumnReady;
-uniform float eveColumnGeneration;
+#define VOLUMETRIC_DISTANT_CLOUDS
+uniform sampler2D volumetricColumnTexture;
+uniform vec2 volumetricColumnDimensions;
+uniform float volumetricColumnReady;
+uniform float volumetricColumnGeneration;
+
+// The stock finite-octave approximation under-represents the diffuse return
+// from sunlit cloud tops. Calibrate only its higher scattering orders, leaving
+// the direct phase lobe, opacity and ambient/underside lighting intact. This is
+// a lighting approximation, not an additional source of emitted light.
+// Both the volume and column paths call this so the altitude blend stays smooth.
+float volumetricCloudTopScattering(
+  const float opticalDepth, const float cosTheta,
+  const vec2 anisotropy, const float phaseMix,
+  const vec3 physicalPosition, const vec3 rayDirection
+) {
+  float scattering = approximateMultipleScattering(opticalDepth, cosTheta, anisotropy, phaseMix);
+  float singleScattering = exp(-opticalDepth) * phaseFunction(cosTheta, 1.0, anisotropy, phaseMix);
+  float multipleScattering = max(0.0, scattering - singleScattering);
+  vec3 up = normalize(physicalPosition);
+  float sunlitTop = smoothstep(0.0, 0.35, dot(up, sunDirection));
+  float viewedFromAbove = smoothstep(0.0, 0.35, -dot(up, rayDirection));
+  const float topMultipleScatteringScale = 2.0;
+  return scattering + multipleScattering * (topMultipleScatteringScale - 1.0) * sunlitTop * viewedFromAbove;
+}
 
 // Implemented by the host immediately after its lighting hook.
 float cloudSunOpticalDepth(const vec3 position, const float footprintM,
   const float mipLevel, const float jitter, out CloudLightingSample lighting);
 
-vec4 eveReadColumn(const vec3 p, const float footprintM) {
-  vec3 canonicalPositionECEFM = eveWeatherCanonicalPositionECEFM(p);
-  float lod = eveWeatherMapLod(canonicalPositionECEFM, footprintM, 0.0,
-    eveColumnDimensions, vec2(2.0 * PI, PI));
-  return textureLod(eveColumnTexture, eveWeatherUv(canonicalPositionECEFM), lod);
+vec4 volumetricReadColumn(const vec3 p, const float footprintM) {
+  vec3 canonicalPositionECEFM = volumetricWeatherCanonicalPositionECEFM(p);
+  float lod = volumetricWeatherMapLod(canonicalPositionECEFM, footprintM, 0.0,
+    volumetricColumnDimensions, vec2(2.0 * PI, PI));
+  return textureLod(volumetricColumnTexture, volumetricWeatherUv(canonicalPositionECEFM), lod);
 }
 
 // Height stays conditional on coverage through filtering; an empty texel must
 // not drag its neighbor's cloud altitude down to sea level.
-float eveColumnHeightM(const vec4 column) {
+float volumetricColumnHeightM(const vec4 column) {
   return column.r > 1e-5 ? 1000.0 * column.g / column.r : 0.0;
 }
 
-float eveColumnHalfChord(const float radius, const float impactRadius) {
+float volumetricColumnHalfChord(const float radius, const float impactRadius) {
   // Factor r^2 - b^2 instead of subtracting Earth-sized squares as the generic
   // raySphere helper does. Callers test support before using the clamped root.
   return sqrt(max(0.0, (radius - impactRadius) * (radius + impactRadius)));
 }
 
-float eveColumnRadius(const vec3 position) {
+float volumetricColumnRadius(const vec3 position) {
   // Avoid squaring Earth-sized components before the norm. Sub-metre radius
   // roundoff is amplified into tens of metres of depth for grazing rays.
   float scale = max(max(abs(position.x), abs(position.y)), abs(position.z));
@@ -38,14 +58,14 @@ float eveColumnRadius(const vec3 position) {
   return scale * sqrt(dot(scaled, scaled));
 }
 
-vec2 eveColumnShellInterval(
+vec2 volumetricColumnShellInterval(
   const float closestDistance, const float impactRadius,
   const vec2 heightsM, const int crossing
 ) {
-  float outerRadius = eveWeatherPlanetRadiusM + heightsM.y;
+  float outerRadius = volumetricWeatherPlanetRadiusM + heightsM.y;
   if (outerRadius <= impactRadius || heightsM.y <= heightsM.x) return vec2(-1.0);
-  float outerChord = eveColumnHalfChord(outerRadius, impactRadius);
-  float innerChord = eveColumnHalfChord(eveWeatherPlanetRadiusM + heightsM.x, impactRadius);
+  float outerChord = volumetricColumnHalfChord(outerRadius, impactRadius);
+  float innerChord = volumetricColumnHalfChord(volumetricWeatherPlanetRadiusM + heightsM.x, impactRadius);
   // The closest-approach plane divides a grazing chord into disjoint halves,
   // including when the ray never reaches the inner sphere. Never switch roots
   // just because a first intersection is negative (the camera may be inside).
@@ -54,7 +74,7 @@ vec2 eveColumnShellInterval(
     : closestDistance + vec2(innerChord, outerChord);
 }
 
-vec4 eveRenderDistantCrossing(
+vec4 volumetricRenderDistantCrossing(
   const vec3 physicalOrigin, const vec3 rayDirection, const vec2 rayNearFar,
   const float closestDistance, const float impactRadius,
   const vec2 searchInterval, const int crossing,
@@ -75,32 +95,32 @@ vec4 eveRenderDistantCrossing(
   for (int i = 0; i < 4; ++i) {
     vec3 p = physicalOrigin + distanceM * rayDirection;
     footprintM = max(cloudEntryFootprintM, (rayNearFar.x + distanceM) * cloudRaySlope);
-    column = eveReadColumn(p, footprintM);
+    column = volumetricReadColumn(p, footprintM);
     if (i == 3) {
       // Recover subtexel coverage from the SAME medium, retaining the existing
       // footprint transition into the preintegrated opacity mip chain.
-      float atlasTexelM = PI * eveWeatherPlanetRadiusM / eveColumnDimensions.y;
+      float atlasTexelM = PI * volumetricWeatherPlanetRadiusM / volumetricColumnDimensions.y;
       float detailWeight = 1.0 - smoothstep(0.4 * atlasTexelM, atlasTexelM, footprintM);
       if (detailWeight > 0.0) {
-        column = mix(column, eveIntegrateRadialColumn(normalize(p), 16, footprintM), detailWeight);
+        column = mix(column, volumetricIntegrateRadialColumn(normalize(p), 16, footprintM), detailWeight);
       }
     }
-    weather = eveSampleWeather(p, footprintM, 0.0);
-    float type = clamp(weather.y, 0.0, 1.0) * float(EVE_CLOUD_PROFILE_COUNT - 1);
-    int left = min(EVE_CLOUD_PROFILE_COUNT - 1, int(floor(type)));
-    int right = min(EVE_CLOUD_PROFILE_COUNT - 1, left + 1);
+    weather = volumetricSampleWeather(p, footprintM, 0.0);
+    float type = clamp(weather.y, 0.0, 1.0) * float(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1);
+    int left = min(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1, int(floor(type)));
+    int right = min(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1, left + 1);
     vec2 heightsM = vec2(
-      mix(eveCloudBaseAltitudeM[left], eveCloudBaseAltitudeM[right], fract(type)),
-      mix(eveCloudTopAltitudeM[left], eveCloudTopAltitudeM[right], fract(type)));
-    vec2 support = eveColumnShellInterval(closestDistance, impactRadius, heightsM, crossing);
+      mix(volumetricCloudBaseAltitudeM[left], volumetricCloudBaseAltitudeM[right], fract(type)),
+      mix(volumetricCloudTopAltitudeM[left], volumetricCloudTopAltitudeM[right], fract(type)));
+    vec2 support = volumetricColumnShellInterval(closestDistance, impactRadius, heightsM, crossing);
     interval = vec2(max(searchInterval.x, support.x), min(searchInterval.y, support.y));
     if (interval.y <= interval.x) return vec4(0.0);
     // The first-event moment is a representative depth, NOT a support bound.
     // If the ray grazes above it, use the midpoint of the actual shell segment.
     // The same finite segment handles a scene-depth cut through a column.
-    float heightM = column.r > 1e-5 ? eveColumnHeightM(column) : 0.5 * (heightsM.x + heightsM.y);
-    float radius = eveWeatherPlanetRadiusM + heightM;
-    float projected = closestDistance + (crossing == 0 ? -1.0 : 1.0) * eveColumnHalfChord(radius, impactRadius);
+    float heightM = column.r > 1e-5 ? volumetricColumnHeightM(column) : 0.5 * (heightsM.x + heightsM.y);
+    float radius = volumetricWeatherPlanetRadiusM + heightM;
+    float projected = closestDistance + (crossing == 0 ? -1.0 : 1.0) * volumetricColumnHalfChord(radius, impactRadius);
     distanceM = radius > impactRadius && projected >= interval.x && projected <= interval.y
       ? projected : 0.5 * (interval.x + interval.y);
   }
@@ -115,15 +135,15 @@ vec4 eveRenderDistantCrossing(
   float tau = -log(max(1.0 - verticalOpacity, 1e-5));
   float opacity = 1.0 - exp(-tau * slant);
 
-  weather = eveSampleWeather(p, footprintM, 0.0);
-  float type = clamp(weather.y, 0.0, 1.0) * float(EVE_CLOUD_PROFILE_COUNT - 1);
-  int left = min(EVE_CLOUD_PROFILE_COUNT - 1, int(floor(type)));
-  int right = min(EVE_CLOUD_PROFILE_COUNT - 1, left + 1);
+  weather = volumetricSampleWeather(p, footprintM, 0.0);
+  float type = clamp(weather.y, 0.0, 1.0) * float(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1);
+  int left = min(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1, int(floor(type)));
+  int right = min(VOLUMETRIC_CLOUD_PROFILE_COUNT - 1, left + 1);
   float blend = fract(type);
   vec2 anisotropy = vec2(
-    mix(eveCloudPhaseAnisotropyX[left], eveCloudPhaseAnisotropyX[right], blend),
-    mix(eveCloudPhaseAnisotropyY[left], eveCloudPhaseAnisotropyY[right], blend));
-  float phaseMix = mix(eveCloudPhaseMix[left], eveCloudPhaseMix[right], blend);
+    mix(volumetricCloudPhaseAnisotropyX[left], volumetricCloudPhaseAnisotropyX[right], blend),
+    mix(volumetricCloudPhaseAnisotropyY[left], volumetricCloudPhaseAnisotropyY[right], blend));
+  float phaseMix = mix(volumetricCloudPhaseMix[left], volumetricCloudPhaseMix[right], blend);
   vec3 atmospherePoint = p + altitudeCorrection;
   vec3 skyIrradiance;
   // A single orbital lookup is cheap enough to retain the local terminator;
@@ -134,9 +154,9 @@ vec4 eveRenderDistantCrossing(
   float opticalDepth = cloudSunOpticalDepth(atmospherePoint, footprintM, 0.0, jitter, lighting);
   // Retain the local atmosphere irradiance here; the lower-quality near path's
   // lighting sample may use camera-vertex irradiance over an entire hemisphere.
-  skyIrradiance *= eveSkyVisibility(p, footprintM);
-  vec3 radiance = sunIrradiance * approximateMultipleScattering(
-    opticalDepth, cosTheta, anisotropy, phaseMix);
+  skyIrradiance *= volumetricSkyVisibility(p, footprintM);
+  vec3 radiance = sunIrradiance * volumetricCloudTopScattering(
+    opticalDepth, cosTheta, anisotropy, phaseMix, p, rayDirection);
   radiance += skyIrradiance * RECIPROCAL_PI4 * skyLightScale;
   secondaryOpticalDepth = opticalDepth;
   frontDepth = distanceM;
@@ -153,26 +173,26 @@ vec4 renderDistantClouds(
   sampleCount = ivec3(0);
   secondaryOpticalDepth = 0.0;
   composedLighting = vec3(0.0);
-  if (eveColumnReady < 0.5) return vec4(0.0);
+  if (volumetricColumnReady < 0.5) return vec4(0.0);
   vec3 physicalOrigin = rayOrigin - altitudeCorrection;
   float closestDistance = -dot(physicalOrigin, rayDirection);
-  float impactRadius = eveColumnRadius(physicalOrigin + closestDistance * rayDirection);
+  float impactRadius = volumetricColumnRadius(physicalOrigin + closestDistance * rayDirection);
   float endDistance = rayNearFar.y - rayNearFar.x;
   // Scene depth is already relative to the host's entry point. Also stop at
   // the physical solid planet, even if no terrain depth was written there.
-  if (eveColumnRadius(physicalOrigin) < eveWeatherPlanetRadiusM) return vec4(0.0);
-  if (impactRadius <= eveWeatherPlanetRadiusM) {
-    float groundDistance = closestDistance - eveColumnHalfChord(eveWeatherPlanetRadiusM, impactRadius);
+  if (volumetricColumnRadius(physicalOrigin) < volumetricWeatherPlanetRadiusM) return vec4(0.0);
+  if (impactRadius <= volumetricWeatherPlanetRadiusM) {
+    float groundDistance = closestDistance - volumetricColumnHalfChord(volumetricWeatherPlanetRadiusM, impactRadius);
     if (groundDistance >= 0.0) endDistance = min(endDistance, groundDistance);
   }
   vec4 result = vec4(0.0);
   float weightedDepth = 0.0;
   for (int crossing = 0; crossing < 2; ++crossing) {
-    vec2 support = eveColumnShellInterval(closestDistance, impactRadius, vec2(minHeight, maxHeight), crossing);
+    vec2 support = volumetricColumnShellInterval(closestDistance, impactRadius, vec2(minHeight, maxHeight), crossing);
     vec2 interval = vec2(max(0.0, support.x), min(endDistance, support.y));
     if (interval.y <= interval.x) continue;
     float depth, opticalDepth;
-    vec4 layer = eveRenderDistantCrossing(physicalOrigin, rayDirection, rayNearFar,
+    vec4 layer = volumetricRenderDistantCrossing(physicalOrigin, rayDirection, rayNearFar,
       closestDistance, impactRadius, interval, crossing, cosTheta, jitter, depth, opticalDepth);
     float weight = (1.0 - result.a) * layer.a;
     if (weight <= 0.0) continue;

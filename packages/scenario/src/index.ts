@@ -1,5 +1,6 @@
 export * from './schema.js';
 export * from './scenarios/finalApproach01.js';
+export * from './scenarios/firstDocking01.js';
 export * from './scenarioToSimConfig.js';
 export * from './director.js';
 export * from './perfectOperatorBot.js';

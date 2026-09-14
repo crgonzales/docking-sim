@@ -10,7 +10,7 @@ import {
   createWeatherSnapshot,
   DEFAULT_CLOUD_NOISE_SAMPLE,
   evaluateCloudLayerMedia,
-  EVE_WEATHER_ASSETS,
+  VOLUMETRIC_WEATHER_ASSETS,
   sampleCloudMedia,
   sampleReferenceWeatherField,
   sampleWeatherField,
@@ -20,7 +20,7 @@ import {
   type WeatherSnapshot
 } from './cloudWeather'
 import {
-  EVE_CLOUD_COVERAGE_EDGE_SOFTNESS, EVE_CLOUD_PROFILE_TABLES, EVE_REFERENCE_REGION,
+  VOLUMETRIC_CLOUD_COVERAGE_EDGE_SOFTNESS, VOLUMETRIC_CLOUD_PROFILE_TABLES, VOLUMETRIC_REFERENCE_REGION,
   interpolateCloudProfile, type WeatherFieldSample
 } from './cloudConfig'
 
@@ -35,8 +35,8 @@ const snapshot = createWeatherSnapshot({
 // Match the byte-backed, fixed-domain oracle in CloudWeatherFixture. These
 // helpers only sample assets; all density and transport use the production CPU
 // evaluator. cloudData.test.ts separately verifies asset hashes and generation.
-const noiseBytes = readFileSync(new URL(`../../../public${EVE_WEATHER_ASSETS.noise.path}`, import.meta.url))
-const referenceBytes = readFileSync(new URL(`../../../public${EVE_WEATHER_ASSETS.referenceField.path}`, import.meta.url))
+const noiseBytes = readFileSync(new URL(`../../../public${VOLUMETRIC_WEATHER_ASSETS.noise.path}`, import.meta.url))
+const referenceBytes = readFileSync(new URL(`../../../public${VOLUMETRIC_WEATHER_ASSETS.referenceField.path}`, import.meta.url))
 
 function positionAt(latitudeDeg: number, longitudeDeg: number, altitudeM: number): CloudMediaQuery['positionECEFM'] {
   const latitude = latitudeDeg * Math.PI / 180
@@ -47,7 +47,7 @@ function positionAt(latitudeDeg: number, longitudeDeg: number, altitudeM: number
 }
 
 function noiseAtScale(position: CloudMediaQuery['positionECEFM'], scaleM: number): CloudNoiseSample {
-  const size = EVE_WEATHER_ASSETS.noise.dimensions[0]
+  const size = VOLUMETRIC_WEATHER_ASSETS.noise.dimensions[0]
   const coordinates = position.map(value => {
     const unit = Math.fround(Math.fround(value) / Math.fround(scaleM))
     return (unit - Math.floor(unit)) * size - 0.5
@@ -77,14 +77,14 @@ function actualNoise(position: CloudMediaQuery['positionECEFM'], typeField: numb
     return [mix(0), mix(1), mix(2), mix(3)]
   }
   return {
-    primary: sampleDomain(position, EVE_CLOUD_PROFILE_TABLES.primaryNoiseScaleM),
-    detail: sampleDomain(cloudDetailNoisePositionECEFM(position), EVE_CLOUD_PROFILE_TABLES.detailNoiseScaleM)
+    primary: sampleDomain(position, VOLUMETRIC_CLOUD_PROFILE_TABLES.primaryNoiseScaleM),
+    detail: sampleDomain(cloudDetailNoisePositionECEFM(position), VOLUMETRIC_CLOUD_PROFILE_TABLES.detailNoiseScaleM)
   }
 }
 
 function actualReference(latitudeDeg: number, longitudeDeg: number): WeatherFieldSample {
-  const [width, height] = EVE_WEATHER_ASSETS.referenceField.dimensions
-  const region = EVE_REFERENCE_REGION
+  const [width, height] = VOLUMETRIC_WEATHER_ASSETS.referenceField.dimensions
+  const region = VOLUMETRIC_REFERENCE_REGION
   const x = (longitudeDeg - region.centerLongitudeDeg + region.longitudeExtentDeg) /
     (2 * region.longitudeExtentDeg) * width - 0.5
   const y = (latitudeDeg - region.centerLatitudeDeg + region.latitudeExtentDeg) /
@@ -116,7 +116,7 @@ function columnOpticalDepth(latitude: number, longitude: number, maxStepM = 25):
   return tau
 }
 
-describe('EVE weather snapshot and media', () => {
+describe('VOLUMETRIC weather snapshot and media', () => {
   it('uses the engine ECEF north-at-V=1 mapping', () => {
     expect(weatherUvFromEcef([0, 0, radiusM])).toEqual([0.5, 1])
     expect(weatherUvFromEcef([0, 0, -radiusM])).toEqual([0.5, 0])
@@ -129,15 +129,15 @@ describe('EVE weather snapshot and media', () => {
   it('exposes one immutable binding set without camera or rebase state', () => {
     const uniforms = createWeatherBindingUniforms(snapshot)
     expect(Object.isFrozen(uniforms)).toBe(true)
-    expect(uniforms.eveWeatherVisualTimeS.value).toBe(17.25)
-    expect(uniforms.eveCloudCoverageEdgeSoftness.value).toBe(EVE_CLOUD_COVERAGE_EDGE_SOFTNESS)
-    expect(uniforms.eveCloudPrimaryNoiseScaleM.value).toEqual(new Vector4(...EVE_CLOUD_PROFILE_TABLES.primaryNoiseScaleM))
-    expect(uniforms.eveCloudDetailNoiseScaleM.value).toEqual(new Vector4(...EVE_CLOUD_PROFILE_TABLES.detailNoiseScaleM))
-    expect(uniforms.eveWeatherMapDimensions.value).toMatchObject({ x: 1024, y: 512 })
-    expect(uniforms.eveWeatherReferenceMapDimensions.value).toMatchObject({ x: 128, y: 64 })
-    expect(uniforms.eveWeatherGeneration.value).toBe(4)
-    expect(uniforms.eveWeatherNorthAxisECEF.value).toMatchObject({ x: 0, y: 0, z: 1 })
-    expect(uniforms.eveWeatherAltitudeBoundsM.value).toMatchObject({
+    expect(uniforms.volumetricWeatherVisualTimeS.value).toBe(17.25)
+    expect(uniforms.volumetricCloudCoverageEdgeSoftness.value).toBe(VOLUMETRIC_CLOUD_COVERAGE_EDGE_SOFTNESS)
+    expect(uniforms.volumetricCloudPrimaryNoiseScaleM.value).toEqual(new Vector4(...VOLUMETRIC_CLOUD_PROFILE_TABLES.primaryNoiseScaleM))
+    expect(uniforms.volumetricCloudDetailNoiseScaleM.value).toEqual(new Vector4(...VOLUMETRIC_CLOUD_PROFILE_TABLES.detailNoiseScaleM))
+    expect(uniforms.volumetricWeatherMapDimensions.value).toMatchObject({ x: 1024, y: 512 })
+    expect(uniforms.volumetricWeatherReferenceMapDimensions.value).toMatchObject({ x: 128, y: 64 })
+    expect(uniforms.volumetricWeatherGeneration.value).toBe(4)
+    expect(uniforms.volumetricWeatherNorthAxisECEF.value).toMatchObject({ x: 0, y: 0, z: 1 })
+    expect(uniforms.volumetricWeatherAltitudeBoundsM.value).toMatchObject({
       x: snapshot.bounds.minAltitudeM,
       y: snapshot.bounds.maxAltitudeM
     })
@@ -146,13 +146,13 @@ describe('EVE weather snapshot and media', () => {
 
     const coverageTexture = new Texture()
     const textured = createWeatherBindingUniforms(snapshot, { coverage: coverageTexture })
-    expect(textured.eveWeatherCoverageTexture.value).toBe(coverageTexture)
-    textured.eveWeatherCoverageTexture.value = null
-    expect(textured.eveWeatherCoverageTexture.value).toBeNull()
+    expect(textured.volumetricWeatherCoverageTexture.value).toBe(coverageTexture)
+    textured.volumetricWeatherCoverageTexture.value = null
+    expect(textured.volumetricWeatherCoverageTexture.value).toBeNull()
     const referenceTexture = new Texture()
     const referenceBindings = createWeatherBindingUniforms(snapshot, { referenceField: referenceTexture })
-    expect(referenceBindings.eveWeatherReferenceFieldEnabled.value).toBe(1)
-    expect(referenceBindings.eveWeatherReferenceFieldTexture.value).toBe(referenceTexture)
+    expect(referenceBindings.volumetricWeatherReferenceFieldEnabled.value).toBe(1)
+    expect(referenceBindings.volumetricWeatherReferenceFieldTexture.value).toBe(referenceTexture)
   })
 
   it('filters a four-local-texel footprint without coarsening the subtexel global map', () => {
@@ -185,8 +185,8 @@ describe('EVE weather snapshot and media', () => {
       expect(lods.reference).toBeCloseTo(baseline.reference + 1, 10)
       expect(lods.global).toBe(baseline.global)
     }
-    expect(createWeatherBindingUniforms(finer).eveWeatherReferenceMapDimensions.value).toMatchObject({ x: 256, y: 128 })
-    expect(createWeatherBindingUniforms(smallerPatch).eveWeatherReferenceBoundsDeg.value)
+    expect(createWeatherBindingUniforms(finer).volumetricWeatherReferenceMapDimensions.value).toMatchObject({ x: 256, y: 128 })
+    expect(createWeatherBindingUniforms(smallerPatch).volumetricWeatherReferenceBoundsDeg.value)
       .toMatchObject({ x: -76.6, y: 39.3, z: -73.4, w: 41.7 })
   })
 
@@ -346,7 +346,7 @@ describe('EVE weather snapshot and media', () => {
     const position: CloudMediaQuery['positionECEFM'] = [radiusM + 2200, 0, 0]
     const difference = (a: CloudNoiseSample, b: CloudNoiseSample) =>
       Math.max(...a.map((value, channel) => Math.abs(value - b[channel])))
-    EVE_CLOUD_PROFILE_TABLES.primaryNoiseScaleM.forEach((scaleM, index) => {
+    VOLUMETRIC_CLOUD_PROFILE_TABLES.primaryNoiseScaleM.forEach((scaleM, index) => {
       const original = actualNoise(position, index / 3)
       const rotated = noiseAtScale(cloudDetailNoisePositionECEFM(position), scaleM)
       const shifted: CloudMediaQuery['positionECEFM'] = [position[0] + scaleM, position[1], position[2]]

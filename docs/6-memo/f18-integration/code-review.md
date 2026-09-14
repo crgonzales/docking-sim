@@ -6,6 +6,6 @@ No findings.
 
 Checklist sections 1–8 pass: functional requirements and plan conformance, code quality, architecture, package/FSW boundaries, frame/unit/determinism conventions, error handling, security, and performance/resource cleanup. The GLB fallback and ownership are explicit, FLIGHT remains isolated, and renderer behavior is correctly parameterized.
 
-Approval gate is met: 123 sim-core tests, 65 affected web tests, final web typecheck/build, browser pause/resume/camera/reentry checks, and documentation all passed per [validation.md](/Users/carlosgonzales/dev/docking-sim-flight-integrated/docs/6-memo/f18-integration/validation.md:12). No corresponding changelog was present.
+Approval gate is met: 123 sim-core tests, 65 affected web tests, final web typecheck/build, browser pause/resume/camera/reentry checks, and documentation all passed per [validation.md](docking-sim-flight-integrated/docs/6-memo/f18-integration/validation.md:12). No corresponding changelog was present.
 
 APPROVED

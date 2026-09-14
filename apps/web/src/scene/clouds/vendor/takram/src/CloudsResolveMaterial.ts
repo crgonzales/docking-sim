@@ -59,6 +59,11 @@ export interface CloudsResolveMaterialUniforms {
   stationaryDepthAbsoluteThresholdM: Uniform<number>
   depthRelativeThreshold: Uniform<number>
   historyOpacityThreshold: Uniform<number>
+  sceneDepthBuffer: Uniform<Texture | null>
+  sceneDepthEnabled: Uniform<boolean>
+  sceneCameraRange: Uniform<Vector2>
+  sceneLogDepth: Uniform<boolean>
+  scenePerspective: Uniform<boolean>
   texelSize: Uniform<Vector2>
   frame: Uniform<number>
   jitterOffset: Uniform<Vector2>
@@ -109,6 +114,11 @@ export class CloudsResolveMaterial extends RawShaderMaterial {
         stationaryDepthAbsoluteThresholdM: new Uniform(stationaryDepthAbsoluteThresholdM),
         depthRelativeThreshold: new Uniform(depthRelativeThreshold),
         historyOpacityThreshold: new Uniform(historyOpacityThreshold),
+        sceneDepthBuffer: new Uniform(null),
+        sceneDepthEnabled: new Uniform(false),
+        sceneCameraRange: new Uniform(new Vector2(0.1, 1e8)),
+        sceneLogDepth: new Uniform(false),
+        scenePerspective: new Uniform(true),
         texelSize: new Uniform(new Vector2()),
         frame: new Uniform(0),
         jitterOffset: new Uniform(new Vector2()),

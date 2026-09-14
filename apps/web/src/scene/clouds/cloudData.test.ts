@@ -8,10 +8,10 @@ import { Vector4 } from 'three'
 import {
   createWeatherBindingUniforms,
   createWeatherSnapshot,
-  EVE_WEATHER_ASSETS,
+  VOLUMETRIC_WEATHER_ASSETS,
   sampleReferenceWeatherField
 } from './cloudWeather'
-import { EVE_CLOUD_PROFILES, EVE_CLOUD_PROFILE_TABLES, EVE_REFERENCE_REGION } from './cloudConfig'
+import { VOLUMETRIC_CLOUD_PROFILES, VOLUMETRIC_CLOUD_PROFILE_TABLES, VOLUMETRIC_REFERENCE_REGION } from './cloudConfig'
 
 function bytes(path: string): Buffer {
   return readFileSync(new URL(path, import.meta.url))
@@ -21,15 +21,15 @@ function sha256(data: Buffer): string {
   return createHash('sha256').update(data).digest('hex')
 }
 
-describe('offline EVE weather assets', () => {
+describe('offline VOLUMETRIC weather assets', () => {
   it('matches the committed manifest hashes and bounded dimensions', () => {
-    const manifest = JSON.parse(bytes('../../../public/assets/clouds/eve/manifest.json').toString('utf8'))
+    const manifest = JSON.parse(bytes('../../../public/assets/clouds/volumetric/manifest.json').toString('utf8'))
     const provenance = JSON.parse(bytes('../../../public/vendor/earth-weather/provenance.json').toString('utf8'))
     expect(manifest.deterministic).toBe(true)
     expect(manifest.source.sha256).toBe(provenance.outputSha256)
     expect(sha256(bytes('../../../public/vendor/earth-weather/global-coverage.png'))).toBe(manifest.source.sha256)
-    expect(manifest.referenceRegion).toEqual(EVE_REFERENCE_REGION)
-    expect(manifest.profiles).toEqual(EVE_CLOUD_PROFILES.map(profile => profile.id))
+    expect(manifest.referenceRegion).toEqual(VOLUMETRIC_REFERENCE_REGION)
+    expect(manifest.profiles).toEqual(VOLUMETRIC_CLOUD_PROFILES.map(profile => profile.id))
     expect(manifest.noise).toMatchObject({
       seed: 0x0e7e0c10,
       periodCells: 4,
@@ -39,7 +39,7 @@ describe('offline EVE weather assets', () => {
     })
     expect(manifest.noise.algorithm).toContain('gradient-Perlin')
 
-    for (const [name, descriptor] of Object.entries(EVE_WEATHER_ASSETS)) {
+    for (const [name, descriptor] of Object.entries(VOLUMETRIC_WEATHER_ASSETS)) {
       const manifestAsset = manifest.assets[name]
       const data = bytes(`../../../public${manifestAsset.path}`)
       expect(data.byteLength).toBe(manifestAsset.bytes)
@@ -53,10 +53,10 @@ describe('offline EVE weather assets', () => {
   })
 
   it('reproduces the authored reference field at every south-first texel center', () => {
-    const descriptor = EVE_WEATHER_ASSETS.referenceField
+    const descriptor = VOLUMETRIC_WEATHER_ASSETS.referenceField
     const data = bytes(`../../../public${descriptor.path}`)
     const [width, height] = descriptor.dimensions
-    const region = EVE_REFERENCE_REGION
+    const region = VOLUMETRIC_REFERENCE_REGION
     const expected = Buffer.alloc(data.length)
     for (let y = 0; y < height; y++) {
       const latitude = region.centerLatitudeDeg - region.latitudeExtentDeg + (y + 0.5) / height * 2 * region.latitudeExtentDeg
@@ -72,9 +72,9 @@ describe('offline EVE weather assets', () => {
   })
 
   it('samples a continuous unit-period noise field on all axes and matches its baked texels', async () => {
-    const script = new URL('../../../scripts/setupEveCloudAssets.mjs', import.meta.url)
+    const script = new URL('../../../scripts/setupVolumetricCloudAssets.mjs', import.meta.url)
     const { samplePeriodicNoise } = await import(/* @vite-ignore */ script.href)
-    const descriptor = EVE_WEATHER_ASSETS.noise
+    const descriptor = VOLUMETRIC_WEATHER_ASSETS.noise
     const data = bytes(`../../../public${descriptor.path}`)
     for (const point of [[0.123, 0.417, 0.891], [-0.234, 0.782, 2.191], [0, 0, 0]]) {
       const baseline = samplePeriodicNoise(...point)
@@ -118,8 +118,8 @@ describe('offline EVE weather assets', () => {
       'phaseAnisotropyX', 'phaseAnisotropyY', 'phaseMix'
     ] as const
     for (const tableName of tableNames) {
-      const value = uniforms[`eveCloud${tableName[0].toUpperCase()}${tableName.slice(1)}`].value as Vector4
-      expect(value.toArray()).toEqual(EVE_CLOUD_PROFILE_TABLES[tableName].slice())
+      const value = uniforms[`volumetricCloud${tableName[0].toUpperCase()}${tableName.slice(1)}`].value as Vector4
+      expect(value.toArray()).toEqual(VOLUMETRIC_CLOUD_PROFILE_TABLES[tableName].slice())
     }
     const curveEntries = [
       ['CoverageKnots', 'coverageKnots'],
@@ -128,9 +128,9 @@ describe('offline EVE weather assets', () => {
       ['DensityValues', 'densityValues']
     ] as const
     for (const [uniformName, tableKey] of curveEntries) {
-      const values = uniforms[`eveCloud${uniformName}`].value as Vector4[]
+      const values = uniforms[`volumetricCloud${uniformName}`].value as Vector4[]
       expect(values.map(vector => vector.toArray())).toEqual(
-        EVE_CLOUD_PROFILE_TABLES[tableKey].map(vector => vector.slice())
+        VOLUMETRIC_CLOUD_PROFILE_TABLES[tableKey].map(vector => vector.slice())
       )
     }
   })

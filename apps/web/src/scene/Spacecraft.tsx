@@ -16,11 +16,12 @@ import {
 import { conjugateQuaternion } from '@docking/sim-core';
 import { useTelemetryBus } from '../telemetry/bus';
 import { ThrusterPlumes } from './ThrusterPlumes';
+import { CHASER_HULL } from './thrusterPresentation';
+import { DragonCapsule } from './DragonCapsule';
 import { WorldFrame } from './worldFrame';
 import {
   computeModelNormalizationTransform,
   maxAbsComponent,
-  CHASER_MODEL_NORMALIZATION,
   CHASER_PORT_BODY,
   STATION_PORT_HILL,
   TARGET_MODEL_NORMALIZATION,
@@ -42,7 +43,6 @@ export { CHASER_PORT_BODY, STATION_PORT_HILL } from './modelNormalization';
  */
 const USE_GLTF_MODELS = false;
 const TARGET_MODEL_URL = '/assets/models/target.glb';
-const CHASER_MODEL_URL = '/assets/models/chaser.glb';
 
 /** Render-rate smoothing constant for the 10 Hz bus position (1/s). */
 const POSITION_DAMP_LAMBDA = 1.5;
@@ -156,11 +156,11 @@ function PrimitiveChaser() {
   return (
     <group>
       <mesh>
-        <cylinderGeometry args={[1.1, 1.9, 3.4, 20]} />
+        <cylinderGeometry args={[CHASER_HULL.capsuleTopRadiusM, CHASER_HULL.capsuleBottomRadiusM, CHASER_HULL.capsuleHeightM, 32]} />
         <meshStandardMaterial color="#d8d3c8" metalness={0.45} roughness={0.5} />
       </mesh>
-      <mesh position={[0, -2.4, 0]}>
-        <cylinderGeometry args={[1.9, 1.9, 1.4, 20]} />
+      <mesh position={[0, CHASER_HULL.trunkCenterYM, 0]}>
+        <cylinderGeometry args={[CHASER_HULL.trunkRadiusM, CHASER_HULL.trunkRadiusM, CHASER_HULL.trunkHeightM, 32]} />
         <meshStandardMaterial color="#7a7e88" metalness={0.7} roughness={0.35} />
       </mesh>
       <ChaserLivery />
@@ -222,7 +222,6 @@ function GltfModel({ url, normalization }: GltfModelProps) {
 
 if (USE_GLTF_MODELS) {
   useGLTF.preload(TARGET_MODEL_URL);
-  useGLTF.preload(CHASER_MODEL_URL);
 }
 
 function Chaser({ worldFrame }: { worldFrame: WorldFrame }) {
@@ -254,16 +253,9 @@ function Chaser({ worldFrame }: { worldFrame: WorldFrame }) {
   return (
     <group ref={ref} position={[0, -250, 12]}>
       <ThrusterPlumes />
-      {USE_GLTF_MODELS ? (
-        <CraftErrorBoundary fallback={<PrimitiveChaser />}>
-          <Suspense fallback={null}>
-            <GltfModel url={CHASER_MODEL_URL} normalization={CHASER_MODEL_NORMALIZATION} />
-            <ChaserLivery gltf />
-          </Suspense>
-        </CraftErrorBoundary>
-      ) : (
-        <PrimitiveChaser />
-      )}
+      <CraftErrorBoundary fallback={<PrimitiveChaser />}>
+        <Suspense fallback={<PrimitiveChaser />}><DragonCapsule /></Suspense>
+      </CraftErrorBoundary>
     </group>
   );
 }

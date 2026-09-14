@@ -3,6 +3,9 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Color, DirectionalLight, NoToneMapping } from 'three';
 import { LibraryEffects } from './LibraryEffects';
 import { RenderProbe } from './RenderProbe';
+import { ThrusterProbe } from './ThrusterProbe';
+import { RCS_INSPECTION } from './rcsInspection';
+import { useAppModeStore } from '../appModeStore';
 import { RenderFrameTiming } from './RenderFrameTiming';
 import { LIBRARY_RENDERER, PROBE_DPR, RENDER_PROBE } from './renderProbeConfig';
 import { renderTimings } from './renderTimings';
@@ -11,6 +14,7 @@ import { Effects } from './Effects';
 import { CameraRig } from './CameraRig';
 import { DockingCameraPass } from './DockingCameraPiP';
 import { Spacecraft } from './Spacecraft';
+import { DockingGuide } from './DockingGuide';
 import { Starfield } from './Starfield';
 import { SunSprite } from './SunSprite';
 import { SUN_DIR, SUN_LIGHT_DISTANCE_M } from './sun';
@@ -179,6 +183,7 @@ function useSunExtinctionTint(): Color {
  * the planet coexisting without z-fighting.
  */
 export function SceneRoot() {
+  const appMode = useAppModeStore(state => state.mode);
   const fixtureOnly = RENDER_PROBE && new URLSearchParams(window.location.search).get('fixture') === 'clouds';
   const sunTint = useSunExtinctionTint();
   const worldFrame = useMemo(() => new WorldFrame(), []);
@@ -224,12 +229,14 @@ export function SceneRoot() {
       {/* faint earthshine so the night side of the craft isn't pure black */}
       <ambientLight intensity={0.06} color="#7d9bff" />
       <Spacecraft worldFrame={worldFrame} />
+      <DockingGuide worldFrame={worldFrame} />
       <CameraRig worldFrame={worldFrame} terrainSourceRef={terrainSourceRef} />
       <FrameExposureController worldFrame={worldFrame} exposureRef={frameExposureRef} />
       <DockingCameraPass worldFrame={worldFrame} exposureRef={frameExposureRef} />
       {LIBRARY_RENDERER ? <LibraryEffects worldFrame={worldFrame} exposureRef={frameExposureRef} /> : <Effects exposureRef={frameExposureRef} />}
       </>}
       {RENDER_PROBE && <RenderProbe worldFrame={worldFrame} />}
+      {RCS_INSPECTION && appMode === 'SANDBOX' && <ThrusterProbe />}
     </Canvas>
   );
 }

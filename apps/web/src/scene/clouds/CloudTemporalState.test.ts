@@ -17,7 +17,7 @@ function frame(overrides: Partial<CloudTemporalFrame> = {}): CloudTemporalFrame 
     viewportWidth: 1920,
     viewportHeight: 1080,
     dpr: 1,
-    backend: 'takram-eve',
+    backend: 'takram-volumetric',
     cameraPositionECEFM: [EARTH_RADIUS_M + 400_000, 0, 0],
     cameraOrientationECEF: [1, 0, 0, 0],
     rebaseOriginECEFM: [EARTH_RADIUS_M, 0, 0],

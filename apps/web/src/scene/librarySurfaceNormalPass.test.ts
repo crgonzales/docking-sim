@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NormalPass, Selection } from 'postprocessing';
 import {
-  BufferGeometry, Color, Float32BufferAttribute, Line, Mesh, MeshBasicMaterial,
+  BackSide, BufferGeometry, Color, DoubleSide, Float32BufferAttribute, FrontSide, Line, Mesh, MeshBasicMaterial,
   MeshNormalMaterial, PerspectiveCamera, Points, Scene, ShaderChunk, ShaderLib, ShaderMaterial,
   Sprite, Texture, Uniform, Vector3, WebGLRenderTarget, type ColorRepresentation, type Material, type WebGLRenderer,
 } from 'three';
@@ -72,6 +72,63 @@ function compileNormal(material: MeshNormalMaterial, renderer: WebGLRenderer) {
 }
 
 describe('surface normal coverage pass', () => {
+  it.each([false, true])('preserves per-group sidedness and visibility (water=%s), reuses materials, and restores arrays', water => {
+    const f = fixture(), { stub, renderer } = rendererStub();
+    const sources = [FrontSide, BackSide, DoubleSide].map(side => own(new MeshBasicMaterial({ side })));
+    sources.push(own(new MeshBasicMaterial({ transparent: true, depthWrite: false })),
+      own(new MeshBasicMaterial({ visible: false })));
+    const geometry = water ? f.water.geometry : f.solid.geometry;
+    const mesh = new Mesh(geometry, sources); f.scene.add(mesh);
+    const groups = geometry.groups;
+    const pass = own(new SurfaceNormalPass(f.scene, f.camera));
+    let cached: MeshNormalMaterial[] = [];
+    stub.render.mockImplementation(() => {
+      const active = mesh.material as unknown as MeshNormalMaterial[];
+      expect(Array.isArray(active)).toBe(true);
+      expect(active.map(m => m.side)).toEqual(sources.map(m => m.side));
+      expect(active.map(m => m.visible)).toEqual([true, true, true, false, false]);
+      expect(active.every(m => m instanceof MeshNormalMaterial)).toBe(true);
+      if (cached.length) active.forEach((m, i) => expect(m).toBe(cached[i]));
+      cached = active;
+      expect(geometry.groups).toBe(groups);
+    });
+    pass.render(renderer, null, null);
+    expect(mesh.material).toBe(sources);
+    const version = cached[0].version;
+    sources[0].side = DoubleSide;
+    pass.render(renderer, null, null);
+    expect(cached[0].version).toBe(version + 1);
+    pass.render(renderer, null, null);
+    expect(cached[0].version).toBe(version + 1);
+    stub.render.mockImplementationOnce(() => { throw new Error('group draw failed'); });
+    expect(() => pass.render(renderer, null, null)).toThrow('group draw failed');
+    expect(mesh.material).toBe(sources);
+    const dispose = cached.map(m => vi.spyOn(m, 'dispose'));
+    const sourceDispose = sources.map(m => vi.spyOn(m, 'dispose'));
+    pass.dispose(); pass.dispose();
+    dispose.forEach(spy => expect(spy).toHaveBeenCalledTimes(1));
+    sourceDispose.forEach(spy => expect(spy).not.toHaveBeenCalled());
+  });
+
+  it('does not turn alpha-only plume volumes into solid surfaces, including on render failure', () => {
+    const f = fixture(), { stub, renderer } = rendererStub();
+    const material = own(new ShaderMaterial({ transparent: true, depthWrite: false }));
+    const plume = new Mesh(f.solid.geometry, material);
+    plume.layers.enable(3); const mask = plume.layers.mask;
+    const child = new Mesh(f.solid.geometry, f.solid.material); plume.add(child); f.scene.add(plume);
+    const pass = own(new SurfaceNormalPass(f.scene, f.camera));
+    stub.render.mockImplementationOnce(() => {
+      expect(plume.layers.mask).toBe(0);
+      expect(plume.material).toBe(material);
+      expect(child.layers.mask).toBe(1);
+      expect(child.material).toBeInstanceOf(MeshNormalMaterial);
+      throw new Error('draw failed');
+    });
+    expect(() => pass.render(renderer, null, null)).toThrow('draw failed');
+    expect(plume.layers.mask).toBe(mask); expect(plume.material).toBe(material);
+    expect(() => pass.render(renderer, null, null)).not.toThrow();
+    expect(plume.layers.mask).toBe(mask);
+  });
   it('renders once with two cached materials, preserves the stock target/clear, and restores originals', () => {
     const f = fixture(), { stub, renderer } = rendererStub();
     const pass = own(new SurfaceNormalPass(f.scene, f.camera, { resolutionScale: 0.5 }));
@@ -87,13 +144,12 @@ describe('surface normal coverage pass', () => {
       expect(pass.renderPass.overrideMaterial).toBeNull();
       expect(stub.shadowMap).toEqual({ enabled: false, autoUpdate: false });
       expect(f.solid.material).toBeInstanceOf(MeshNormalMaterial);
-      expect(f.arrayMesh.material).toBe(f.solid.material);
-      expect(f.child.material).toBe(f.solid.material);
+      expect(f.arrayMesh.material).toEqual([f.solid.material, f.child.material]);
       // Unified terrain must retain land AND water normals. Selecting the
       // water-only material here silently erases every dry part of the tile.
       expect(f.terrain.material).toBe(f.solid.material);
       expect(f.water.material).toBeInstanceOf(MeshNormalMaterial);
-      expect(f.water2.material).toBe(f.water.material);
+      expect(f.water2.material).toBeInstanceOf(MeshNormalMaterial);
       expect(f.water.material).not.toBe(f.solid.material);
       expect(f.hidden.material).toBe(originals[0]);
       expect([f.line.material, f.points.material, f.sprite.material]).toEqual(nonMeshMaterials);

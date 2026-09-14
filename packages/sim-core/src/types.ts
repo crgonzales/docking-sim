@@ -59,6 +59,9 @@ export interface SensorFrame {
   range_m: number | null;
   bearing_body_rad: [number, number] | null;
   gyro_rps: Vec3;
+  /** IMU window-mean rate for attitude propagation. Endpoint gyro_rps remains
+   * the instantaneous control feedback; short RCS pulses need both. */
+  gyro_mean_rps?: Vec3;
   /** Star-tracker quaternion, rotating inertial-frame vectors into body axes. */
   star_tracker_q_BI?: Quat | null;
   /** @deprecated Use star_tracker_q_BI. */
@@ -79,6 +82,7 @@ export interface FswTick {
   clearGuidanceFault(): void;
   setManualSubMode(mode: ManualSubMode): void;
   setManualCommand(command: ManualCommand): void;
+  holdManualPosition(): void;
   setManualAuthority(level: ManualAuthority): void;
   getManualAuthority(): ManualAuthority;
   commandAbort(): void;

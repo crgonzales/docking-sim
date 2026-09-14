@@ -1,5 +1,5 @@
 /**
- * Authored EVE cloud constants.  These values are deliberately data-only: the
+ * Authored VOLUMETRIC cloud constants.  These values are deliberately data-only: the
  * render path consumes a WeatherSnapshot and never owns a weather simulation.
  */
 
@@ -81,7 +81,7 @@ export interface CloudSupportBounds {
 const CLOUD_EROSION_DISPLACEMENT_M = 750
 
 /** Half-width of the coverage support edge in normalized noise space. */
-export const EVE_CLOUD_COVERAGE_EDGE_SOFTNESS = 0.08
+export const VOLUMETRIC_CLOUD_COVERAGE_EDGE_SOFTNESS = 0.08
 
 // The two-domain Perlin/Worley support signal spans about [0.48, 0.63] over
 // the reference region. A small calibrated margin keeps authored formations
@@ -89,8 +89,8 @@ export const EVE_CLOUD_COVERAGE_EDGE_SOFTNESS = 0.08
 const CLOUD_BASE_NOISE_CENTER = 0.54
 const CLOUD_BASE_NOISE_HALF_WIDTH = 0.11
 
-/** Shared CPU/GPU weights for the two-sample EVE-style shape construction. */
-export const EVE_CLOUD_NOISE_SHAPE = deepFreeze({
+/** Shared CPU/GPU weights for the two-sample VOLUMETRIC-style shape construction. */
+export const VOLUMETRIC_CLOUD_NOISE_SHAPE = deepFreeze({
   primaryWorleyMix: 0.3,
   detailSupportMix: 0.6,
   erosionWorleyMix: 0.65
@@ -143,7 +143,7 @@ const profile = (
  * (scattering = extinction, absorption = 0), with authored inverse-metre
  * strengths. These are appearance settings, not calibrated microphysics.
  */
-export const EVE_CLOUD_PROFILES = deepFreeze([
+export const VOLUMETRIC_CLOUD_PROFILES = deepFreeze([
   profile({
     id: 'broken-cumulus',
     ordinal: 0,
@@ -259,10 +259,10 @@ export const EVE_CLOUD_PROFILES = deepFreeze([
 ] as const)
 
 const profileVector = (read: (profile: CloudTypeProfile) => number): CloudProfileVector4 => [
-  read(EVE_CLOUD_PROFILES[0]),
-  read(EVE_CLOUD_PROFILES[1]),
-  read(EVE_CLOUD_PROFILES[2]),
-  read(EVE_CLOUD_PROFILES[3])
+  read(VOLUMETRIC_CLOUD_PROFILES[0]),
+  read(VOLUMETRIC_CLOUD_PROFILES[1]),
+  read(VOLUMETRIC_CLOUD_PROFILES[2]),
+  read(VOLUMETRIC_CLOUD_PROFILES[3])
 ]
 
 const curveVector = (
@@ -276,7 +276,7 @@ const curveVector = (
 ]
 
 /** Single source of truth for the GLSL profile uniform tables. */
-export const EVE_CLOUD_PROFILE_TABLES: CloudProfileTables = deepFreeze({
+export const VOLUMETRIC_CLOUD_PROFILE_TABLES: CloudProfileTables = deepFreeze({
   baseAltitudeM: profileVector(profile => profile.baseAltitudeM),
   topAltitudeM: profileVector(profile => profile.topAltitudeM),
   primaryNoiseScaleM: profileVector(profile => profile.primaryNoiseScaleM),
@@ -293,23 +293,23 @@ export const EVE_CLOUD_PROFILE_TABLES: CloudProfileTables = deepFreeze({
   phaseAnisotropyY: profileVector(profile => profile.phase.anisotropy[1]),
   phaseMix: profileVector(profile => profile.phase.mix),
   // GLSL indexes these arrays by type, then indexes the vec4 by height knot.
-  coverageKnots: EVE_CLOUD_PROFILES.map(profile => curveVector(profile.coverageCurve, false)),
-  coverageValues: EVE_CLOUD_PROFILES.map(profile => curveVector(profile.coverageCurve, true)),
-  densityKnots: EVE_CLOUD_PROFILES.map(profile => curveVector(profile.densityCurve, false)),
-  densityValues: EVE_CLOUD_PROFILES.map(profile => curveVector(profile.densityCurve, true))
+  coverageKnots: VOLUMETRIC_CLOUD_PROFILES.map(profile => curveVector(profile.coverageCurve, false)),
+  coverageValues: VOLUMETRIC_CLOUD_PROFILES.map(profile => curveVector(profile.coverageCurve, true)),
+  densityKnots: VOLUMETRIC_CLOUD_PROFILES.map(profile => curveVector(profile.densityCurve, false)),
+  densityValues: VOLUMETRIC_CLOUD_PROFILES.map(profile => curveVector(profile.densityCurve, true))
 })
 
-export const EVE_CLOUD_SUPPORT_BOUNDS: CloudSupportBounds = deepFreeze({
+export const VOLUMETRIC_CLOUD_SUPPORT_BOUNDS: CloudSupportBounds = deepFreeze({
   minAltitudeM:
-    Math.min(...EVE_CLOUD_PROFILES.map(({ baseAltitudeM }) => baseAltitudeM)) -
+    Math.min(...VOLUMETRIC_CLOUD_PROFILES.map(({ baseAltitudeM }) => baseAltitudeM)) -
     CLOUD_EROSION_DISPLACEMENT_M,
   maxAltitudeM:
-    Math.max(...EVE_CLOUD_PROFILES.map(({ topAltitudeM }) => topAltitudeM)) +
+    Math.max(...VOLUMETRIC_CLOUD_PROFILES.map(({ topAltitudeM }) => topAltitudeM)) +
     CLOUD_EROSION_DISPLACEMENT_M,
   maxWeatherDisplacementM: CLOUD_EROSION_DISPLACEMENT_M
 })
 
-export const EVE_REFERENCE_REGION = deepFreeze({
+export const VOLUMETRIC_REFERENCE_REGION = deepFreeze({
   centerLatitudeDeg: 40.5,
   centerLongitudeDeg: -75,
   latitudeExtentDeg: 2.4,
@@ -356,12 +356,12 @@ function blendCurve(left: HeightCurve, right: HeightCurve, blend: number): Heigh
 
 /** Resolves the adjacent authored entries before a density curve is evaluated. */
 export function interpolateCloudProfile(typeField: number): ResolvedCloudProfile {
-  const scalar = clamp01(typeField) * (EVE_CLOUD_PROFILES.length - 1)
-  const leftIndex = Math.min(EVE_CLOUD_PROFILES.length - 1, Math.floor(scalar))
-  const rightIndex = Math.min(EVE_CLOUD_PROFILES.length - 1, leftIndex + 1)
+  const scalar = clamp01(typeField) * (VOLUMETRIC_CLOUD_PROFILES.length - 1)
+  const leftIndex = Math.min(VOLUMETRIC_CLOUD_PROFILES.length - 1, Math.floor(scalar))
+  const rightIndex = Math.min(VOLUMETRIC_CLOUD_PROFILES.length - 1, leftIndex + 1)
   const blend = scalar - leftIndex
-  const left = EVE_CLOUD_PROFILES[leftIndex]
-  const right = EVE_CLOUD_PROFILES[rightIndex]
+  const left = VOLUMETRIC_CLOUD_PROFILES[leftIndex]
+  const right = VOLUMETRIC_CLOUD_PROFILES[rightIndex]
 
   return deepFreeze({
     leftType: left.id,

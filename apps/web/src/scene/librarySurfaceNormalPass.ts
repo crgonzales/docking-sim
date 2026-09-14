@@ -1,6 +1,7 @@
 import { NormalPass, RenderPass } from 'postprocessing';
 import { Camera, Color, Line, Material, Mesh, MeshNormalMaterial, Object3D, Points, Scene, ShaderMaterial, Sprite } from 'three';
 import { createTerrainSurfaceNormalMaterial } from './terrain/terrainSurfaceNormal';
+import { hasOpaqueSurface, SurfaceMaterialCache } from './librarySurfaceMaterials';
 
 type NormalShader = Pick<Parameters<MeshNormalMaterial['onBeforeCompile']>[0], 'vertexShader' | 'fragmentShader'>;
 
@@ -27,9 +28,15 @@ export function maskSurfaceNormalShader(shader: NormalShader): void {
 export class SurfaceNormalPass extends NormalPass {
   // Public at runtime, omitted from the pinned postprocessing declarations.
   declare readonly renderPass: RenderPass;
-  #normalMaterial: MeshNormalMaterial;
-  #waterMaterial = new MeshNormalMaterial();
-  #terrainMaterials = new Map<ShaderMaterial, { material: MeshNormalMaterial; release: () => void }>();
+  #normalMaterials = new SurfaceMaterialCache(source =>
+    source instanceof ShaderMaterial && source.uniforms.terrainSurfaceNoiseTexture
+      ? createTerrainSurfaceNormalMaterial(source) : new MeshNormalMaterial());
+  #waterMaterials = new SurfaceMaterialCache(() => {
+    const material = new MeshNormalMaterial();
+    material.onBeforeCompile = maskSurfaceNormalShader;
+    material.customProgramCacheKey = () => 'library-surface-normal-water-v1';
+    return material;
+  });
   #originalMaterials = new Map<Mesh, Material | Material[]>();
   #originalLayers = new Map<Object3D, number>();
   #clearColor = new Color();
@@ -42,12 +49,11 @@ export class SurfaceNormalPass extends NormalPass {
     }
     this.scene = scene;
     this.camera = camera;
-    this.#normalMaterial = this.renderPass.overrideMaterial;
+    const original = this.renderPass.overrideMaterial;
     // Disable once: the public setter disposes its clones, but not the source material.
     // Restoring this override each frame would allocate another set of clones.
     (this.renderPass as unknown as { overrideMaterial: Material | null }).overrideMaterial = null;
-    this.#waterMaterial.onBeforeCompile = maskSurfaceNormalShader;
-    this.#waterMaterial.customProgramCacheKey = () => 'library-surface-normal-water-v1';
+    original.dispose();
   }
 
   override set mainScene(scene: Scene) { this.scene = scene; super.mainScene = scene; }
@@ -55,27 +61,26 @@ export class SurfaceNormalPass extends NormalPass {
 
   #replaceMaterials = (object: Object3D): void => {
     if (object instanceof Mesh) {
-      this.#originalMaterials.set(object, object.material);
       const source = object.material;
-      if (source instanceof ShaderMaterial && source.uniforms.terrainSurfaceNoiseTexture) {
-        let entry = this.#terrainMaterials.get(source);
-        if (!entry) {
-          const material = createTerrainSurfaceNormalMaterial(source);
-          const release = () => {
-            source.removeEventListener('dispose', release);
-            this.#terrainMaterials.delete(source);
-            material.dispose();
-          };
-          entry = { material, release };
-          source.addEventListener('dispose', release);
-          this.#terrainMaterials.set(source, entry);
-        }
-        object.material = entry.material;
+      const materials = Array.isArray(source) ? source : [source];
+      // Additive exhaust and transparent decals have no solid surface/depth.
+      // Overriding their shader with an opaque material reveals their raster
+      // bounds in the atmosphere lighting, even where their alpha is zero.
+      if (!materials.some(hasOpaqueSurface)) {
+        this.#originalLayers.set(object, object.layers.mask);
+        object.layers.mask = 0;
         return;
       }
+      this.#originalMaterials.set(object, source);
       // Unified terrainWaterMask tiles cover both land and water. Their stock
       // normal material must keep every fragment, matching their color/depth.
-      object.material = object.geometry.hasAttribute('waterMask') ? this.#waterMaterial : this.#normalMaterial;
+      const water = object.geometry.hasAttribute('waterMask');
+      const replacement = (material: Material) => {
+        // Retain the existing terrain hook's precedence, also inside arrays.
+        const terrain = material instanceof ShaderMaterial && material.uniforms.terrainSurfaceNoiseTexture;
+        return (water && !terrain ? this.#waterMaterials : this.#normalMaterials).get(material);
+      };
+      object.material = Array.isArray(source) ? source.map(replacement) : replacement(source);
     } else if (object instanceof Line || object instanceof Points || object instanceof Sprite) {
       // Exclude unsupported drawables without hiding their mesh children or changing materials.
       this.#originalLayers.set(object, object.layers.mask);
@@ -115,9 +120,8 @@ export class SurfaceNormalPass extends NormalPass {
     if (this.#disposed) return;
     this.#disposed = true;
     // JS private fields keep Pass.dispose's shallow walk from disposing these twice.
-    this.#normalMaterial.dispose();
-    this.#waterMaterial.dispose();
-    for (const entry of this.#terrainMaterials.values()) entry.release();
+    this.#normalMaterials.dispose();
+    this.#waterMaterials.dispose();
     super.dispose();
   }
 }

@@ -1,5 +1,6 @@
 import {
   DEFAULT_DRY_MASS_KG,
+  CREW_DRAGON_THRUSTERS,
   smallAngleExp,
   type SimConfig,
 } from '@docking/sim-core';
@@ -32,6 +33,7 @@ export function scenarioToSimConfig(initial: InitialConditions): SimConfig {
   const q_BI = smallAngleExp(attitudeError_rad);
 
   return {
+    thrusters: { specs: CREW_DRAGON_THRUSTERS },
     initial: {
       r_hill_m: [...initial.rel_position_m],
       v_hill_mps: [...initial.rel_velocity_mps],

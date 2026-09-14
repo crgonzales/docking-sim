@@ -50,14 +50,14 @@ export interface CloudLightVolumeOptions {
 /** Two complete arrays, atomic publication, no feedback reads or compute API. */
 export class CloudLightVolume {
   readonly uniforms = {
-    eveLightVolumeTexture: new Uniform<Texture | null>(null),
-    eveCloudPlanetRadiusM: new Uniform(0),
-    eveLightFrame: new Uniform(new Matrix3()),
-    eveLightCapRadius: new Uniform(1),
-    eveLightAltitudeBoundsM: new Uniform(new Vector2()),
-    eveLightSlices: new Uniform(1),
-    eveLightValid: new Uniform(0),
-    eveLightGeneration: new Uniform(-1),
+    volumetricLightVolumeTexture: new Uniform<Texture | null>(null),
+    volumetricCloudPlanetRadiusM: new Uniform(0),
+    volumetricLightFrame: new Uniform(new Matrix3()),
+    volumetricLightCapRadius: new Uniform(1),
+    volumetricLightAltitudeBoundsM: new Uniform(new Vector2()),
+    volumetricLightSlices: new Uniform(1),
+    volumetricLightValid: new Uniform(0),
+    volumetricLightGeneration: new Uniform(-1),
   };
   readonly status = {
     state: 'uninitialized', format: '', bytes: 0, generation: -1, pendingSlices: 0, error: '',
@@ -71,8 +71,8 @@ export class CloudLightVolume {
   private readonly geometry = new PlaneGeometry(2, 2);
   private readonly material: RawShaderMaterial;
   private readonly baseUniforms = {
-    bottomRadius: new Uniform(0), eveCloudPlanetRadiusM: new Uniform(0), sunDirection: new Uniform(new Vector3()),
-    eveCloudAltitudeBoundsM: new Uniform(new Vector2()),
+    bottomRadius: new Uniform(0), volumetricCloudPlanetRadiusM: new Uniform(0), sunDirection: new Uniform(new Vector3()),
+    volumetricCloudAltitudeBoundsM: new Uniform(new Vector2()),
     buildFrame: new Uniform(new Matrix3()), buildCapRadius: new Uniform(1),
     buildAltitudeM: new Uniform(0), buildQuantity: new Uniform(0), buildTexelSize: new Uniform(1),
   };
@@ -105,8 +105,8 @@ void main() {
     vec3 direction = buildFrame * vec3(2.0 * sampleQ, 1.0 - sampleQ2) / (1.0 + sampleQ2);
     vec3 p = direction * (bottomRadius + buildAltitudeM);
     visibility += buildQuantity == 0
-      ? eveDirectIntegration(p, sunDirection, 0.0, 32, 0.0)
-      : eveAmbientIntegration(p, 4, 16, 0.0);
+      ? volumetricDirectIntegration(p, sunDirection, 0.0, 32, 0.0)
+      : volumetricAmbientIntegration(p, 4, 16, 0.0);
   }
   value = vec4(clamp(visibility * 0.25, 0.0, 1.0), 0.0, 0.0, 1.0);
 }`, uniforms: this.baseUniforms });
@@ -173,7 +173,7 @@ void main() {
     const next = requestCloudLightGeneration(this.state, inputs);
     if (next === this.state) return;
     this.state = next;
-    this.uniforms.eveCloudPlanetRadiusM.value = inputs.layout.planetRadiusM;
+    this.uniforms.volumetricCloudPlanetRadiusM.value = inputs.layout.planetRadiusM;
     this.bindings.set(inputs.generation, frozenBindingCopy(mediaUniforms));
     const retained = new Set([next.build?.inputs.generation, next.pending?.generation]);
     for (const generation of this.bindings.keys()) if (!retained.has(generation)) this.bindings.delete(generation);
@@ -201,9 +201,9 @@ void main() {
         }
         const u = this.baseUniforms, layout = build.inputs.layout;
         u.bottomRadius.value = layout.planetRadiusM;
-        u.eveCloudPlanetRadiusM.value = layout.planetRadiusM;
+        u.volumetricCloudPlanetRadiusM.value = layout.planetRadiusM;
         u.sunDirection.value.fromArray(build.inputs.sunDirectionECEF);
-        u.eveCloudAltitudeBoundsM.value.set(layout.minAltitudeM, layout.maxAltitudeM);
+        u.volumetricCloudAltitudeBoundsM.value.set(layout.minAltitudeM, layout.maxAltitudeM);
         frameMatrix(layout, u.buildFrame.value);
         u.buildCapRadius.value = layout.capRadius;
         u.buildTexelSize.value = 1 / CLOUD_LIGHT_QUALITY[layout.quality].width;
@@ -229,15 +229,15 @@ void main() {
       age >= 0 && age <= 3 && sunAgreement >= Math.cos(Math.PI / 180);
     this.status.ageSeconds = Number.isFinite(age) ? Math.max(0, age) : null;
     this.status.valid = valid;
-    this.uniforms.eveLightValid.value = valid ? 1 : 0;
+    this.uniforms.volumetricLightValid.value = valid ? 1 : 0;
     if (published) {
       const layout = published.inputs.layout;
-      this.uniforms.eveLightVolumeTexture.value = this.buffers[published.bufferIndex].texture;
-      frameMatrix(layout, this.uniforms.eveLightFrame.value);
-      this.uniforms.eveLightCapRadius.value = layout.capRadius;
-      this.uniforms.eveLightAltitudeBoundsM.value.set(layout.minAltitudeM, layout.maxAltitudeM);
-      this.uniforms.eveLightSlices.value = CLOUD_LIGHT_QUALITY[layout.quality].slicesPerQuantity;
-      this.uniforms.eveLightGeneration.value = published.inputs.generation;
+      this.uniforms.volumetricLightVolumeTexture.value = this.buffers[published.bufferIndex].texture;
+      frameMatrix(layout, this.uniforms.volumetricLightFrame.value);
+      this.uniforms.volumetricLightCapRadius.value = layout.capRadius;
+      this.uniforms.volumetricLightAltitudeBoundsM.value.set(layout.minAltitudeM, layout.maxAltitudeM);
+      this.uniforms.volumetricLightSlices.value = CLOUD_LIGHT_QUALITY[layout.quality].slicesPerQuantity;
+      this.uniforms.volumetricLightGeneration.value = published.inputs.generation;
       this.status.generation = published.inputs.generation;
       this.status.state = valid ? 'ready' : 'building';
     }
@@ -247,8 +247,8 @@ void main() {
 
   invalidate(): void {
     this.state = invalidateCloudLightGenerations(this.state); this.bindings.clear();
-    this.uniforms.eveLightValid.value = 0; this.activeBuildId = -1;
-    this.uniforms.eveLightGeneration.value = -1;
+    this.uniforms.volumetricLightValid.value = 0; this.activeBuildId = -1;
+    this.uniforms.volumetricLightGeneration.value = -1;
     this.status.generation = -1;
     this.status.pendingSlices = 0;
     this.status.ageSeconds = null;
@@ -263,6 +263,6 @@ void main() {
     this.disposed = true; this.invalidate();
     this.buffers?.forEach(buffer => buffer.dispose()); this.buffers = null;
     this.material.dispose(); this.geometry.dispose(); this.scene.clear();
-    this.uniforms.eveLightVolumeTexture.value = null; this.status.state = 'disposed';
+    this.uniforms.volumetricLightVolumeTexture.value = null; this.status.state = 'disposed';
   }
 }

@@ -115,7 +115,7 @@ export function runCloudDiffuseTransportConformance(
       uniform vec3 fixtureOpticalDepths;
       out vec4 outputColor;
       void main() {
-        float transmitted = eveDiffuseTransmittance(fixtureOpticalDepths.x,
+        float transmitted = volumetricDiffuseTransmittance(fixtureOpticalDepths.x,
           fixtureOpticalDepths.y, fixtureOpticalDepths.z);
         outputColor = vec4(transmitted, 0.25, 0.5, 1.0);
       }`,

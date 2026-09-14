@@ -14,7 +14,7 @@ import mediaGLSL from './clouds/shaders/cloudDensity.glsl?raw';
 import transportGLSL from './clouds/shaders/cloudTransport.glsl?raw';
 import lookupGLSL from './clouds/shaders/cloudLightLookup.glsl?raw';
 
-const PHYSICAL_MEDIA_GLSL = mediaGLSL.replace(/\bbottomRadius\b/g, 'eveCloudPlanetRadiusM');
+const PHYSICAL_MEDIA_GLSL = mediaGLSL.replace(/\bbottomRadius\b/g, 'volumetricCloudPlanetRadiusM');
 
 /**
  * This is deliberately the small local-PBR subset of the cloud backend. The
@@ -24,9 +24,9 @@ const PHYSICAL_MEDIA_GLSL = mediaGLSL.replace(/\bbottomRadius\b/g, 'eveCloudPlan
  */
 const LOCAL_CLOUD_GLSL = /* glsl */ `
 precision highp sampler3D;
-uniform float eveLocalCloudLightingEnabled;
-uniform vec3 eveWeatherSunDirectionECEF;
-uniform float eveCloudPlanetRadiusM;
+uniform float volumetricLocalCloudLightingEnabled;
+uniform vec3 volumetricWeatherSunDirectionECEF;
+uniform float volumetricCloudPlanetRadiusM;
 struct MediaSample {
   float density;
   vec4 weight;
@@ -36,19 +36,19 @@ struct MediaSample {
   float phaseMix;
 };
 ${PHYSICAL_MEDIA_GLSL}
-#define sunDirection eveWeatherSunDirectionECEF
-${transportGLSL.replace('uniform float eveCloudPlanetRadiusM;', '')}
+#define sunDirection volumetricWeatherSunDirectionECEF
+${transportGLSL.replace('uniform float volumetricCloudPlanetRadiusM;', '')}
 ${lookupGLSL}
 #undef sunDirection
 `;
 
 const VERTEX_DECLARATIONS = /* glsl */ `
-uniform mat4 eveLocalRenderToECEF;
-varying vec3 eveLocalPositionECEFM;
+uniform mat4 volumetricLocalRenderToECEF;
+varying vec3 volumetricLocalPositionECEFM;
 `;
 
 const FRAGMENT_DECLARATIONS = /* glsl */ `
-varying vec3 eveLocalPositionECEFM;
+varying vec3 volumetricLocalPositionECEFM;
 ${LOCAL_CLOUD_GLSL}
 `;
 
@@ -90,7 +90,7 @@ function placeholderUniforms(): Record<string, FlightCloudUniform> {
     })();
     uniforms[name] = new Uniform(value);
   }
-  uniforms.eveLocalRenderToECEF = new Uniform(new Matrix4());
+  uniforms.volumetricLocalRenderToECEF = new Uniform(new Matrix4());
   return uniforms;
 }
 
@@ -113,13 +113,13 @@ export interface FlightCloudLightingBridge {
 
 export function createFlightCloudLightingBridge(): FlightCloudLightingBridge {
   const placeholders = placeholderUniforms();
-  const renderToECEF = placeholders.eveLocalRenderToECEF.value as Matrix4;
+  const renderToECEF = placeholders.volumetricLocalRenderToECEF.value as Matrix4;
   const enabled = new Uniform(0);
   const materials = new Map<MeshStandardMaterial, MaterialRegistration>();
   let bindings: Readonly<Record<string, Uniform>> | null = null;
   const activeUniforms: Record<string, FlightCloudUniform> = {
     ...placeholders,
-    eveLocalCloudLightingEnabled: enabled,
+    volumetricLocalCloudLightingEnabled: enabled,
   };
 
   const refreshUniforms = () => {
@@ -128,8 +128,8 @@ export function createFlightCloudLightingBridge(): FlightCloudLightingBridge {
     for (const name of Object.keys(placeholders)) {
       activeUniforms[name] = bindings?.[name] ?? placeholders[name]!;
     }
-    activeUniforms.eveLocalCloudLightingEnabled = enabled;
-    activeUniforms.eveLocalRenderToECEF = placeholders.eveLocalRenderToECEF!;
+    activeUniforms.volumetricLocalCloudLightingEnabled = enabled;
+    activeUniforms.volumetricLocalRenderToECEF = placeholders.volumetricLocalRenderToECEF!;
     for (const registration of materials.values()) {
       for (const uniforms of registration.compiledUniforms) Object.assign(uniforms, activeUniforms);
     }
@@ -177,15 +177,15 @@ export function createFlightCloudLightingBridge(): FlightCloudLightingBridge {
           `#include <common>\n${VERTEX_DECLARATIONS}`);
         shader.vertexShader = once(shader.vertexShader, '#include <worldpos_vertex>', `
           #include <worldpos_vertex>
-          vec4 eveLocalWorldPosition = vec4(transformed, 1.0);
+          vec4 volumetricLocalWorldPosition = vec4(transformed, 1.0);
           #ifdef USE_BATCHING
-            eveLocalWorldPosition = batchingMatrix * eveLocalWorldPosition;
+            volumetricLocalWorldPosition = batchingMatrix * volumetricLocalWorldPosition;
           #endif
           #ifdef USE_INSTANCING
-            eveLocalWorldPosition = instanceMatrix * eveLocalWorldPosition;
+            volumetricLocalWorldPosition = instanceMatrix * volumetricLocalWorldPosition;
           #endif
-          eveLocalWorldPosition = modelMatrix * eveLocalWorldPosition;
-          eveLocalPositionECEFM = (eveLocalRenderToECEF * eveLocalWorldPosition).xyz;
+          volumetricLocalWorldPosition = modelMatrix * volumetricLocalWorldPosition;
+          volumetricLocalPositionECEFM = (volumetricLocalRenderToECEF * volumetricLocalWorldPosition).xyz;
         `);
         shader.fragmentShader = once(shader.fragmentShader, '#include <common>',
           `#include <common>\n${FRAGMENT_DECLARATIONS}`);
@@ -193,25 +193,25 @@ export function createFlightCloudLightingBridge(): FlightCloudLightingBridge {
         // Compute physical derivatives before the lighting branch.
         shader.fragmentShader = once(shader.fragmentShader, '\t#include <emissivemap_fragment>\n', `
           #include <emissivemap_fragment>
-          float eveLocalCloudFootprintM = max(1.0, max(
-            length(dFdx(eveLocalPositionECEFM)), length(dFdy(eveLocalPositionECEFM))));
-          float eveLocalDirectCloudVisibility = 1.0;
-          float eveLocalSkyCloudVisibility = 1.0;
-          if (eveLocalCloudLightingEnabled > 0.5) {
-            eveLocalDirectCloudVisibility = eveSunTransmittance(
-              eveLocalPositionECEFM, 0.0, eveLocalCloudFootprintM);
-            eveLocalSkyCloudVisibility = eveSkyVisibility(
-              eveLocalPositionECEFM, eveLocalCloudFootprintM);
+          float volumetricLocalCloudFootprintM = max(1.0, max(
+            length(dFdx(volumetricLocalPositionECEFM)), length(dFdy(volumetricLocalPositionECEFM))));
+          float volumetricLocalDirectCloudVisibility = 1.0;
+          float volumetricLocalSkyCloudVisibility = 1.0;
+          if (volumetricLocalCloudLightingEnabled > 0.5) {
+            volumetricLocalDirectCloudVisibility = volumetricSunTransmittance(
+              volumetricLocalPositionECEFM, 0.0, volumetricLocalCloudFootprintM);
+            volumetricLocalSkyCloudVisibility = volumetricSkyVisibility(
+              volumetricLocalPositionECEFM, volumetricLocalCloudFootprintM);
           }
         `);
         const directLighting = once(ShaderChunk.lights_fragment_begin,
           'getDirectionalLightInfo( directionalLight, directLight );',
-          'getDirectionalLightInfo( directionalLight, directLight );\n directLight.color *= eveLocalDirectCloudVisibility;');
+          'getDirectionalLightInfo( directionalLight, directLight );\n directLight.color *= volumetricLocalDirectCloudVisibility;');
         shader.fragmentShader = once(shader.fragmentShader,
           '#include <lights_fragment_begin>', directLighting);
         shader.fragmentShader = once(shader.fragmentShader, '\t#include <lights_fragment_maps>\n', `
           #include <lights_fragment_maps>
-          if (eveLocalCloudLightingEnabled > 0.5) irradiance *= eveLocalSkyCloudVisibility;
+          if (volumetricLocalCloudLightingEnabled > 0.5) irradiance *= volumetricLocalSkyCloudVisibility;
         `);
         Object.assign(shader.uniforms, activeUniforms);
         registration.compiledUniforms.add(shader.uniforms);

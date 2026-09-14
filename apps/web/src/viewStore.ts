@@ -59,7 +59,7 @@ interface ViewState {
 /** 'C' cycles the flight views only; DEBUG is entered/left via its toggle. */
 const VIEW_MODES: readonly ViewMode[] = ['CINEMATIC', 'CHASE', 'COCKPIT'];
 const ORBIT_LIMITS: Record<ViewMode, { minDistance_m: number; maxDistance_m: number }> = {
-  CINEMATIC: { minDistance_m: 40, maxDistance_m: FLIGHT_MAX_ORBIT_M },
+  CINEMATIC: { minDistance_m: 20, maxDistance_m: FLIGHT_MAX_ORBIT_M },
   CHASE: { minDistance_m: 8, maxDistance_m: 400 },
   COCKPIT: { minDistance_m: 0, maxDistance_m: 0 },
   // Diagnostic camera: zoom range spans from hull inspection out past the full

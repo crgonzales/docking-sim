@@ -190,7 +190,7 @@ an architecture/source map, not a direct Unity port.
 [Scatterer notices](https://github.com/LGhassen/Scatterer/blob/c2d0b0f2a8798381040d3a4e735a00cad957eb47/license.md),
 [EVE notices](https://github.com/LGhassen/EnvironmentalVisualEnhancements/blob/4ac5793a55dec05d6dba70237dde8a2f0d68f855/README.md#L18-L48).
 
-For Claude: preserve the imported staged state and read
+Next steps: preserve the imported staged state and read
 [the shadow increment](cloud-shadows.md), its patch/manifest and the source links
 above. The isolated prototype runs on **5174** with `?renderer=library`; **5173**
 is reserved. Start with bounded material/weather experiments, then compare a
