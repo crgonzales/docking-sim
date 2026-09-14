@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.14.1` | 7   | hotfix: make the library atmosphere pipeline and volumetric weather the only renderer for ordinary play |
 | `0.14.0` | 7   | feat: first docking mission, Crew Dragon RCS model, volumetric weather naming & audited flight/cloud fixes |
 | `0.8.0` | 2    | feat: physically-based sky overhaul — atmospheric scattering LUTs, volumetric clouds, terrain relief & debug camera |
 | `0.7.0` | 2    | feat: flight feel — selectable manual authority, truth-driven thruster plumes & procedural RCS audio |
@@ -15,6 +16,12 @@
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
+
+- **v0.14.1 (Hotfix - Week 7, 14-09-2026)**:
+  - **Issue**: the bare public URL and `?mode=mission` still mounted the retired v0.8.0 renderer with the old shell clouds; only URLs carrying `renderer=library&cloudSystem=volumetric` showed the released atmosphere and volumetric weather
+  - **Fix**: SceneRoot always mounts the library pipeline; `resolveCloudSystem` defaults to volumetric (`eve` alias kept, `cloudSystem=legacy` remains the earlier library cloud backend for comparison); normal play resolves to medium cloud quality, DPR 1, exposure 2; missing/empty/invalid selectors resolve to the defaults; the `renderer=` switch is retired and the old renderer is no longer reachable
+  - **Root Cause**: two independent opt-in gates (`renderer=library` in `renderProbeConfig.ts`, `cloudSystem` defaulting to legacy in `cloudSystemSelection.ts`) were never flipped when the renderer became the shipped default; FLIGHT passed both explicitly, so only space views regressed
+  - **Verification**: new `renderSelection.test.ts` covers the configuration SceneRoot and LibraryEffects consume; production build served locally and the live site checked at bare `/`, `?mode=mission`, orbit/transition/low-altitude framings and `?mode=flight` (see `CR_w7_v0.14.1.md`)
 
 - **v0.14.0 (First Docking + Volumetric Weather + Flight - Week 7, 14-09-2026)**:
   - **Mission**: `FIRST_DOCKING_01` — a prepared six-metre manual docking on a Crew Dragon with a guidance HUD, station-anchored target, `holdManualPosition()`, pause and seeded retry; the emergency scenario remains selectable

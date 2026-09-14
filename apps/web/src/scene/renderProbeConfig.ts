@@ -1,18 +1,22 @@
-// Isolated research switches; these are not part of the production interface.
-const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
-export const LIBRARY_RENDERER = query.get('renderer') === 'library';
-export const RENDER_PROBE = query.get('probe') === '1';
-/** Phase 1 profiling is deliberately opt-in; normal flights add no timers. */
-export const PROBE_PROFILE = query.get('profile') === '1';
-export const PROBE_CLOUDS = query.get('clouds') !== '0';
-export const PROBE_DPR = Math.max(0.5, Math.min(1.75, Number(query.get('dpr') ?? '1')));
-// One photographic exposure for the entire prototype, including spacecraft.
-// The brighter presentation is art direction; it does not alter cloud density.
-export const PROBE_EXPOSURE = Math.max(0.01, Math.min(10, Number(query.get('exposure') ?? (LIBRARY_RENDERER ? '2' : '1'))));
+// Query-driven render settings. Defaults are normal play (library atmosphere
+// pipeline, volumetric weather, medium quality, DPR 1, exposure 2); the
+// remaining switches are research diagnostics that stay opt-in. Resolution
+// logic lives in renderSelection.ts so it can be tested without a window.
+import { resolveRenderProbeConfig } from './renderSelection';
 
-export const PROBE_QUALITY = query.get('quality') === 'medium' ? 'medium' : 'low';
-
-export const PROBE_WEATHER = query.get('weather') === 'demo' ? 'demo' : 'global';
-// The structured candidate still needs orbital art acceptance; keep A/B explicit.
-export const PROBE_WEATHER_STRUCTURE = query.get('weatherStructure') === 'structured' ? 'structured' : 'legacy';
-export const PROBE_WATER_REFLECTIONS = query.get('water') !== 'diffuse';
+const config = resolveRenderProbeConfig(typeof window === 'undefined' ? '' : window.location.search);
+/**
+ * The library pipeline is the only renderer. The v0.8.0 renderer is retired
+ * and no longer selectable; consumers that still branch on this constant keep
+ * their library path and their legacy branch is dead code pending removal.
+ */
+export const LIBRARY_RENDERER = true;
+export const RENDER_PROBE = config.renderProbe;
+export const PROBE_PROFILE = config.profile;
+export const PROBE_CLOUDS = config.clouds;
+export const PROBE_DPR = config.dpr;
+export const PROBE_EXPOSURE = config.exposure;
+export const PROBE_QUALITY = config.quality;
+export const PROBE_WEATHER = config.weather;
+export const PROBE_WEATHER_STRUCTURE = config.weatherStructure;
+export const PROBE_WATER_REFLECTIONS = config.waterReflections;

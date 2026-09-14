@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.14.0** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.14.1** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim ·
 Live: https://docking-sim.pages.dev
@@ -57,8 +57,10 @@ Inside:
 - Volumetric weather (v0.14.0): library renderer hosted on Takram's Bruneton
   atmosphere and Three-clouds passes — **canonical world-fixed cloud density**
   feeding local raymarched volumes, a shared light cache and an orbital column
-  atlas, depth-validated temporal reconstruction, weather advecting at 15 m/s
-  (`renderer=library&cloudSystem=volumetric` for diagnostics; FLIGHT uses it by default)
+  atlas, depth-validated temporal reconstruction, weather advecting at 15 m/s.
+  Since v0.14.1 this is the only renderer, on by default in every mode at medium
+  cloud quality, DPR 1 and exposure 2 (`quality=low`, `dpr=`, `exposure=` and
+  `clouds=0` remain as explicit overrides)
 - FLIGHT mode (v0.14.0): **F/A-18C-style 6-DOF flight** with a CC BY 4.0 Hornet
   model, an airfield with runway/apron/hangars/tower and an **on-foot start**
   beside the parked jet, real-time daylight clock, Balanced/High graphics presets,

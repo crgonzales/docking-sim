@@ -1,5 +1,5 @@
 import { VolumetricCloudSystem } from './clouds/VolumetricCloudSystem';
-import { resolveCloudSystem } from './clouds/cloudSystemSelection';
+import { resolveLibraryEffectsSelection } from './renderSelection';
 import { VolumetricAerialPerspectiveEffect } from './clouds/VolumetricAerialPerspectiveEffect';
 import { configureCloudSampling } from './libraryCloudSampling';
 import { configureCloudLighting } from './libraryCloudLighting';
@@ -91,10 +91,12 @@ export interface LibraryEffectsProps {
 export function LibraryEffects({ worldFrame, exposureRef, cloudSystem, quality, exposure, dpr, graphicsPreset, smaa, environment, sunTransmittanceRef, skyIrradianceRef, cloudLighting }: LibraryEffectsProps) {
   const { gl, scene, camera, size, viewport, invalidate } = useThree();
   const query = new URLSearchParams(window.location.search);
-  const selectedCloudSystem = resolveCloudSystem(cloudSystem ?? query.get('cloudSystem'));
-  const selectedQuality = quality ?? PROBE_QUALITY;
-  const selectedExposure = exposure ?? PROBE_EXPOSURE;
-  const selectedDpr = dpr ?? PROBE_DPR;
+  const selected = resolveLibraryEffectsSelection({ cloudSystem, quality, exposure, dpr }, window.location.search,
+    { quality: PROBE_QUALITY, exposure: PROBE_EXPOSURE, dpr: PROBE_DPR });
+  const selectedCloudSystem = selected.cloudSystem;
+  const selectedQuality = selected.quality;
+  const selectedExposure = selected.exposure;
+  const selectedDpr = selected.dpr;
   const selectedSmaaPreset = smaa?.enabled === false || ((import.meta as ImportMeta & { env: { DEV: boolean } }).env.DEV && query.get('sceneAA') === 'off')
     ? null : smaa?.preset ?? 'high';
   const hasSmaa = selectedSmaaPreset !== null;

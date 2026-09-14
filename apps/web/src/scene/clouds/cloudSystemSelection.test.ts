@@ -6,7 +6,11 @@ describe('cloud system selection', () => {
     expect(resolveCloudSystem(value)).toBe('volumetric');
   });
 
-  it.each([null, undefined, '', 'legacy', 'unknown'])('preserves the existing default for %s', value => {
-    expect(resolveCloudSystem(value)).toBe('legacy');
+  it.each([null, undefined, '', 'unknown'])('defaults missing, empty and unknown selectors (%s) to volumetric', value => {
+    expect(resolveCloudSystem(value)).toBe('volumetric');
+  });
+
+  it('keeps the legacy cloud backend as an explicit comparison override', () => {
+    expect(resolveCloudSystem('legacy')).toBe('legacy');
   });
 });

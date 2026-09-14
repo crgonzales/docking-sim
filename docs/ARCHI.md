@@ -92,9 +92,14 @@ physical inputs → in-code derivations), baked Hillaire atmosphere LUTs
 RGB float is unfilterable in WebGL2), KTX2/UASTC textures + seeded cloud
 placement mask via `scripts/make*.mjs` (provenance: `assets/ASSETS.md`).
 
-Library renderer (`renderer=library&cloudSystem=volumetric` for query-selected
-SceneRoot diagnostics; FLIGHT selects the same components explicitly): Takram
-Bruneton atmosphere and a maintained Three-clouds fork provide the host passes.
+Library renderer (the only renderer since v0.14.1: SceneRoot mounts it for
+SANDBOX/MISSION/ANALYSIS at medium cloud quality, DPR 1 and exposure 2, with
+our volumetric weather; FLIGHT passes the same selection explicitly; the v0.8.0
+renderer and its `renderer=` switch are retired): Takram Bruneton atmosphere and
+a maintained Three-clouds fork provide the host passes. `renderSelection.ts`
+resolves every query switch (`quality=low`, `dpr`, `exposure`, `clouds=0`,
+`cloudSystem=legacy` for the earlier library cloud backend, `probe`/`profile`
+diagnostics); missing, empty and unknown values resolve to normal play.
 Their runtime LUT/noise binaries under `apps/web/public/vendor/takram/` are
 gitignored; `scripts/setupRendererSpikeAssets.mjs` copies them from the pinned
 packages, fetches the pinned STBN, verifies `asset-checksums.json` and runs first
@@ -110,8 +115,8 @@ Patch-local phase reduction preserves ground precision. Color and normal passes
 share the geographic water classifier and bounded imagery-to-reflectance
 calibration. The latter is artistic calibration, not measured albedo. Resource
 ownership and verified limits: `6-memo/volumetric-cloud-system/stabilization-completion.md`.
-The query-selected SceneRoot behavior remains unchanged for nonflight modes;
-integrated FLIGHT opts into the library Earth, terrain and effects explicitly.
+Integrated FLIGHT opts into the library Earth, terrain and effects explicitly
+with its own graphics presets; nonflight modes use the shared query defaults.
 
 ## Roadmap
 

@@ -7,16 +7,13 @@ import { ThrusterProbe } from './ThrusterProbe';
 import { RCS_INSPECTION } from './rcsInspection';
 import { useAppModeStore } from '../appModeStore';
 import { RenderFrameTiming } from './RenderFrameTiming';
-import { LIBRARY_RENDERER, PROBE_DPR, RENDER_PROBE } from './renderProbeConfig';
+import { PROBE_DPR, RENDER_PROBE } from './renderProbeConfig';
 import { renderTimings } from './renderTimings';
 import { Earth } from './Earth';
-import { Effects } from './Effects';
 import { CameraRig } from './CameraRig';
 import { DockingCameraPass } from './DockingCameraPiP';
 import { Spacecraft } from './Spacecraft';
 import { DockingGuide } from './DockingGuide';
-import { Starfield } from './Starfield';
-import { SunSprite } from './SunSprite';
 import { SUN_DIR, SUN_LIGHT_DISTANCE_M } from './sun';
 import {
   ATMOSPHERE_TRANSMITTANCE_LUT_PATH,
@@ -207,9 +204,9 @@ export function SceneRoot() {
   return (
     <Canvas
       // The library's full-screen buffers follow canvas DPR. Keep normal play
-      // on the same pixel budget as the measured profile (explicit override
-      // remains available), instead of silently tripling work on Retina.
-      dpr={RENDER_PROBE || LIBRARY_RENDERER ? PROBE_DPR : [1, 1.75]}
+      // on the same pixel budget as the measured profile (explicit `dpr`
+      // override remains available), instead of silently tripling work on Retina.
+      dpr={PROBE_DPR}
       gl={{ logarithmicDepthBuffer: true, powerPreference: 'high-performance', antialias: true }}
       camera={{ position: [40, -320, 60], fov: 45, near: CAMERA_NEAR, far: CAMERA_FAR }}
       onCreated={({ camera, gl }) => {
@@ -221,8 +218,6 @@ export function SceneRoot() {
       {!fixtureOnly && <>
       <WorldFrameController worldFrame={worldFrame} />
       <Suspense fallback={null}>
-        {!LIBRARY_RENDERER && <Starfield />}
-        {!LIBRARY_RENDERER && <SunSprite sunTint={sunTint} worldFrame={worldFrame} />}
         <Earth worldFrame={worldFrame} terrainSourceRef={terrainSourceRef} />
       </Suspense>
       <SunLight sunTint={sunTint} worldFrame={worldFrame} />
@@ -233,7 +228,8 @@ export function SceneRoot() {
       <CameraRig worldFrame={worldFrame} terrainSourceRef={terrainSourceRef} />
       <FrameExposureController worldFrame={worldFrame} exposureRef={frameExposureRef} />
       <DockingCameraPass worldFrame={worldFrame} exposureRef={frameExposureRef} />
-      {LIBRARY_RENDERER ? <LibraryEffects worldFrame={worldFrame} exposureRef={frameExposureRef} /> : <Effects exposureRef={frameExposureRef} />}
+      {/* The library atmosphere pipeline with volumetric weather is the only renderer. */}
+      <LibraryEffects worldFrame={worldFrame} exposureRef={frameExposureRef} />
       </>}
       {RENDER_PROBE && <RenderProbe worldFrame={worldFrame} />}
       {RCS_INSPECTION && appMode === 'SANDBOX' && <ThrusterProbe />}
