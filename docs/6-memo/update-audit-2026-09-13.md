@@ -4,11 +4,11 @@
 
 **Subsequent instruction (2026-09-14):** The user authorized publishing the latest update to GitHub and then updating the existing Cloudflare-hosted website; the release is recorded in [the v0.14.0 changelog](../2-changelog/w7_v0.14.0.md). The no-release/no-push statements below describe the completed audit, not a restriction on that newly authorized work. This addendum was written after the preserved audit snapshot; application code is unchanged.
 
-Audit the accumulated working tree in `docking-sim-flight-integrated`, branch `codex/gameplay-first-docking`, against HEAD `77ec02ccbce69f5cb4c85272b9cdfd5dfeed7cfd` (last flight/cloud-shimmer checkpoint).
+Audit the accumulated working tree in `docking-sim-flight-integrated`, branch `gameplay-first-docking`, against HEAD `77ec02ccbce69f5cb4c85272b9cdfd5dfeed7cfd` (last flight/cloud-shimmer checkpoint).
 
 ## Scope and method
 
-The user requested the normal TRIP independent Codex CLI review loop, with one reviewer, fixes and retesting until approval. No release, version bump, merge or push is part of this audit. Keep the visible game closed; any necessary runtime validation must use one temporary offscreen instance and stop it afterward. Preserve all existing work. The original `docking-sim` checkout owns the review checklist/template; local prompt copies only correct their stale paths.
+The user requested the normal TRIP independent review loop, with one reviewer, fixes and retesting until approval. No release, version bump, merge or push is part of this audit. Keep the visible game closed; any necessary runtime validation must use one temporary offscreen instance and stop it afterward. Preserve all existing work. The original `docking-sim` checkout owns the review checklist/template; local prompt copies only correct their stale paths.
 
 Review tracked changes AND every new source file. The prior first-docking approval excluded unrelated renderer, allocator, sensors and livery. It is evidence for that feature only, not approval of this update. Its raw synthesis listed too many files and omitted new files; do not reuse that list as coverage evidence. No changelog/release exists for this accumulated update; version remains 0.8.0 and 0.14.0 is a feature-plan candidate.
 
@@ -110,7 +110,7 @@ Full workspace build passed on the unchanged baseline. Full package suites passe
 
 All 83 original changed/new file hashes were unchanged during the gate. `before-files.tar.gz`, `before-tracked.patch` and `before-manifest.json` preserve the audit starting point locally; they are not a reviewed Git checkpoint. No game listener was running on port 5175.
 
-The independent reviewer is the normal Codex CLI loop, thread `01a09ea6-694f-7cf2-919c-3ad0aa659ba8`, target `full-update-audit-2026-09-13`. Review state is archived locally outside the repository. An earlier fallback helper was stopped before reading application code and closed; it produced no approval.
+The independent reviewer is the normal independent review loop, thread `01a09ea6-694f-7cf2-919c-3ad0aa659ba8`, target `full-update-audit-2026-09-13`. Review state is archived locally outside the repository. An earlier fallback helper was stopped before reading application code and closed; it produced no approval.
 
 Review status: APPROVED on both independent rounds. Final confirmation verified both implementer findings as addressed, the restored/strengthened regression coverage, and all eight checklist sections. No unresolved findings were reported. The earlier scoped first-mission approval is not being reused as full-update evidence.
 
@@ -129,7 +129,7 @@ Audit additions beyond the 83-path baseline: `apps/web/src/hud/flightAudio.test.
 
 ## Continuation and limits
 
-Consolidated record: `docs/3-code-review/CR_wa_update-audit-2026-09-13.md` (saved after both independent approvals). Resume in `docking-sim-flight-integrated` on `codex/gameplay-first-docking`; the original checkout is not the active game working tree. Read `docs/ARCHI.md`, `docs/scenario-mode-spec.md`, the first-docking plan and this review before changes. Use the current agent's TRIP skill files.
+Consolidated record: `docs/3-code-review/CR_wa_update-audit-2026-09-13.md` (saved after both independent approvals). Resume in `docking-sim-flight-integrated` on `gameplay-first-docking`; the original checkout is not the active game working tree. Read `docs/ARCHI.md`, `docs/scenario-mode-spec.md`, the first-docking plan and this review before changes. Use the current agent's TRIP skill files.
 
 The update remains an uncommitted working tree based on `77ec02ccbce69f5cb4c85272b9cdfd5dfeed7cfd`. Nothing was released, merged or pushed. A local snapshot of all 87 changed/new files, including the final review report, is saved in `.evidence.local/audit-2026-09-13/after-files.tar.gz`, with hashes in `after-manifest.json` and tracked changes in `after-tracked.patch`; it is a recovery artifact, not a Git tag. Restore into a separate checkout for comparison rather than overwriting current work.
 

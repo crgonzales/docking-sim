@@ -2,8 +2,8 @@
 
 - Date: 2026-09-11
 - Status: **APPROVED**
-- Scope: incremental correction after `8e930fb`, branch `codex/flight-visual-quality`
-- Review: Codex CLI, thread `01a08f49-174d-7d32-be1a-1d77dbef97c6`
+- Scope: incremental correction after `8e930fb`, branch `flight-visual-quality`
+- Review: independent reviewer, thread `01a08f49-174d-7d32-be1a-1d77dbef97c6`
 
 Gate: complete workspace build passed; 11 affected tests passed; visual and
 performance evidence in `docs/6-memo/f18-integration/flight-shadow-bands-validation.md`.

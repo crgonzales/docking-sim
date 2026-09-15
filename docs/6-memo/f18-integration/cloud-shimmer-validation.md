@@ -77,7 +77,7 @@ The full GPU report is saved in
 `.evidence.local/capture-eve-medium-full-1789112747506.json` (last sample's
 `conformance` field). No console errors were observed after the visual checks.
 
-Independent Codex CLI review returned APPROVED with no findings, thread
+Independent review returned APPROVED with no findings, thread
 `01a08f6e-5b98-7b03-b5b7-3a7f260e597f`; see
 `docs/3-code-review/CR_wa_cloud-shimmer.md`. The ordinary game URL is restored
 on port 5175, paused at the runway on High, with one tab open. Temporary

@@ -1,6 +1,6 @@
 # Ground and volumetric weather validation
 
-Verified local checkpoint on `codex/ground-weather-cycle`, based on `56be888`. Consolidated review: [CR_wa_v0.10.0.md](../../3-code-review/CR_wa_v0.10.0.md). One in-app game tab on port 5175; Apple M3. No changes to the source checkout or shared asset symlinks.
+Verified local checkpoint on `ground-weather-cycle`, based on `56be888`. Consolidated review: [CR_wa_v0.10.0.md](../../3-code-review/CR_wa_v0.10.0.md). One in-app game tab on port 5175; Apple M3. No changes to the source checkout or shared asset symlinks.
 
 ## Confirmed
 

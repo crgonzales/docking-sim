@@ -1,6 +1,6 @@
 # Flight visual quality validation
 
-Completed local checkpoint on `codex/flight-visual-quality`, based on `5a34b36`.
+Completed local checkpoint on `flight-visual-quality`, based on `5a34b36`.
 Trees and birds follow this pass; they are not included in this checkpoint.
 
 The subsequent [aircraft shadow-band fix](flight-shadow-bands-validation.md)

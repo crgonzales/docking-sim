@@ -12,7 +12,7 @@ The parked aircraft stays stationary after boarding. Takeoff, landing gear suspe
 
 The base uses one fixed tangent surface at the surveyed inland prototype site near 7°N, 0.02°E. Airfield geometry, character support and parked gear height share the site definition. The surface sampler intersects the radial direction from the existing flight chart with this plane, so curvature cannot separate the feet from the runway toward its ends. The base perimeter and building footprints bound walking; the aircraft itself has no collision volume and building interiors are not accessible.
 
-This integrates the reviewed `codex/first-person-character` prototype from its preserved worktree. The integrated version reconciles the flight session's private controls and exercise cancellation on parking, keeps flight controls isolated from walking, and retains the paused resize cloud warmup from c160798. It adds no renderer, composer or texture service.
+This integrates the reviewed `first-person-character` prototype from its preserved worktree. The integrated version reconciles the flight session's private controls and exercise cancellation on parking, keeps flight controls isolated from walking, and retains the paused resize cloud warmup from c160798. It adds no renderer, composer or texture service.
 
 ## Validation
 

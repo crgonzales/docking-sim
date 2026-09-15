@@ -1,6 +1,6 @@
 # F/A-18 prototype — independent review
 
-2026-09-10 · `docking-sim-f18` · branch `codex/f18-flight-prototype`, base `153957b`, including the uncommitted prototype.
+2026-09-10 · `docking-sim-f18` · branch `f18-flight-prototype`, base `153957b`, including the uncommitted prototype.
 
 **Status: all three findings resolved after user-authorized fixes. Recommendation: ready for further isolated user testing.** No blocking sign, unit, or default-trim defect was found. Fixes and focused regressions were implemented in this checkout by the original reviewer; no further agent or integration was involved.
 

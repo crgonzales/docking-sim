@@ -2,7 +2,7 @@
 
 **The parent's coverage hypothesis is supported by the raw assets and canonical CPU evaluator.** For fixed type, height, and noise, positive coverage only scales density; it cannot change the nonzero support. The current field fills most of its nominal volume with weak extinction. Noise/threshold calibration and low authored extinction coefficients reinforce that behavior. This is sufficient to explain a fog-like medium before considering any image reconstruction or lighting issues.
 
-Repository: `docking-sim-eve-clouds`, branch `codex/eve-cloud-system`. All investigation writes are in `/private/tmp`. No production edits, commits, browser, GPU shader review, temporal/lifecycle review, or builds.
+Repository: `docking-sim-eve-clouds`, branch `eve-cloud-system`. All investigation writes are in `/private/tmp`. No production edits, commits, browser, GPU shader review, temporal/lifecycle review, or builds.
 
 ## Reproduce and method
 

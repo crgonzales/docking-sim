@@ -16,7 +16,7 @@
 
 Reduce cloud-boundary quadrature noise by using closer primary samples while
 retaining iteration limits, render allocations, and temporal safeguards.
-Independent Codex CLI review found no issues. APPROVED.
+Independent review found no issues. APPROVED.
 
 ## Changes Overview
 

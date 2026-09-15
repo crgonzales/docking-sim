@@ -1,6 +1,6 @@
 # Cloud base grain repair
 
-Follow a85d669 on codex/flight-visual-pass. User reports persistent stipple at cloud undersides in paused flight at 2830 m and while moving. Preserve one game tab on 5175 and medium/DPR1 rendering; do not change character checkout or source indexes. No release/merge/push.
+Follow a85d669 on flight-visual-pass. User reports persistent stipple at cloud undersides in paused flight at 2830 m and while moving. Preserve one game tab on 5175 and medium/DPR1 rendering; do not change character checkout or source indexes. No release/merge/push.
 
 ## Work
 

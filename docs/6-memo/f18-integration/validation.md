@@ -1,6 +1,6 @@
 # F/A-18 / EVE integration validation — 2026-09-10
 
-Current checkout: `docking-sim-flight-integrated`, branch `codex/f18-eve-integration`, based on renderer checkpoint `e2f0977`. The reviewed F18 source snapshot is `753b609d`; only its flight delta was imported. Port 5175 serves this integration, and 5173 is reserved for another app.
+Current checkout: `docking-sim-flight-integrated`, branch `f18-eve-integration`, based on renderer checkpoint `e2f0977`. The reviewed F18 source snapshot is `753b609d`; only its flight delta was imported. Port 5175 serves this integration, and 5173 is reserved for another app.
 
 ## Implemented
 
@@ -25,7 +25,7 @@ One game tab was used at a time. Actual screenshots showed the textured, correct
 
 Final browser checks passed through the browser tab interface after native control reported the Mac locked: P paused and resumed, C changed the actual camera image while paused, ANALYSIS unloaded the flight view, and returning to FLIGHT reloaded the textured model and EVE environment without console errors. The paused camera check initially caught a stale-image bug; an explicit camera-change invalidation fixed it, verified with new screenshots. The final scene was left paused in a single game tab. Automated tests additionally verify the actual key-handler/control/physics path and the paused-command update signal. No sustained real-key hold or frame-rate benchmark is claimed from these browser taps.
 
-Independent review: **APPROVED, no findings**. See [the review record](code-review.md). All integration changes are saved in the development checkpoint on `codex/f18-eve-integration`; no merge, push or release was performed.
+Independent review: **APPROVED, no findings**. See [the review record](code-review.md). All integration changes are saved in the development checkpoint on `f18-eve-integration`; no merge, push or release was performed.
 
 ## Deliberate limits
 

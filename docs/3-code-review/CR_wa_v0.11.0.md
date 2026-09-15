@@ -45,7 +45,7 @@
 
 ## Executive Summary
 
-Corrected local aircraft lighting, added filtered ground materials and optional High graphics, and fixed the depth attachment and cloud diffuse-light defects found during visual verification. The independent Codex review found no actionable issues after inspecting implementation and validation evidence.
+Corrected local aircraft lighting, added filtered ground materials and optional High graphics, and fixed the depth attachment and cloud diffuse-light defects found during visual verification. The independent review found no actionable issues after inspecting implementation and validation evidence.
 
 APPROVED
 

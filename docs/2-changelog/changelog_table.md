@@ -44,7 +44,7 @@
   - **Clouds**: deck + cirrus + 12k volumetric puffs from one shared coverage function and a seeded mask placement; fixed 180° UV misregistration, a malformed mask asset, whole-field frustum culling, and sub-pixel shimmer via footprint fades
   - **Surface & sun**: GEBCO relief, orbit-correct smooth ocean with steady glint, camera-relative sun at optical infinity, 192-segment silhouettes
   - **UX**: debug camera + arrow-key camera controls + FPS counter; owner kept primitive craft models (glTF hull bake too dark, deferred)
-  - **Review**: Codex loop 2 rounds -> APPROVED (`CR_w2_v0.8.0.md`); 145 tests; 60 fps GPU checkpoints
+  - **Review**: review loop 2 rounds -> APPROVED (`CR_w2_v0.8.0.md`); 145 tests; 60 fps GPU checkpoints
 
 - **v0.7.0 (Flight Feel - Week 2, 15-08-2026)**:
   - **Controls**: measurement found manual flight limited by both a 1.5 deg/s cap (~6% of available torque) and a slow, underdamped attitude loop (32% overshoot, >15 s to settle); manual now resolves through LOW/HIGH authority presets with their own gains, hitting commanded rate in 1.5 s at <=10% overshoot on HIGH while LOW reproduces v0.6.0 exactly

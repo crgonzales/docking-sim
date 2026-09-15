@@ -71,7 +71,7 @@ preserves its legacy 1024 setting; material assertions verify that the hull's
 shadow culling does not alter shared source paint or thin-part casting.
 
 The focused review caught the rejected narrow-footprint regression. The final
-Codex CLI review returned **APPROVED**, with no findings (thread
+Independent review returned **APPROVED**, with no findings (thread
 `01a08f49-174d-7d32-be1a-1d77dbef97c6`;
 `docs/3-code-review/CR_wa_flight-shadow-bands.md`). No new console errors were
 observed. The ordinary game URL is restored, paused on High, with one tab open.

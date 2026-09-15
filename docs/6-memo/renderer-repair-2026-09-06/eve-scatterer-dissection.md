@@ -1,6 +1,6 @@
 # EVE and Scatterer: source dissection and direction
 
-2026-09-06 Pacific. Two parallel Codex agents traced the public repositories;
+2026-09-06 Pacific. Two parallel research passes traced the public repositories;
 the parent inspected key shader/pass code, the author's documentation and our
 installed Takram implementation. This is source research, not a KSP benchmark.
 

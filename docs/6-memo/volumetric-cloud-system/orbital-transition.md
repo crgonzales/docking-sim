@@ -60,12 +60,12 @@ hardware has been measured.
 
 ## Rollback / isolation
 
-`codex/eve-pre-orbit-transition` points to
+`eve-pre-orbit-transition` points to
 `153957bd9861ee27cd1604370683d7e6f5f31388`. It includes prior appearance and horizon
 styling, plus the known old orbital/reference-region defects. Work is isolated in
 `docking-sim-eve-clouds`. The original checkout and its
 staged index are preserved. The independently requested F/A-18 work is isolated
-in `docking-sim-f18` on `codex/f18-flight-prototype`.
+in `docking-sim-f18` on `f18-flight-prototype`.
 
 ## Shadow filtering correction
 

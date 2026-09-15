@@ -15,8 +15,8 @@ entire v0.12 plan released or promote the development renderer to the root URL.
 | Lighting | Globe and terrain share material calibration and coast classification. Fixed a further shadow bug: filtering noise before the cloud threshold erased extinction. The light cache now averages transmitted light from four canonical subrays. |
 | Performance | Measured single-tab frame times and render-resource stability during altitude travel and regional changes. Details and limits below; final shadow-cost comparison is recorded separately. |
 | Validation | Full web suite 454/454; unchanged sim-core 105/105 and scenario 14/14 passed in the earlier workspace run. After the final shadow change: 47 affected tests, 353/353 actual GPU cases, and full workspace build pass. |
-| Checkpoint | Final snapshot is saved under `codex/render-stabilization-2026-09-10`, using a temporary index so the ordinary staging state is preserved. |
-| F/A-18 | Independent review found three input/trim issues, now fixed with 37 focused tests and both package typechecks passing. Saved separately at `codex/f18-reviewed-checkpoint-2026-09-10` (`753b609d596726c01b9d37852c5623efe0ca11e3`). No integration. |
+| Checkpoint | Final snapshot is saved under `render-stabilization-2026-09-10`, using a temporary index so the ordinary staging state is preserved. |
+| F/A-18 | Independent review found three input/trim issues, now fixed with 37 focused tests and both package typechecks passing. Saved separately at `f18-reviewed-checkpoint-2026-09-10` (`753b609d596726c01b9d37852c5623efe0ca11e3`). No integration. |
 | Browser / agents | Stale-tab cleanup confirmed. Testing reused one game tab on port 5174. Review helpers are closed when finished; port 5173 remains reserved. |
 
 ## What the verification establishes
@@ -121,6 +121,6 @@ the existing browser tab when checking other elevations.
 
 The imported `docking-sim` checkout and its staged
 index remain separate and preserved. The pre-transition snapshot is
-`codex/eve-pre-orbit-transition` at `153957bd9861ee27cd1604370683d7e6f5f31388`;
+`eve-pre-orbit-transition` at `153957bd9861ee27cd1604370683d7e6f5f31388`;
 it retains the known old orbital/reference-region defects. Final checkpoints
 use separate refs and do not reset, merge, push or replace either working tree.

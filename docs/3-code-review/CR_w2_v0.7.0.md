@@ -100,5 +100,5 @@ uniform `setScalar` was replaced with duty-driven length scaling at near-constan
 radius, and a per-jet phase flicker was added. The change is presentation-only —
 no sim-core, scenario, audio, or control-path code was touched, and the
 allocation-free `useFrame` and additive/HDR constraints were preserved. **This
-pass was not itself submitted to the Codex review loop**; it was verified by build
+pass was not itself submitted to the independent review loop**; it was verified by build
 and by direct inspection of the render loop for per-frame allocation.

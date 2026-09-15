@@ -1,6 +1,6 @@
 # F/A-18 / EVE integration independent review
 
-2026-09-10 · gpt-5.6-sol / xhigh · thread `01a08bc8-5511-7b22-890d-0cc32f4148bf`. Reviewed the integration against `docs/1-plans/F_f18-eve-integration.plan.md` and the project TRIP checklist. Parent retained responsibility for browser verification. This is a development checkpoint, not a release.
+2026-09-10 · independent automated review · thread `01a08bc8-5511-7b22-890d-0cc32f4148bf`. Reviewed the integration against `docs/1-plans/F_f18-eve-integration.plan.md` and the project TRIP checklist. Parent retained responsibility for browser verification. This is a development checkpoint, not a release.
 
 No findings.
 

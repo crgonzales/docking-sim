@@ -11,12 +11,12 @@ batches, not the current result.
 
 
 Implementation worktree: `docking-sim-eve-clouds`, branch
-`codex/eve-cloud-system`. Rollback: `codex/renderer-pass06-checkpoint` at
+`eve-cloud-system`. Rollback: `renderer-pass06-checkpoint` at
 `ffd53b55a4e9a7748720f9d01e5792ea7f97a5a2`. The imported checkout and its index
 remain separate. Development server uses port **5174**.
 
 The tested integrated development batch is also preserved at
-`codex/eve-integrated-checkpoint`, parented to `codex/eve-phase1-checkpoint`.
+`eve-integrated-checkpoint`, parented to `eve-phase1-checkpoint`.
 This is a rollback snapshot, not whole-renderer acceptance.
 The independent [incremental review](integrated-batch-review.txt) approved this
 development batch after its three remaining Major findings were corrected.

@@ -72,6 +72,6 @@ None added by the final incremental review. Planned visual/performance and featu
 
 **APPROVED**
 
-Independent Codex review session `01a0899e-c06b-7372-b347-eb6c43959370` converged after the three final Major corrections. The [verbatim result](../6-memo/volumetric-cloud-system/integrated-batch-review.txt) and [210 passing GPU cases](../6-memo/volumetric-cloud-system/gpu-conformance-final-batch.json) are retained. All 103 affected unit tests and the workspace build pass; the existing bundle-size warning remains. A recorded descent and mountain-to-coast teleport check supplement numerical tests without establishing visual or performance acceptance.
+Independent review session `01a0899e-c06b-7372-b347-eb6c43959370` converged after the three final Major corrections. The [verbatim result](../6-memo/volumetric-cloud-system/integrated-batch-review.txt) and [210 passing GPU cases](../6-memo/volumetric-cloud-system/gpu-conformance-final-batch.json) are retained. All 103 affected unit tests and the workspace build pass; the existing bundle-size warning remains. A recorded descent and mountain-to-coast teleport check supplement numerical tests without establishing visual or performance acceptance.
 
 Grain, sparse orbital appearance, the prepared far representation, independent overlapping layers, advection/detiling, atmospheric shafts, PiP integration, capability fallback and the full visual/performance/soak matrix remain in the approved plan. No default promotion, merge, release or push is implied.

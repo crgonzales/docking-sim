@@ -38,4 +38,4 @@ The full workspace build and **655 web tests in 78 files passed** in the canonic
 
 No game, browser, server or GPU sweep was started. There was no commit, push or deployment. The review does not claim fresh visual validation or Cloudflare deployment readiness.
 
-Independent reviewer: Codex CLI `gpt-5.6-sol`, xhigh, resumed thread `01a09ea6-694f-7cf2-919c-3ad0aa659ba8`. Raw review, events, equivalence proof and successful build/test logs are archived under `.evidence.local/workspace-cleanup-2026-09-14/`. This report records the completed review and is not included in its 52-path application scope.
+Independent automated reviewer, resumed thread `01a09ea6-694f-7cf2-919c-3ad0aa659ba8`. Raw review, events, equivalence proof and successful build/test logs are archived under `.evidence.local/workspace-cleanup-2026-09-14/`. This report records the completed review and is not included in its 52-path application scope.

@@ -1,6 +1,6 @@
 # Single workspace and volumetric renderer naming
 
-The user objected to the proliferation of sibling game folders and the continued use of EVE as the name of this project's cloud renderer. The canonical working folder is now `docking-sim`, on `codex/gameplay-first-docking`. All future game work and the release use this folder.
+The user objected to the proliferation of sibling game folders and the continued use of EVE as the name of this project's cloud renderer. The canonical working folder is now `docking-sim`, on `gameplay-first-docking`. All future game work and the release use this folder.
 
 ## Consolidation
 

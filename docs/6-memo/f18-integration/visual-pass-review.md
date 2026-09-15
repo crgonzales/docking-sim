@@ -17,7 +17,7 @@
 
 ## Executive Summary
 
-Actual fly-throughs reproduced ocean shadow bands, low-contrast instruments and frozen noisy clouds after paused camera changes. The fixes retain cloud shadows and bounded rendering cost. Independent Codex CLI review converged in three rounds. **APPROVED**.
+Actual fly-throughs reproduced ocean shadow bands, low-contrast instruments and frozen noisy clouds after paused camera changes. The fixes retain cloud shadows and bounded rendering cost. Independent review converged in three rounds. **APPROVED**.
 
 ## Changes Overview
 

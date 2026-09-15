@@ -2,7 +2,7 @@
 
 Worktree: `docking-sim-eve-clouds`. The imported
 `docking-sim` checkout is unchanged. Previous rollback:
-`codex/eve-integrated-checkpoint` (`9ec0000abdd45f57a82a0478535991222324c418`).
+`eve-integrated-checkpoint` (`9ec0000abdd45f57a82a0478535991222324c418`).
 
 The user accepted the new visual direction at the original 20 km, pitch −20°,
 yaw 90° reference view. This is acceptance of the direction, not a claim of full

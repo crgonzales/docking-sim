@@ -1,6 +1,6 @@
 # Flight visual pass — 2026-09-10
 
-Branch `codex/flight-visual-pass`, based on integration checkpoint `a6964c2`. One live game on port 5175; original checkouts preserved. Development checkpoint only, no release or push.
+Branch `flight-visual-pass`, based on integration checkpoint `a6964c2`. One live game on port 5175; original checkouts preserved. Development checkpoint only, no release or push.
 
 ## Fixes
 
@@ -38,4 +38,4 @@ Evidence is local in `.evidence.local/` in this checkout. Captures have adjacent
 
 Near-ground imagery remains coarse, and temporal cloud reconstruction remains softer in motion at medium quality/DPR 1. This pass fixes reproduced rendering defects; it does not add terrain assets or change the cloud reconstruction architecture. Flight-model bounds and static model control surfaces remain as documented in `validation.md`. Screenshots and the tested routes are evidence for those views, not a claim that every possible location is artifact-free.
 
-Independent review: **APPROVED**, all findings addressed; see [review record](visual-pass-review.md). The completed development checkpoint is saved on `codex/flight-visual-pass`. No release, merge or push was performed.
+Independent review: **APPROVED**, all findings addressed; see [review record](visual-pass-review.md). The completed development checkpoint is saved on `flight-visual-pass`. No release, merge or push was performed.

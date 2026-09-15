@@ -1,6 +1,6 @@
 # Independent airfield code review
 
-2026-09-10 · gpt-5.6-sol / xhigh
+2026-09-10 · independent automated review
 
 No findings.
 

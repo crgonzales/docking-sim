@@ -1,6 +1,6 @@
 # Flight stress pass — independent review
 
-Scope: changes after development checkpoint 8728d77 on `codex/flight-visual-pass`. No release/merge/push. Two review rounds: the first found only stale gate documentation while the final lighting follow-up was being validated; the second verified the refreshed build, tests and actual GPU report. Static review found no functional defects.
+Scope: changes after development checkpoint 8728d77 on `flight-visual-pass`. No release/merge/push. Two review rounds: the first found only stale gate documentation while the final lighting follow-up was being validated; the second verified the refreshed build, tests and actual GPU report. Static review found no functional defects.
 
 ## Final reviewer report (verbatim)
 
