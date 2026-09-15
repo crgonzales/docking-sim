@@ -10,3 +10,5 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile=false
       - run: pnpm -r test
+      # Production build, including the checksum-verified Takram asset provisioning the Pages build relies on.
+      - run: pnpm -r build
