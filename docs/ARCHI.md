@@ -73,7 +73,8 @@ F/A-18C GLB through a narrow adapter; the original procedural Hornet remains
 the loading/error fallback. The adapter preserves source transforms, maps
 glTF `(x,y,z)` into body FRD `(z,-x,-y)`, normalizes the measured length to
 17.06 m and hides deployed stores/gear without animating source control
-groups. Default mode stays SANDBOX; `?mode=flight` explicitly selects FLIGHT.
+groups. Since v0.14.3 the bare URL opens MISSION (first-docking briefing);
+`?mode=sandbox`, `?mode=analysis` and `?mode=flight` are the explicit selections.
 Provenance, frame math and limits: `docs/6-memo/f18-flight-prototype.md`.
 
 ## Stack

@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.14.2** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.14.3** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim ·
 Live: https://docking-sim.pages.dev
@@ -105,14 +105,16 @@ the browser may close the tab before the page sees the keystroke.
 ```bash
 pnpm install
 pnpm test        # oracle + consistency suites (sim-core, scenario) and web tests
-pnpm dev         # live closed-loop approach at localhost:5173
+pnpm dev         # opens on the first-docking mission at localhost:5173;
+                 # ?mode=sandbox shows the autopilot approach, ?mode=analysis the Monte Carlo screen
 pnpm build       # type-check + Vite build; provisions the pinned Takram
                  # renderer assets (gitignored) into apps/web/public/vendor/takram first
 ```
 
 ## Optional F/A-18-style flight mode
 
-Select **FLIGHT** in the mode bar, or open the app with `?mode=flight`. Ordinary
+Select **FLIGHT** in the mode bar, or open the app with `?mode=flight`. Bare
+`/` opens the first-docking mission since v0.14.3. Ordinary
 flight starts on foot beside a parked, gear-down Hornet at the airfield; walk up
 and board it, or add `start=airborne` for the legacy airborne start at 1,500 m
 and 180 m/s. W/S (or arrow up/down) pitches the nose down/up;

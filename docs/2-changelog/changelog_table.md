@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.14.3` | 7   | hotfix: open the bare URL on the first-docking mission; sandbox, analysis and flight stay explicit modes |
 | `0.14.2` | 7   | chore: retire the v0.8.0 renderer — remove the legacy cloud stack, starfield, bloom composer, water overlay and unused textures |
 | `0.14.1` | 7   | hotfix: make the library atmosphere pipeline and volumetric weather the only renderer for ordinary play |
 | `0.14.0` | 7   | feat: first docking mission, Crew Dragon RCS model, volumetric weather naming & audited flight/cloud fixes |
@@ -17,6 +18,11 @@
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
+
+- **v0.14.3 (Hotfix - Week 7, 15-09-2026)**:
+  - **Issue**: the live site opened on the autopilot SANDBOX; the owner wants visitors to land in the guided first-docking mission
+  - **Fix**: `resolveAppMode` in `appModeStore.ts` — missing, empty and unknown `?mode=` values open MISSION; `sandbox`, `analysis` and `flight` remain explicit; the portfolio site keeps its blurred ambient background on `?mode=sandbox` and loads the mission when Play is pressed
+  - **Verification**: `appModeStore.test.ts`; 668 web tests; production build; headless checks at bare `/`, `?mode=sandbox`, mission start, flight, then the live site
 
 - **v0.14.2 (Renderer cleanup - Week 7, 14-09-2026)**:
   - **Removed**: `Effects.tsx` (bloom composer), `Starfield.tsx`, `SunSprite.tsx`, `Clouds.tsx` (deck + cirrus shells), `VolumetricClouds.tsx` (12k puffs), cloud coverage/placement helpers, `sky/lighting.ts`, `EarthMath.ts`, the transparent terrain water overlay, `LIBRARY_RENDERER` and every legacy shader branch; ~2,000 lines
