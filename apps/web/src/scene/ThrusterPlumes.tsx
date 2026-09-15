@@ -6,7 +6,6 @@ import {
 import { useTelemetryBus } from '../telemetry/bus';
 import { updateRcsListener } from '../hud/rcsAudio';
 import { RCS_INSPECTION, useRcsInspection } from './rcsInspection';
-import { LIBRARY_RENDERER } from './renderProbeConfig';
 import { SPACECRAFT_EXHAUST_LAYER } from './SpacecraftExhaustPass';
 import {
   boundedThrusterDuty, NOZZLE_EXIT_RADIUS_M, PLUME_END_RADIUS_M, PLUME_LENGTH_M,
@@ -116,7 +115,8 @@ export function ThrusterPlumes() {
       uniforms: { duty: { value: 0 }, time: { value: 0 }, phase: { value: index * 1.618 }, nozzleRadius: { value: nozzle.radiusM },
         opaqueDepth: { value: null }, viewportSize: { value: new Vector2(1, 1) }, clipOpaque: { value: 0 } },
       vertexShader, fragmentShader, transparent: true, blending: AdditiveBlending,
-      side: BackSide, depthWrite: false, depthTest: !LIBRARY_RENDERER, toneMapped: false,
+      // The exhaust pass composites plumes against the composer's opaque depth itself.
+      side: BackSide, depthWrite: false, depthTest: false, toneMapped: false,
     }));
     return { plume, matrices, materials };
   }, []);
@@ -151,7 +151,7 @@ export function ThrusterPlumes() {
     </group>}
     {THRUSTER_NOZZLES.map((nozzle, index) => <mesh key={nozzle.id}
       name={`rcs-plume-${nozzle.id}`}
-      layers-mask={LIBRARY_RENDERER ? 1 << SPACECRAFT_EXHAUST_LAYER : 1}
+      layers-mask={1 << SPACECRAFT_EXHAUST_LAYER}
       ref={mesh => { meshRefs.current[index] = mesh; }}
       geometry={resources.plume} material={resources.materials[index]}
       matrix={resources.matrices[index]} matrixAutoUpdate={false} visible={false}

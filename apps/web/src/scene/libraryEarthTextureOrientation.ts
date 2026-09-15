@@ -9,9 +9,8 @@
  * generic KTX mapper: already-flipped JPG/PNG textures and the structured
  * weather DataTexture use their existing UVs. Do not set compressed flipY.
  *
- * Initial LIBRARY consumers: Earth day/spec and terrain day. Legacy Earth
- * day/night/spec/normal and KTX cloud lookups need a separate coordinated
- * change (including cloud coverage/placement and normal tangent conventions).
+ * Consumers: the Earth globe (day/spec) and terrain patches (day/spec); the
+ * retired renderer's night, normal and cloud lookups no longer exist.
  */
 export const EARTH_KTX_UV_GLSL = /* glsl */ `
   vec2 earthMapUv(vec2 uv) {

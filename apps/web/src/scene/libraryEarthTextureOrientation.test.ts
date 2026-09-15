@@ -18,10 +18,7 @@ const mapUv = new Function('vec2', uvFunction.replace(
 const mapped = ([x, y]: Uv): Uv => mapUv({ x, y });
 const publicUrl = new URL('../../public/', import.meta.url);
 const asset = (name: string): Buffer => readFileSync(new URL(`assets/textures/${name}`, publicUrl));
-const names = [
-  'earth_day_4k.ktx2', 'earth_day_2k.ktx2', 'earth_night_2k.ktx2',
-  'earth_spec_2k.ktx2', 'earth_normal_4k.ktx2', 'earth_clouds_4k.ktx2',
-] as const;
+const names = ['earth_day_4k.ktx2', 'earth_day_2k.ktx2', 'earth_spec_2k.ktx2'] as const;
 
 function keyValues(bytes: Buffer): Map<string, string> {
   expect([...bytes.subarray(0, 12)]).toEqual([171, 75, 84, 88, 32, 50, 48, 187, 13, 10, 26, 10]);

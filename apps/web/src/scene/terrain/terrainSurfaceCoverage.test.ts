@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { Texture, Vector3 } from 'three';
 import { createTerrainPatchGeometry } from './TerrainPatches';
 import { buildPatchGeometry, patchWaterMask, type PatchBuildResult } from './terrainWorker';
@@ -8,14 +8,11 @@ import { buildWaterPatchGeometry } from './terrainWater';
 import { DEFAULT_TERRAIN_RGB_CODEC, directionFromLatLon, terrainTileFromRgb, type TerrainTile } from './heightField';
 import { addressFromDirection } from './quadtree';
 import { SKY_DERIVED } from '../sky/skyConfig';
-import { createTerrainPatchMaterial, createWaterMaterial, TERRAIN_FRAGMENT_SHADER, TERRAIN_VERTEX_SHADER } from './terrainShaders';
-
-const rendererMode = vi.hoisted(() => ({ library: false }));
-vi.mock('../renderProbeConfig', () => ({ get LIBRARY_RENDERER() { return rendererMode.library; }, PROBE_PROFILE: false }));
+import { createTerrainPatchMaterial, TERRAIN_FRAGMENT_SHADER, TERRAIN_VERTEX_SHADER } from './terrainShaders';
 
 const disposables: { dispose(): void }[] = [];
 function own<T extends { dispose(): void }>(value: T): T { disposables.push(value); return value; }
-afterEach(() => { disposables.splice(0).forEach(value => value.dispose()); rendererMode.library = false; });
+afterEach(() => { disposables.splice(0).forEach(value => value.dispose()); });
 const radius = SKY_DERIVED.earthRadiusM;
 
 function patch(heightM: number, level = 10, shore = false): PatchBuildResult {
@@ -30,8 +27,8 @@ function patch(heightM: number, level = 10, shore = false): PatchBuildResult {
     detail: { baseAmplitudeM: 0 }, skirtDepthM: 2 });
 }
 
-function surface(result: PatchBuildResult, library = true) {
-  return own(createTerrainPatchGeometry(result, buildWaterPatchGeometry(result, radius), library));
+function surface(result: PatchBuildResult) {
+  return own(createTerrainPatchGeometry(result, buildWaterPatchGeometry(result, radius)));
 }
 
 // Execute the material selection from the real fragment shader; no duplicated
@@ -52,9 +49,9 @@ describe('one opaque library terrain surface', () => {
     expect(geometry.getAttribute('position').array).toEqual(new Float32Array(result.positions));
     expect(geometry.getAttribute('terrainWaterMask').array.every(value => value === 1)).toBe(true);
     expect(shade(1)).toEqual([0.015, 0.04, 0.07, 0.5]);
-    // The owner must not install its separate water overlay in this mode.
+    // The owner installs no separate water overlay: one surface owns material and depth.
     const owner = readFileSync(new URL('./TerrainPatches.tsx', import.meta.url), 'utf8');
-    expect(owner).toContain('if (waterData.hasWater && !LIBRARY_RENDERER)');
+    expect(owner).not.toMatch(/waterMesh|createWaterMaterial|terrainOpacity/);
   });
 
   it.each([0.001, -1000])('keeps a closed surface and skirt bottoms for %sm DEM', heightM => {
@@ -125,14 +122,6 @@ describe('one opaque library terrain surface', () => {
     expect(geometry.hasAttribute('waterMask')).toBe(false);
   });
 
-  it('leaves legacy terrain geometry, normals and skirts byte-for-byte unchanged', () => {
-    const result = patch(600, 10, true), geometry = surface(result, false);
-    expect(geometry.getAttribute('position').array).toEqual(new Float32Array(result.positions));
-    expect(geometry.getAttribute('normal').array).toEqual(new Float32Array(result.normals));
-    expect(geometry.hasAttribute('terrainWaterMask')).toBe(false);
-    expect(geometry.boundingSphere!.radius).toBe(result.boundingSphereRadiusM);
-  });
-
   it('renders the packaged Atlantic bathymetry at the geoid with radial ocean normals', () => {
     const assets = new URL('../../../public/assets/terrain/', import.meta.url);
     const manifest = JSON.parse(readFileSync(new URL('manifest.json', assets), 'utf8'));
@@ -159,35 +148,22 @@ describe('one opaque library terrain surface', () => {
     }
   });
 
-  it.each([false, true])('allows a mode to override the page renderer (library=%s)', library => {
-    rendererMode.library = !library;
+  it('retains the opaque library material/depth contract', () => {
     const texture = own(new Texture());
-    const options = { planetCenter: [0, 0, 0] as const, surfaceRadius: radius,
-      atmosphereRadius: radius + 60000, libraryRenderer: library };
-    const terrain = own(createTerrainPatchMaterial({ dayMap: texture, specMap: texture,
-      cloudMap: texture, transmittanceLut: texture }, options));
-    const water = own(createWaterMaterial(options));
-    const result = patch(-1000);
-    const geometry = surface(result, library);
-    expect(terrain.defines.LIBRARY_LIGHTING === 1).toBe(library);
-    expect(terrain.defines.TERRAIN_WATER_MAP === 1).toBe(library);
-    expect(geometry.hasAttribute('terrainWaterMask')).toBe(library);
-    expect(terrain.transparent).toBe(!library);
-    expect(water.depthWrite).toBe(library);
-  });
-
-  it.each([false, true])('retains the renderer material/depth contract (library=%s)', library => {
-    rendererMode.library = library;
-    const texture = own(new Texture());
-    const options = { planetCenter: [0, 0, 0] as const, surfaceRadius: radius, atmosphereRadius: radius + 60000 };
-    const terrain = own(createTerrainPatchMaterial({ dayMap: texture, cloudMap: texture, transmittanceLut: texture }, options));
-    const water = own(createWaterMaterial(options));
-    expect(terrain.defines).toEqual(library ? { LIBRARY_LIGHTING: 1 } : {});
-    expect(terrain.transparent).toBe(!library);
-    expect(terrain.depthWrite).toBe(true);
-    expect(water.transparent).toBe(!library);
-    expect(water.depthWrite).toBe(library);
-    expect(terrain.polygonOffset).toBe(false);
-    expect(terrain.vertexShader).toMatch(/#ifdef LIBRARY_LIGHTING\s+attribute float terrainWaterMask;/);
+    const options = { planetCenter: [0, 0, 0] as const };
+    const withWaterMap = own(createTerrainPatchMaterial({ dayMap: texture, specMap: texture }, options));
+    const withoutWaterMap = own(createTerrainPatchMaterial({ dayMap: texture }, options));
+    const geometry = surface(patch(-1000));
+    expect(withWaterMap.defines).toEqual({ LIBRARY_LIGHTING: 1, TERRAIN_WATER_MAP: 1 });
+    expect(withoutWaterMap.defines).toEqual({ LIBRARY_LIGHTING: 1 });
+    expect(geometry.hasAttribute('terrainWaterMask')).toBe(true);
+    for (const material of [withWaterMap, withoutWaterMap]) {
+      expect(material.transparent).toBe(false);
+      expect(material.depthWrite).toBe(true);
+      expect(material.polygonOffset).toBe(false);
+      expect(material.uniforms.planetCenter!.value.toArray()).toEqual([0, 0, 0]);
+    }
+    expect(TERRAIN_VERTEX_SHADER).toMatch(/attribute float terrainWaterMask;\s+varying float vTerrainWaterMask;/);
+    expect(TERRAIN_FRAGMENT_SHADER).not.toContain('LIBRARY_LIGHTING');
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cloudSphericalUv } from '../sky/cloudPlacement';
+import { cloudSphericalUv } from '../sky/cloudSphericalUv';
 import {
   addressFromDirection,
   addressFromFaceUv,

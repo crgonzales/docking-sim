@@ -3,7 +3,7 @@ import {
   DEFAULT_EXPOSURE, DEFAULT_RENDER_DPR,
   resolveBoundedNumber, resolveCloudQuality, resolveLibraryEffectsSelection, resolveRenderProbeConfig,
 } from './renderSelection';
-import { LIBRARY_RENDERER, PROBE_DPR, PROBE_EXPOSURE, PROBE_QUALITY } from './renderProbeConfig';
+import { PROBE_DPR, PROBE_EXPOSURE, PROBE_QUALITY } from './renderProbeConfig';
 
 describe('render selection resolvers', () => {
   it.each([null, undefined, '', 'medium', 'high', 'unknown'])('defaults %s cloud quality to medium', value => {
@@ -44,7 +44,6 @@ describe('bare entry configuration consumed by SceneRoot', () => {
     });
   });
   it('exposes the same defaults through the module constants SceneRoot and LibraryEffects import', () => {
-    expect(LIBRARY_RENDERER).toBe(true);
     expect(PROBE_DPR).toBe(DEFAULT_RENDER_DPR);
     expect(PROBE_EXPOSURE).toBe(DEFAULT_EXPOSURE);
     expect(PROBE_QUALITY).toBe('medium');

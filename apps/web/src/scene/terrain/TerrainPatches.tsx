@@ -21,7 +21,7 @@ import {
   TERRAIN_WORKER_BUILD_CONCURRENCY,
   terrainFadeFromAltitudeM,
 } from '../sky/skyConfig';
-import { LIBRARY_RENDERER, PROBE_PROFILE } from '../renderProbeConfig';
+import { PROBE_PROFILE } from '../renderProbeConfig';
 import { createTerrainSurfaceNoise, createTerrainSurfaceUniforms, type TerrainSurfaceNoiseResource } from './terrainSurface';
 import {
   nodeAngularRadiusRadians,
@@ -43,7 +43,6 @@ import {
 } from './heightField';
 import {
   createTerrainPatchMaterial,
-  createWaterMaterial,
   type TerrainShaderTextures,
 } from './terrainShaders';
 import {
@@ -100,18 +99,11 @@ async function loadHeroManifest(url: string): Promise<HeroManifest> {
 export interface TerrainPatchesProps {
   /** Parent may retire its opaque globe only once this complete cover is active. */
   readonly onCoverageReadyChange?: (ready: boolean) => void;
-  /** Pass LIBRARY_RENDERER here; omitted preserves the legacy alpha fade. */
-  readonly opaque?: boolean;
-  /** Material/geometry path; defaults to the existing query-selected renderer. */
-  readonly libraryRenderer?: boolean;
   readonly worldFrame: WorldFrame;
   readonly terrainSourceRef: { current: TerrainTileSource | null };
   readonly earthCenterF64: WorldPositionF64;
   readonly dayMap: Texture;
   readonly specMap: Texture;
-  readonly cloudMap: Texture;
-  readonly transmittanceLut: Texture;
-  readonly mainDeckRotation: { current: number };
   readonly radius: number;
 }
 
@@ -119,7 +111,6 @@ interface PatchRecord {
   readonly heroInputKey: string;
   readonly result: PatchBuildResult;
   readonly mesh: Mesh<BufferGeometry, ShaderMaterial>;
-  readonly waterMesh: Mesh<BufferGeometry, ShaderMaterial> | null;
 }
 
 function vectorLength(vector: Vec3): number {
@@ -174,39 +165,23 @@ async function loadManifest(url: string): Promise<TerrainTileManifest> {
 export function createTerrainPatchGeometry(
   result: PatchBuildResult,
   water: WaterPatchGeometry,
-  libraryRenderer = LIBRARY_RENDERER,
 ): BufferGeometry {
   const geometry = new BufferGeometry();
-  let positions = new Float32Array(result.positions);
-  if (libraryRenderer) {
-    // Share one continuous surface at mixed/negative-height shores. Keep the
-    // original skirt bottoms: water's collapsed skirts cannot close LOD cracks.
-    positions = new Float32Array(water.positions.slice(0));
-    positions.set(new Float32Array(result.positions).subarray(result.baseVertexCount * 3), result.baseVertexCount * 3);
-    // Distinct from waterMask: the normal pass must retain the entire surface,
-    // including dry land, rather than apply its water-only coverage discard.
-    geometry.setAttribute('terrainWaterMask', new BufferAttribute(new Float32Array(water.waterMask), 1));
-  }
+  // Share one continuous surface at mixed/negative-height shores. Keep the
+  // original skirt bottoms: water's collapsed skirts cannot close LOD cracks.
+  const positions = new Float32Array(water.positions.slice(0));
+  positions.set(new Float32Array(result.positions).subarray(result.baseVertexCount * 3), result.baseVertexCount * 3);
+  // Distinct from waterMask: the normal pass must retain the entire surface,
+  // including dry land, rather than apply its water-only coverage discard.
+  geometry.setAttribute('terrainWaterMask', new BufferAttribute(new Float32Array(water.waterMask), 1));
   geometry.setAttribute('position', new BufferAttribute(positions, 3));
-  geometry.setAttribute('normal', new BufferAttribute(new Float32Array(libraryRenderer ? water.normals : result.normals), 3));
+  geometry.setAttribute('normal', new BufferAttribute(new Float32Array(water.normals), 3));
   geometry.setAttribute('uv', new BufferAttribute(new Float32Array(result.uvs), 2));
   geometry.setIndex(new BufferAttribute(new Uint32Array(result.indices), 1));
   // Worker positions are relative to the patch centre, so the local sphere
   // is centred at zero and remains valid while RTC placement changes.
-  geometry.boundingSphere = new Sphere(new Vector3(0, 0, 0), libraryRenderer
-    ? Math.max(result.boundingSphereRadiusM, water.boundingSphereRadiusM)
-    : result.boundingSphereRadiusM);
-  return geometry;
-}
-
-function waterMeshGeometry(data: WaterPatchGeometry): BufferGeometry {
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(new Float32Array(data.positions), 3));
-  geometry.setAttribute('normal', new BufferAttribute(new Float32Array(data.normals), 3));
-  geometry.setAttribute('uv', new BufferAttribute(new Float32Array(data.uvs), 2));
-  geometry.setAttribute('waterMask', new BufferAttribute(new Float32Array(data.waterMask), 1));
-  geometry.setIndex(new BufferAttribute(new Uint32Array(data.indices), 1));
-  geometry.boundingSphere = new Sphere(new Vector3(0, 0, 0), data.boundingSphereRadiusM);
+  geometry.boundingSphere = new Sphere(new Vector3(0, 0, 0),
+    Math.max(result.boundingSphereRadiusM, water.boundingSphereRadiusM));
   return geometry;
 }
 
@@ -216,20 +191,13 @@ function waterMeshGeometry(data: WaterPatchGeometry): BufferGeometry {
  */
 export function TerrainPatches({
   onCoverageReadyChange,
-  opaque,
-  libraryRenderer = LIBRARY_RENDERER,
   worldFrame,
   terrainSourceRef,
   earthCenterF64,
   dayMap,
   specMap,
-  cloudMap,
-  transmittanceLut,
-  mainDeckRotation,
   radius,
 }: TerrainPatchesProps) {
-  const LIBRARY_RENDERER = libraryRenderer;
-  const opaqueTerrain = opaque ?? libraryRenderer;
   const { camera, size } = useThree();
   const coverageReadyRef = useRef(false);
   const coverageCallbackRef = useRef(onCoverageReadyChange);
@@ -248,7 +216,6 @@ export function TerrainPatches({
   const buildRequestsRef = useRef(new Map<string, symbol>());
   const desiredResidencyRef = useRef(terrainResidencyKeys(rootTerrainNodes()));
   const dirtyHeroRef = useRef(new Set<string>());
-  const waterTimeRef = useRef(0);
   const surfaceNoiseRef = useRef<TerrainSurfaceNoiseResource | null>(null);
   // Hero DEM tiles are a small, address-independent asset cache: unlike
   // sourceRef's per-address tile cache, nothing here needs clearing when
@@ -272,11 +239,6 @@ export function TerrainPatches({
     groupRef.current?.remove(record.mesh);
     record.mesh.geometry.dispose();
     record.mesh.material.dispose();
-    if (record.waterMesh !== null) {
-      groupRef.current?.remove(record.waterMesh);
-      record.waterMesh.geometry.dispose();
-      record.waterMesh.material.dispose();
-    }
     recordsRef.current.delete(key);
     reconciliationDirtyRef.current = true;
     dirtyHeroRef.current.delete(key);
@@ -361,53 +323,27 @@ export function TerrainPatches({
     let waterData: WaterPatchGeometry;
     try {
       waterData = buildWaterPatchGeometry(result, radius);
-      geometry = createTerrainPatchGeometry(result, waterData, LIBRARY_RENDERER);
+      geometry = createTerrainPatchGeometry(result, waterData);
     } finally {
       renderTimings.end('terrain.geometryPreparation', geometryStartedAt);
     }
     const material = createTerrainPatchMaterial(
-      { dayMap, specMap, cloudMap, transmittanceLut } satisfies TerrainShaderTextures,
-      {
-        planetCenter: worldFrame.toRender(earthCenterF64),
-        surfaceRadius: radius,
-        atmosphereRadius: radius * SKY_DERIVED.atmosphereRadiusMultiplier,
-        libraryRenderer: LIBRARY_RENDERER,
-      },
+      { dayMap, specMap } satisfies TerrainShaderTextures,
+      { planetCenter: worldFrame.toRender(earthCenterF64) },
     );
     const mesh = new Mesh(geometry, material);
-    if (LIBRARY_RENDERER) {
-      surfaceNoiseRef.current ??= createTerrainSurfaceNoise();
-      Object.assign(material.uniforms, createTerrainSurfaceUniforms(surfaceNoiseRef.current, radius, {
-        enabled: new URLSearchParams(location.search).get('terrainDetail') !== 'off',
-        patchCenterM: result.patchCenterF64,
-      }));
-      material.uniforms.terrainSurfaceMetersPerUnit = { value: SKY_CONFIG.renderScaleMPerUnit };
-      material.defines.TERRAIN_SURFACE_DETAIL = 1;
-    }
+    surfaceNoiseRef.current ??= createTerrainSurfaceNoise();
+    Object.assign(material.uniforms, createTerrainSurfaceUniforms(surfaceNoiseRef.current, radius, {
+      enabled: new URLSearchParams(location.search).get('terrainDetail') !== 'off',
+      patchCenterM: result.patchCenterF64,
+    }));
+    material.uniforms.terrainSurfaceMetersPerUnit = { value: SKY_CONFIG.renderScaleMPerUnit };
+    material.defines.TERRAIN_SURFACE_DETAIL = 1;
     mesh.frustumCulled = true;
     mesh.renderOrder = 0.5;
     groupRef.current?.add(mesh);
-    let waterMesh: Mesh<BufferGeometry, ShaderMaterial> | null = null;
-    // Library terrain already emits opaque land/water metadata on one surface.
-    // Keep the separate animated, transparent water overlay for legacy only.
-    if (waterData.hasWater && !LIBRARY_RENDERER) {
-      const waterGeometryStartedAt = renderTimings.start('terrain.geometryPreparation');
-      const waterGeometry = waterMeshGeometry(waterData);
-      renderTimings.end('terrain.geometryPreparation', waterGeometryStartedAt);
-      const waterMaterial = createWaterMaterial({
-        planetCenter: worldFrame.toRender(earthCenterF64),
-        surfaceRadius: radius,
-        atmosphereRadius: radius * SKY_DERIVED.atmosphereRadiusMultiplier,
-        libraryRenderer: LIBRARY_RENDERER,
-      });
-      waterMesh = new Mesh(waterGeometry, waterMaterial);
-      waterMesh.visible = false; // Placed and made visible with its terrain patch.
-      waterMesh.frustumCulled = true;
-      waterMesh.renderOrder = 0.6;
-      groupRef.current?.add(waterMesh);
-    }
     if (recordsRef.current.has(key)) disposeRecord(key);
-    recordsRef.current.set(key, { result, mesh, waterMesh, heroInputKey });
+    recordsRef.current.set(key, { result, mesh, heroInputKey });
     reconciliationDirtyRef.current = true;
   };
 
@@ -596,8 +532,7 @@ export function TerrainPatches({
     });
   };
 
-  useFrame((_, delta) => {
-    waterTimeRef.current += delta;
+  useFrame(() => {
     const cameraWorld = worldFrame.toWorld([camera.position.x, camera.position.y, camera.position.z]);
     const cameraFromEarth = subtract(cameraWorld, earthCenterF64);
     const altitudeM = vectorLength(cameraFromEarth) - radius;
@@ -673,19 +608,9 @@ export function TerrainPatches({
         earthCenterF64[2] + record.result.patchCenterF64[2],
       ]);
       record.mesh.position.set(renderCenter[0], renderCenter[1], renderCenter[2]);
-      record.mesh.visible = displayedKeys.has(key)
-        && (opaqueTerrain || isTerrainNodeHorizonVisible(record.result.address, cameraFromEarth, radius));
+      record.mesh.visible = displayedKeys.has(key);
       record.mesh.material.uniforms.planetCenter!.value.fromArray(renderEarthCenter);
       record.mesh.material.uniforms.terrainSurfaceCameraPositionM?.value.fromArray(cameraFromEarth);
-      record.mesh.material.uniforms.terrainOpacity!.value = opaqueTerrain ? 1 : fade;
-      record.mesh.material.uniforms.cloudRotationOffset!.value = mainDeckRotation.current;
-      if (record.waterMesh !== null) {
-        record.waterMesh.position.set(renderCenter[0], renderCenter[1], renderCenter[2]);
-        record.waterMesh.visible = record.mesh.visible;
-        record.waterMesh.material.uniforms.planetCenter!.value.fromArray(renderEarthCenter);
-        record.waterMesh.material.uniforms.terrainOpacity!.value = opaqueTerrain ? 1 : fade;
-        record.waterMesh.material.uniforms.oceanTime!.value = waterTimeRef.current;
-      }
     }
     // Publish after placement and visibility, never from an async worker
     // callback while freshly created meshes are still at their default pose.

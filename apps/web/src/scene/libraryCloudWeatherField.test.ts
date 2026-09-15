@@ -3,7 +3,7 @@ import { ClampToEdgeWrapping, DataTexture, LinearFilter, LinearMipmapLinearFilte
   Matrix4, NoColorSpace, RepeatWrapping, RGBAFormat, UnsignedByteType, Vector3 } from 'three';
 import { createStructuredWeatherTexture, GLOBAL_WEATHER_MAX_WIDTH, type CoveragePixels } from './libraryCloudWeatherField';
 import { directionToECEF, updateWorldToECEF } from './libraryFrame';
-import { cloudSphericalUv } from './sky/cloudPlacement';
+import { cloudSphericalUv } from './sky/cloudSphericalUv';
 import { EARTH_CENTER_DISTANCE_M } from './sky/skyConfig';
 import { WorldFrame } from './worldFrame';
 

@@ -17,7 +17,7 @@ import {
 import { conjugateQuaternion, rotateVector } from '@docking/sim-core';
 import { useTelemetryBus } from '../telemetry/bus';
 import { shouldShowPip, useViewStore } from '../viewStore';
-import { FRAME_TONE_MAPPING } from './Effects';
+import { FRAME_TONE_MAPPING } from './frameToneMapping';
 import { COCKPIT_CAMERA_NEAR, PIP_CAMERA_FAR } from './sky/skyConfig';
 import { WorldFrame } from './worldFrame';
 import { renderTimings } from './renderTimings';

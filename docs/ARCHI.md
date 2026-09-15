@@ -89,8 +89,10 @@ Monte Carlo batches run `@docking/scenario` in a Web Worker pool
 Sky rendering: `apps/web/src/scene/sky/` single-source config (`skyConfig.ts`
 physical inputs → in-code derivations), baked Hillaire atmosphere LUTs
 (`scripts/bakeAtmosphere.mjs` → committed `assets/lut/*.bin`, RGBA float —
-RGB float is unfilterable in WebGL2), KTX2/UASTC textures + seeded cloud
-placement mask via `scripts/make*.mjs` (provenance: `assets/ASSETS.md`).
+RGB float is unfilterable in WebGL2; the transmittance table now only tints the
+sandbox sun), KTX2/UASTC Blue Marble day imagery + water mask, ETOPO/USGS
+terrain tiles via `scripts/makeBaseTiles.mjs` / `makeHeroDem.mjs` (provenance:
+`assets/ASSETS.md`).
 
 Library renderer (the only renderer since v0.14.1: SceneRoot mounts it for
 SANDBOX/MISSION/ANALYSIS at medium cloud quality, DPR 1 and exposure 2, with
@@ -99,7 +101,11 @@ renderer and its `renderer=` switch are retired): Takram Bruneton atmosphere and
 a maintained Three-clouds fork provide the host passes. `renderSelection.ts`
 resolves every query switch (`quality=low`, `dpr`, `exposure`, `clouds=0`,
 `cloudSystem=legacy` for the earlier library cloud backend, `probe`/`profile`
-diagnostics); missing, empty and unknown values resolve to normal play.
+diagnostics); missing, empty and unknown values resolve to normal play. v0.14.2
+removed the v0.8.0 renderer itself: bloom composer, starfield, sun sprite, shell
+and billboard cloud stack, legacy Earth/terrain shader branches, the transparent
+water overlay and their night/normal/cloud textures. `Earth.tsx` and the terrain
+material emit only opaque albedo + water metadata under `LIBRARY_LIGHTING`.
 Their runtime LUT/noise binaries under `apps/web/public/vendor/takram/` are
 gitignored; `scripts/setupRendererSpikeAssets.mjs` copies them from the pinned
 packages, fetches the pinned STBN, verifies `asset-checksums.json` and runs first
@@ -169,10 +175,11 @@ pause/retry tests cover the new seams. See `6-memo/first-docking-gameplay.md`.
   aliased away, and a stuck-open jet reports duty FSW never commanded (implemented:
   `sim.test.ts`)
 - Sky pipeline: config derivation oracles; LUT bake determinism + golden
-  transmittance values + energy bounds; cloud placement determinism, mask
-  registration, and CPU/GPU transfer-function pinning; glTF port normalization
+  transmittance values + energy bounds; packaged KTX orientation and opaque
+  albedo/water metadata pinned for globe and terrain; glTF port normalization
   (implemented: `skyConfig.test.ts`, `atmosphereMath.test.ts`,
-  `cloudPlacement.test.ts`, `EarthMath.test.ts`, `modelNormalization.test.ts`)
+  `libraryEarthTextureOrientation.test.ts`, `libraryWaterLighting.test.ts`,
+  `terrain/terrainSurfaceCoverage.test.ts`, `modelNormalization.test.ts`)
 
 ### Airfield and on-foot flight start
 

@@ -1,6 +1,0 @@
-export {
-  CLOUD_COVERAGE_GLSL,
-  CLOUD_DECK_CONTRAST,
-  CLOUD_DECK_DETAIL_SCALE,
-  CLOUD_DECK_DETAIL_STRENGTH,
-} from './sky/cloudCoverage';

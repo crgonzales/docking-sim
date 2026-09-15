@@ -407,101 +407,16 @@ export function terrainFadeFromAltitudeM(altitudeM: number): number {
   const smooth = t * t * (3 - 2 * t);
   return 1 - smooth;
 }
-export const EARTH_CENTER_DISTANCE = SKY_DERIVED.earthCenterDistanceScene;
 export const EARTH_CENTER_DISTANCE_M = SKY_DERIVED.earthCenterDistanceM;
-export const DECK_RADIUS_MULTIPLIER = SKY_DERIVED.deckRadiusMultiplier;
-export const CIRRUS_RADIUS_MULTIPLIER = SKY_DERIVED.cirrusRadiusMultiplier;
-export const CLOUD_BAND_INNER_MULTIPLIER = SKY_DERIVED.volumetricBandInnerRadiusMultiplier;
-export const CLOUD_BAND_OUTER_MULTIPLIER = SKY_DERIVED.volumetricBandOuterRadiusMultiplier;
-export const ATMOSPHERE_RADIUS_MULTIPLIER = SKY_DERIVED.atmosphereRadiusMultiplier;
-export const CLOUD_DRIFT_RAD_PER_SEC = SKY_DERIVED.cloudDriftRadPerSec;
-export const CIRRUS_DRIFT_RAD_PER_SEC = SKY_DERIVED.cirrusDriftRadPerSec;
 export const SHADOW_ANGULAR_OFFSET_RAD = SKY_DERIVED.shadowAngularOffsetRad;
-export const VOLUMETRIC_CAP_COSINE = SKY_DERIVED.volumetricCapCosine;
-export const SUN_ANCHOR_DISTANCE_M = SKY_DERIVED.sunAnchorDistanceM;
-export const SUN_ANCHOR_DISTANCE = SKY_DERIVED.sunAnchorDistance;
-export const SUN_DISC_RADIUS = SKY_DERIVED.sunDiscRadius;
-export const SUN_QUAD_HALF_WIDTH = SKY_DERIVED.sunQuadHalfWidth;
 
-export const FLIGHT_MAX_ORBIT = kmToSceneUnits(SKY_CONFIG.flightMaxOrbitKm);
-export const DEBUG_MAX_ORBIT = kmToSceneUnits(SKY_CONFIG.debugMaxOrbitKm);
 export const FLIGHT_MAX_ORBIT_M = kmToMeters(SKY_CONFIG.flightMaxOrbitKm);
 export const DEBUG_MAX_ORBIT_M = kmToMeters(SKY_CONFIG.debugMaxOrbitKm);
 export const CAMERA_NEAR = metersToSceneUnits(SKY_CONFIG.cameraNearM);
 export const COCKPIT_CAMERA_NEAR = metersToSceneUnits(SKY_CONFIG.cockpitCameraNearM);
 export const PIP_CAMERA_FAR = metersToSceneUnits(SKY_CONFIG.pipCameraFarM);
 export const CAMERA_FAR = kmToSceneUnits(SKY_CONFIG.cameraFarKm);
+/** Baked by scripts/bakeAtmosphere.mjs; the sandbox sun tint samples it (Earth lighting lives in the composer). */
 export const ATMOSPHERE_TRANSMITTANCE_LUT_PATH = '/assets/lut/transmittance.bin';
-export const ATMOSPHERE_MULTIPLE_SCATTERING_LUT_PATH = '/assets/lut/multiple_scattering.bin';
-
-export const NIGHT_EMISSIVE_GAIN = 2.5;
-export const SPEC_GAIN = 1.6;
-export const OCEAN_TINT_STRENGTH = 0.55;
-/**
- * Camera-to-fragment range (derived scene units) over which ocean wave normals
- * fade to the geometric sphere normal. Waves are a NEAR-WATER effect: from
- * any orbital distance real waves are far sub-pixel, so the water must render
- * as a smooth specular sphere with a steady glint patch. The current camera
- * envelope never gets closer than ~371 units to the surface, so waves are
- * effectively disabled everywhere today; the range exists for the planned
- * atmosphere-to-surface descent, whose close-range wave field will need its
- * own (much finer) pattern anyway.
- */
-export const OCEAN_WAVE_FADE_START = kmToSceneUnits(SKY_CONFIG.oceanWaveFadeKm.start);
-export const OCEAN_WAVE_FADE_END = kmToSceneUnits(SKY_CONFIG.oceanWaveFadeKm.end);
-export const CLOUD_THROUGH_LAYER_FOG_START = kmToSceneUnits(SKY_CONFIG.cloudThroughLayerFogKm.start);
-export const CLOUD_THROUGH_LAYER_FOG_END = kmToSceneUnits(SKY_CONFIG.cloudThroughLayerFogKm.end);
-export const CLOUD_SHADOW_STRENGTH = 0.82;
-export const SHADOW_FULL_LIGHT_COSINE = 0.28;
-
-export const CLOUD_DECK_DETAIL_SCALE = 2.4;
-export const CLOUD_DECK_DETAIL_STRENGTH = 0.3;
-export const CLOUD_DECK_CONTRAST = 1.25;
-export const CLOUD_COVERAGE_DETAIL_MODULATION = 0.45;
-export const CLOUD_COVERAGE_REMAP_CENTER = 0.42;
-export const CLOUD_COVERAGE_SMOOTH_MIN = 0.02;
-export const CLOUD_COVERAGE_SMOOTH_MAX = 0.80;
-export const CLOUD_COVERAGE_DETAIL_OFFSET: readonly [number, number] = [0.37, 0.11];
-export const CLOUD_DECK_OPACITY = 0.92;
-export const CLOUD_DECK_UV_OFFSET: readonly [number, number] = [0, 0];
-export const CLOUD_CIRRUS_DETAIL_SCALE = 4.1;
-export const CLOUD_CIRRUS_DETAIL_STRENGTH = 0.45;
-export const CLOUD_CIRRUS_CONTRAST = 1.5;
-export const CLOUD_CIRRUS_OPACITY = 0.26;
-export const CLOUD_CIRRUS_UV_OFFSET: readonly [number, number] = [0.41, 0.17];
-
-export const VOLUMETRIC_INSTANCE_COUNT = SKY_CONFIG.volumetricInstanceCount;
-export const VOLUMETRIC_FADE_IN_START = kmToSceneUnits(SKY_CONFIG.volumetricFadeKm.inStart);
-export const VOLUMETRIC_FADE_IN_END = kmToSceneUnits(SKY_CONFIG.volumetricFadeKm.inEnd);
-export const VOLUMETRIC_FADE_OUT_START = kmToSceneUnits(SKY_CONFIG.volumetricFadeKm.outStart);
-export const VOLUMETRIC_FADE_OUT_END = kmToSceneUnits(SKY_CONFIG.volumetricFadeKm.outEnd);
-export const PUFF_MIN_SIZE = kmToSceneUnits(SKY_CONFIG.puffSizeKm.min);
-export const PUFF_SIZE_RANGE = kmToSceneUnits(SKY_CONFIG.puffSizeKm.max - SKY_CONFIG.puffSizeKm.min);
-export const PUFF_LARGE_MIN_SIZE = kmToSceneUnits(SKY_CONFIG.puffBillboardSizeKm.largeMin);
-export const PUFF_LARGE_MAX_SIZE = kmToSceneUnits(SKY_CONFIG.puffBillboardSizeKm.largeMax);
-export const PUFF_DETAIL_MIN_SIZE = kmToSceneUnits(SKY_CONFIG.puffBillboardSizeKm.detailMin);
-export const PUFF_DETAIL_MAX_SIZE = kmToSceneUnits(SKY_CONFIG.puffBillboardSizeKm.detailMax);
-export const PUFF_NOISE_OCTAVES = 3;
-export const PUFF_NOISE_SCALE = 2.8;
-export const PUFF_SILVER_LINING_G = 0.65;
-export const CLOUD_COVERAGE_MASK_PATH = '/assets/textures/cloud_coverage_mask.png';
-
-export function cloudCoverageAtCpu(
-  base: number,
-  detail: number,
-  detailStrength = CLOUD_DECK_DETAIL_STRENGTH,
-  contrast = CLOUD_DECK_CONTRAST,
-): number {
-  const coverage = Math.max(0, Math.min(1,
-    (base * (1 - detailStrength * CLOUD_COVERAGE_DETAIL_MODULATION * (1 - detail))
-      - CLOUD_COVERAGE_REMAP_CENTER) * contrast + CLOUD_COVERAGE_REMAP_CENTER,
-  ));
-  const edge = Math.max(0, Math.min(1,
-    (coverage - CLOUD_COVERAGE_SMOOTH_MIN)
-      / (CLOUD_COVERAGE_SMOOTH_MAX - CLOUD_COVERAGE_SMOOTH_MIN),
-  ));
-  return edge * edge * (3 - 2 * edge);
-}
 
 export const skyConfig = SKY_CONFIG;
-export const skyDerived = SKY_DERIVED;

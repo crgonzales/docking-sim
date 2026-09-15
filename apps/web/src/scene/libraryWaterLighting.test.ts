@@ -90,16 +90,18 @@ describe('pinned water metadata and aerial composition', () => {
   it('keeps globe classification in the day-map UV and streamed water semantic', () => {
     const earth = read('./Earth.tsx');
     const terrain = read('./terrain/terrainShaders.ts');
-    expect(earth).toContain('vec2 libraryMapUv = earthMapUv(vUv);');
-    expect(earth).toContain('float libraryWater = earthWaterFraction(texture2D(specMap, libraryMapUv).r);');
-    expect(earth).toContain('vec4(earthSurfaceAlbedo(texture2D(dayMap, libraryMapUv).rgb), 1.0 - 0.5 * libraryWater)');
+    expect(earth).toContain('vec2 mapUv = earthMapUv(vUv);');
+    expect(earth).toContain('float water = earthWaterFraction(texture2D(specMap, mapUv).r);');
+    expect(earth).toContain('vec4(earthSurfaceAlbedo(texture2D(dayMap, mapUv).rgb), 1.0 - 0.5 * water)');
     expect(earth).toContain('specMap.colorSpace = NoColorSpace');
-    expect(terrain).toMatch(/if \(vWaterMask < 0.5\) discard;\s*#ifdef LIBRARY_LIGHTING/);
-    expect(terrain).toContain('gl_FragColor = vec4(0.015, 0.04, 0.07, 0.5);');
+    expect(terrain).toContain('? vec4(0.015, 0.04, 0.07, 0.5)');
     expect(terrain).toContain('gl_FragColor = vTerrainWaterMask >= 0.5');
     expect(terrain).toContain(': vec4(albedo, 1.0);');
-    expect(earth).toContain('transparent: !LIBRARY_RENDERER');
-    expect(terrain.match(/transparent: !LIBRARY_RENDERER/g)).toHaveLength(2);
+    // Both surfaces are opaque material-metadata emitters; the retired
+    // renderer's transparent alpha-fade path no longer exists.
+    expect(earth).not.toContain('transparent:');
+    expect(terrain.match(/transparent: false/g)).toHaveLength(1);
+    expect(terrain).not.toContain('LIBRARY_RENDERER');
   });
 
   it('composes with depth/shadow adapters, applies attenuation before BRDF and aerial once', () => {

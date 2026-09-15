@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.14.2` | 7   | chore: retire the v0.8.0 renderer — remove the legacy cloud stack, starfield, bloom composer, water overlay and unused textures |
 | `0.14.1` | 7   | hotfix: make the library atmosphere pipeline and volumetric weather the only renderer for ordinary play |
 | `0.14.0` | 7   | feat: first docking mission, Crew Dragon RCS model, volumetric weather naming & audited flight/cloud fixes |
 | `0.8.0` | 2    | feat: physically-based sky overhaul — atmospheric scattering LUTs, volumetric clouds, terrain relief & debug camera |
@@ -16,6 +17,12 @@
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
+
+- **v0.14.2 (Renderer cleanup - Week 7, 14-09-2026)**:
+  - **Removed**: `Effects.tsx` (bloom composer), `Starfield.tsx`, `SunSprite.tsx`, `Clouds.tsx` (deck + cirrus shells), `VolumetricClouds.tsx` (12k puffs), cloud coverage/placement helpers, `sky/lighting.ts`, `EarthMath.ts`, the transparent terrain water overlay, `LIBRARY_RENDERER` and every legacy shader branch; ~2,000 lines
+  - **Assets**: night-lights, relief-normal and cloud-composite KTX2 textures, the seeded coverage mask and the ESO starfield panorama (≈16 MB of downloads) and their generator scripts are gone; ASSETS.md, in-app credits and the site credits follow
+  - **Kept**: `cloudSphericalUv` (canonical equirect mapping, now in `sky/cloudSphericalUv.ts`), `FRAME_TONE_MAPPING` (now `frameToneMapping.ts`), the transmittance LUT bake (sandbox sun tint), all library renderer code and FLIGHT behaviour
+  - **Verification**: tsc + 659 web tests; production build; headless browser sweep at bare `/`, mission, orbit, transition, low altitude and flight matches v0.14.1 framing (see `CR_w7_v0.14.2.md`)
 
 - **v0.14.1 (Hotfix - Week 7, 14-09-2026)**:
   - **Issue**: the bare public URL and `?mode=mission` still mounted the retired v0.8.0 renderer with the old shell clouds; only URLs carrying `renderer=library&cloudSystem=volumetric` showed the released atmosphere and volumetric weather

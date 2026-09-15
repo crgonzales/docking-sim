@@ -3,7 +3,7 @@ import { renderEvidenceName } from './renderEvidenceName';
 
 describe('development evidence recorder names', () => {
   it('fits the existing recorder whitelist and 100-character limit for every supported mode', () => {
-    for (const backend of ['volumetric', 'lib', 'old'] as const) {
+    for (const backend of ['volumetric', 'lib'] as const) {
       for (const quality of ['low', 'medium'] as const) {
         for (const stage of ['full', 'albedo', 'lighting']) {
           const name = renderEvidenceName(backend, quality, stage, 8_640_000_000_000_000);

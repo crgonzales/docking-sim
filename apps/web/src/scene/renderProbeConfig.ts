@@ -5,12 +5,6 @@
 import { resolveRenderProbeConfig } from './renderSelection';
 
 const config = resolveRenderProbeConfig(typeof window === 'undefined' ? '' : window.location.search);
-/**
- * The library pipeline is the only renderer. The v0.8.0 renderer is retired
- * and no longer selectable; consumers that still branch on this constant keep
- * their library path and their legacy branch is dead code pending removal.
- */
-export const LIBRARY_RENDERER = true;
 export const RENDER_PROBE = config.renderProbe;
 export const PROBE_PROFILE = config.profile;
 export const PROBE_CLOUDS = config.clouds;

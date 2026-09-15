@@ -83,9 +83,8 @@ export async function runTerrainSurfaceConformance(
     const coastalWater = new DataTexture(new Uint8Array([155, 155, 155, 255]), 1, 1, RGBAFormat);
     const darkLand = new DataTexture(new Float32Array([0.02, 0.04, 0.01, 1]), 1, 1, RGBAFormat, FloatType);
     for (const map of [shoreMap, coastalLand, coastalWater, darkLand]) map.needsUpdate = true;
-    const terrainMaterial = createTerrainPatchMaterial({ dayMap: resources.one2D,
-      specMap: resources.one2D, cloudMap: resources.zero2D, transmittanceLut: resources.one2D },
-      { planetCenter: [-radius - 1000, 0, 0], surfaceRadius: radius, atmosphereRadius: radius + 100000 });
+    const terrainMaterial = createTerrainPatchMaterial({ dayMap: resources.one2D, specMap: resources.one2D },
+      { planetCenter: [-radius - 1000, 0, 0] });
     const geometry = new PlaneGeometry(20000, 20000);
     const vertexMask = new Float32BufferAttribute(new Float32Array(4), 1);
     geometry.setAttribute('terrainWaterMask', vertexMask);

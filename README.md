@@ -1,6 +1,6 @@
 # Orbital Docking GNC Lab
 
-**v0.14.1** — browser-based spacecraft rendezvous & docking simulator, built as a
+**v0.14.2** — browser-based spacecraft rendezvous & docking simulator, built as a
 GNC portfolio piece. Real dynamics, estimation, and constrained control behind a
 cinematic Three.js front end. Repo: https://github.com/crgonzales/docking-sim ·
 Live: https://docking-sim.pages.dev
@@ -50,7 +50,8 @@ Inside:
   cirrus + 12,000 volumetric puffs placed from a seeded NASA coverage mask, all
   sharing one coverage function so clouds and their shadows agree), GEBCO
   terrain relief, orbit-correct ocean glint, a camera-relative sun at optical
-  infinity, and a **debug camera** with an FPS counter
+  infinity, and a **debug camera** with an FPS counter (that shell/billboard
+  stack was retired in v0.14.2; the LUT bake and debug camera remain)
 - Space-to-ground world (v0.14.0): **quadtree terrain LOD** from NOAA ETOPO 2022
   with USGS 1/3-arc-second hero DEMs for KSC and Boca Chica, inside-atmosphere
   sky and aerial perspective from the same baked LUTs, worker-built height fields

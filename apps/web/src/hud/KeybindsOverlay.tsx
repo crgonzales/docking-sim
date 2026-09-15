@@ -57,13 +57,18 @@ export function KeybindsOverlay() {
         <div className="hud-keybinds-group-title">CREDITS</div>
         <div className="hud-keybind">
           <span>
-            Starfield: &ldquo;The Milky Way panorama&rdquo; &mdash; ESO/S.&nbsp;Brunier,
-            CC&nbsp;BY&nbsp;4.0 (creativecommons.org/licenses/by/4.0).
-            Modified: downscaled to 4096&times;2048.
+            Crew Dragon: &ldquo;SpaceX - Dragon 2&rdquo; &mdash; KUBAHA, CC&nbsp;BY&nbsp;4.0
+            (creativecommons.org/licenses/by/4.0). Modified: scale normalized, nose cover opened, materials adjusted.
           </span>
         </div>
         <div className="hud-keybind">
-          <span>Earth imagery: NASA Visible Earth (Blue Marble, Earth at Night, cloud composite) &mdash; public domain.</span>
+          <span>
+            F/A-18C: &ldquo;McDonnell Douglas F/A-18C Hornet&rdquo; &mdash; Rhine_Lab_Muelsyse, CC&nbsp;BY&nbsp;4.0.
+            Modified: rescaled to 17.06&nbsp;m, deployed gear and stores hidden.
+          </span>
+        </div>
+        <div className="hud-keybind">
+          <span>Earth imagery: NASA Visible Earth Blue Marble and water mask; terrain from NOAA ETOPO 2022 and USGS 3DEP &mdash; public domain.</span>
         </div>
         <div className="hud-keybind">
           <span>Spacecraft models: NASA 3D Resources &mdash; public domain.</span>

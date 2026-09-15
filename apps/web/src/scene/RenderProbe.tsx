@@ -6,7 +6,7 @@ import { WorldFrame } from './worldFrame';
 import { EARTH_CENTER_DISTANCE_M, EARTH_RADIUS_M } from './sky/skyConfig';
 import { parseFlytoParam } from './flytoParam';
 import { useViewStore } from '../viewStore';
-import { LIBRARY_RENDERER, PROBE_CLOUDS, PROBE_DPR, PROBE_PROFILE, PROBE_QUALITY, PROBE_WEATHER, PROBE_WEATHER_STRUCTURE } from './renderProbeConfig';
+import { PROBE_CLOUDS, PROBE_DPR, PROBE_PROFILE, PROBE_QUALITY, PROBE_WEATHER, PROBE_WEATHER_STRUCTURE } from './renderProbeConfig';
 import { libraryStatus } from './LibraryEffects';
 import { resolveCloudSystem } from './clouds/cloudSystemSelection';
 import { cloudShadowProbe } from './libraryCloudShadowDiagnostics';
@@ -73,12 +73,8 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
     pose();
   }
   useFrame(({ camera, gl }, delta) => {
-    renderTimings.updateRendererContext(gl, LIBRARY_RENDERER ? 'library' : 'legacy', PROBE_DPR);
-    if (!clock.current.contextReady) {
-      if (!LIBRARY_RENDERER) renderTimings.setBufferContext({ owner: 'canvas' });
-      clock.current.contextReady = true;
-    }
-    if (!LIBRARY_RENDERER) renderTimings.beginFrame();
+    renderTimings.updateRendererContext(gl, 'library', PROBE_DPR);
+    clock.current.contextReady = true;
     camera.getWorldDirection(direction.current);
     probeAnchor.current?.position.copy(camera.position).add(direction.current);
     const c = clock.current; const now = performance.now();
@@ -102,7 +98,7 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
     if (capture.current) {
       capture.current = false;
       const p = selected.current;
-      const backend = LIBRARY_RENDERER ? (resolveCloudSystem(query.get('cloudSystem')) === 'volumetric' ? 'volumetric' : 'lib') : 'old';
+      const backend = resolveCloudSystem(query.get('cloudSystem')) === 'volumetric' ? 'volumetric' : 'lib';
       const name = renderEvidenceName(backend, PROBE_QUALITY, query.get('stage'));
       void fetch('/__render-evidence', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, image: gl.domElement.toDataURL('image/png'), samples: c.samples, context: { url: window.location.href, ...p, shadow: { ...cloudShadowProbe }, dpr: PROBE_DPR, profile: PROBE_PROFILE, videoRecording: recorder.current?.state === 'recording', sweep: c.sweepDirection, drawingBuffer: [gl.domElement.width, gl.domElement.height], userAgent: navigator.userAgent, sceneAa } })
@@ -122,8 +118,8 @@ export function RenderProbe({ worldFrame }: { worldFrame: WorldFrame }) {
     const sorted = history.current.splice(0).sort((a, b) => a - b);
     const timingSnapshot = renderTimings.snapshot();
     const sample = {
-      seconds: +((now - c.start) / 1000).toFixed(1), renderer: LIBRARY_RENDERER ? 'library' : 'legacy',
-      profile: PROBE_PROFILE, clouds: PROBE_CLOUDS, quality: PROBE_QUALITY, weather: PROBE_WEATHER, dpr: PROBE_DPR, state: LIBRARY_RENDERER ? libraryStatus.state : 'ready',
+      seconds: +((now - c.start) / 1000).toFixed(1), renderer: 'library',
+      profile: PROBE_PROFILE, clouds: PROBE_CLOUDS, quality: PROBE_QUALITY, weather: PROBE_WEATHER, dpr: PROBE_DPR, state: libraryStatus.state,
       altitudeMSL: Math.round(Math.hypot(p[0] + EARTH_CENTER_DISTANCE_M, p[1], p[2]) - EARTH_RADIUS_M),
       latitude: +(Math.atan2(p[1], Math.hypot(p[0] + EARTH_CENTER_DISTANCE_M, p[2])) * 180 / Math.PI).toFixed(4),
       longitude: +(Math.atan2(-p[2], p[0] + EARTH_CENTER_DISTANCE_M) * 180 / Math.PI).toFixed(4),

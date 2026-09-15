@@ -178,7 +178,7 @@ const FlightScene = memo(function FlightScene({ session, character, baseRoute, p
   return <>
     <FlightGraphicsResolution graphics={graphics} onResolved={onResolution} />
     <FlightLighting worldFrame={frame} environment={environment ?? undefined} localShadows={baseRoute} daylightRef={daylightRef} sunTransmittanceRef={sunTransmittanceRef} skyIrradianceRef={skyIrradianceRef} shadowMapSize={graphics.shadowMapSize} />
-    <Suspense fallback={null}><Earth worldFrame={frame} terrainSourceRef={terrainSourceRef} libraryRenderer environment={environment ?? undefined} /></Suspense>
+    <Suspense fallback={null}><Earth worldFrame={frame} terrainSourceRef={terrainSourceRef} /></Suspense>
     {baseRoute && <Airfield worldFrame={frame} daylightRef={daylightRef} anisotropy={graphics.anisotropy} cloudLighting={localCloudLighting} />}
     <group ref={aircraft} scale={1 / SKY_CONFIG.renderScaleMPerUnit}><HornetModel session={session} parked={parked} anisotropy={graphics.anisotropy} cloudLighting={localCloudLighting} /></group>
     <LibraryEffects

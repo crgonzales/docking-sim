@@ -1,6 +1,6 @@
 /** Pose/settings live in the companion JSON; keep recorder names short and safe. */
 export function renderEvidenceName(
-  backend: 'volumetric' | 'lib' | 'old', quality: 'low' | 'medium', stage: string | null,
+  backend: 'volumetric' | 'lib', quality: 'low' | 'medium', stage: string | null,
   timestamp = Date.now(),
 ): string {
   const captureStage = stage === 'albedo' || stage === 'lighting' ? stage : 'full';
