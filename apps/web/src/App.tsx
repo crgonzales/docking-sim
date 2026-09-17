@@ -11,6 +11,7 @@ import { startSimEmitter, stopSimEmitter } from './telemetry/simEmitter';
 import { startScenario, stopScenario } from './telemetry/scenarioEmitter';
 
 const FlightMode = lazy(() => import('./flight/FlightMode').then((module) => ({ default: module.FlightMode })));
+const GncMode = lazy(() => import('./gncLab/GncMode').then((module) => ({ default: module.GncMode })));
 
 export function App() {
   const inputElement = useRef<HTMLDivElement>(null);
@@ -32,7 +33,8 @@ export function App() {
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
-      {mode === 'FLIGHT' ? <Suspense fallback={<p style={{ color: 'white' }}>Loading flight…</p>}><FlightMode /></Suspense> : mode === 'ANALYSIS' ? <MonteCarloScreen /> : (
+      {mode === 'GNC' ? <Suspense fallback={<p role="status" style={{ color: 'white' }}>Loading GNC…</p>}><GncMode /></Suspense>
+        : mode === 'FLIGHT' ? <Suspense fallback={<p style={{ color: 'white' }}>Loading flight…</p>}><FlightMode /></Suspense> : mode === 'ANALYSIS' ? <MonteCarloScreen /> : (
         <div ref={inputElement} style={{ height: '100%', position: 'relative' }}>
           <SceneRoot />
           <Hud />

@@ -154,8 +154,8 @@ export function stopScenario(): void {
   useScenarioStore.setState({ state: null, phase: 'BRIEFING', paused: false });
 }
 
-/** Recreate the same seeded scenario and begin it immediately in RUNNING. */
-export function retryScenario(startPoint: 'APPROACH' | 'FINAL' = 'APPROACH'): void {
+/** Recreate the same seeded scenario and begin it immediately in RUNNING; defaults to the exercise being flown. */
+export function retryScenario(startPoint: 'APPROACH' | 'FINAL' = useScenarioStore.getState().startPoint): void {
   stopScenario();
   useScenarioStore.setState({ startPoint });
   startScenario();
@@ -185,8 +185,10 @@ export function toggleScenarioPause(): void {
 
 export function togglePrecision(): void {
   if (!running()) return;
+  // Speed change only: the held approach survives, scaled commands are dropped.
+  const approaching = useScenarioStore.getState().approaching;
   clearInput();
-  useScenarioStore.setState(state => ({ precision: !state.precision }));
+  useScenarioStore.setState(state => ({ precision: !state.precision, approaching }));
 }
 
 export function holdPosition(): void {
@@ -235,7 +237,7 @@ export function setManualAuthority(level: ManualAuthority): void {
 }
 
 export function commandAbort(): void {
-  if (running()) sim?.commandAbort();
+  if (running() && useScenarioStore.getState().selectedMission === 'EMERGENCY') sim?.commandAbort();
 }
 
 export function setNavSource(source: NavSource): void {

@@ -10,16 +10,28 @@ the head-on alignment diamond. A scene marker uses the existing physical port
 datum. Capture is still the actual simulation outcome; no proximity-only win.
 
 Shift/Ctrl translate fore/aft, I/J/K/L slide, WASD/QE rotate. X selects 0.07 or
-0.25 m/s target translation; RATE holds attitude and the commanded position
-after input release. Space recaptures the estimated pose and brakes using real
-thrusters. Keep approaching explicitly maintains forward manual input, with
-no automatic alignment. Fore/aft input, hold, pause and retry cancel it.
+0.25 m/s target translation and keeps a held approach; RATE holds attitude and
+the commanded position after input release. Space recaptures the estimated pose
+and brakes using real thrusters. Keep approaching explicitly maintains forward
+manual input, with no automatic alignment. Fore/aft input, hold, pause and retry
+cancel it. Backspace (passive abort) and the expert mode keys are ignored and
+not advertised in the lesson; the emergency mission keeps them.
 
-P pauses/resumes, R restarts the full approach, C changes view. Pointer clicks
-produce a small minimum three-tick nudge; short keyboard taps survive a tick.
-Focus loss pauses and clears controls; resuming needs an explicit action. The
-two-metre practice option is a fresh prepared simulation, not a saved rewind.
-No-input practice expires at 20 minutes; the emergency countdown remains visible.
+P pauses/resumes, R repeats the exercise being flown (6 m approach or 2 m
+practice), C changes view. The pause overlay and debrief name the other
+exercise explicitly. Pointer clicks produce a small minimum three-tick nudge;
+short keyboard taps survive a tick. Focus loss pauses and clears controls;
+resuming needs an explicit action. The two-metre practice option is a fresh
+prepared simulation, not a saved rewind. No-input practice expires at 20
+minutes; the emergency countdown remains visible.
+
+The lesson hint warns when the corridor error is positive, ahead of every other
+hint. A lesson abort debrief explains the corridor excursion from the last
+estimate and shows only propellant and flight time; the practice-limit debrief
+says nothing failed. The docking-camera LAT figure and its inside/outside class
+grade the rotated nose-port lateral, the quantity the truth contact test uses,
+in both missions. Approach rings retire on the same rotated port gap that the
+TO CONTACT readout prints.
 
 Headless evidence: default-noise FINAL docks in 28.0s with fixed fine forward
 input. A telemetry-only manually scripted full approach docks in 64.4s; both
@@ -52,8 +64,11 @@ corridor violations. The final-two-metre practice also reached the real DOCKED
 debrief before tuning. Retry restored the seeded start. No second game tab was
 opened.
 
-Validation: 641 web tests, 132 sim-core tests and 24 first-docking tests passed.
-The latter include 10 varied waiting/correction timings and seeded retries.
+Validation: 641 web tests, 132 sim-core tests and 14 first-docking tests passed.
+The latter include 4 varied waiting/correction timings and seeded retries.
+The loop-repair batch (plan `F_0.18.0`) added 6 web cases across
+`scenarioEmitter`, `manualControls` and `dockingGuidance` (19 in those three
+files) with the 14 first-docking cases unmodified.
 
 Full workspace build passed. Independent gameplay review approved after fixing
 its five findings. The original emergency mission selection was verified live.

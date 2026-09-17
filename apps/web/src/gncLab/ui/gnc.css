@@ -1,0 +1,85 @@
+/* Only one added semantic role; every layout/style is scoped to GNC. */
+.gnc-overlay { --gnc-truth: #8fb4d4; position: absolute; inset: 0; pointer-events: none;
+  color: var(--hud-green); font: 11px/1.5 var(--hud-font); }
+.gnc-header, .gnc-diagram { position: absolute; left: 16px; right: 16px;
+  background: var(--hud-bg); border: 1px solid var(--hud-border); pointer-events: auto; }
+.gnc-header { top: 58px; padding: 10px 14px; }
+.gnc-heading, .gnc-meta, .gnc-controls, .gnc-diagram-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; }
+.gnc-heading strong { font-size: 14px; letter-spacing: .12em; text-transform: uppercase; }
+.gnc-meta { opacity: .85; font-variant-numeric: tabular-nums; }
+.gnc-controls { margin-top: 8px; gap: 6px; }
+.gnc-controls small { margin-left: auto; }
+.gnc-overlay button { font: inherit; color: inherit; background: var(--hud-bg);
+  border: 1px solid var(--hud-border); cursor: pointer; padding: 5px 10px; }
+.gnc-overlay button:disabled { opacity: .4; cursor: default; }
+.gnc-overlay button:hover:not(:disabled), .gnc-overlay button[aria-pressed="true"] { border-color: currentColor; }
+.gnc-overlay button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.gnc-overlay p { margin: 5px 0; }
+.gnc-caution { color: var(--hud-amber); }
+.gnc-error { color: var(--hud-red); overflow-wrap: anywhere; }
+.gnc-diagram { bottom: 16px; padding: 10px; max-height: 44vh; overflow-y: auto; }
+.gnc-diagram-heading { justify-content: space-between; padding: 0 3px 8px; }
+.gnc-diagram-heading span { font-size: 10px; opacity: .8; }
+.gnc-chain { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding-bottom: 5px;
+  scrollbar-color: var(--hud-green-dim) var(--hud-bg); }
+.gnc-overlay .gnc-block { flex: 1 0 170px; min-width: 0; display: flex; flex-direction: column;
+  text-align: left; padding: 8px; gap: 4px; }
+.gnc-block-title { font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+.gnc-block-provenance { font-size: 9px; letter-spacing: .06em; opacity: .85; }
+.gnc-block[data-provenance="TRUTH"] { color: var(--gnc-truth); border-style: dashed; }
+.gnc-block-readings { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 4px 0; }
+.gnc-reading { display: flex; flex: 1 1 60px; flex-direction: column; }
+.gnc-reading-label, .gnc-reading-unit { font-size: 9px; opacity: .85; }
+.gnc-reading-value { font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gnc-block-foot { margin-top: auto; display: flex; flex-direction: column; font-size: 9px; overflow-wrap: anywhere; }
+.gnc-condition { font-size: 10px; }
+.gnc-block[data-condition="caution"] .gnc-condition { color: var(--hud-amber); }
+.gnc-block[data-condition="warning"] .gnc-condition { color: var(--hud-red); }
+.gnc-pending { font-size: 10px; padding: 0 3px; }
+.gnc-selection { margin-top: 8px; border-top: 1px solid var(--hud-border); padding: 8px 4px;
+  overflow-wrap: anywhere; }
+.gnc-selection > button { float: right; }
+.gnc-selection > p { opacity: .8; }
+.gnc-edge { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.gnc-edge svg { width: 24px; height: 12px; fill: none; stroke: currentColor; }
+.gnc-edge small { flex-basis: 100%; opacity: .8; }
+.gnc-inspector { border-top: 1px solid var(--hud-border); padding-top: 10px; }
+.gnc-inspector header, .gnc-inspector small { opacity: .8; }
+.gnc-inspector h3 { margin: 12px 0 4px; font-size: 12px; }
+.gnc-inspector h4 { margin: 8px 0 4px; font-size: 11px; }
+.gnc-inspector dl { margin: 0; }
+.gnc-inspector dl > div { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+  gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--hud-border); }
+.gnc-inspector dd { margin: 0; font-variant-numeric: tabular-nums; }
+.gnc-inspector details { margin-top: 8px; }
+.gnc-inspector summary { cursor: pointer; }
+.gnc-inspector pre { max-height: 180px; overflow: auto; white-space: pre-wrap; font: inherit; }
+.gnc-lab-tools { border-top: 1px solid var(--hud-border); margin-top: 12px; padding-top: 10px; min-width: 0; }
+.gnc-lab-tools h3 { margin: 0 0 8px; font-size: 12px; }
+.gnc-evidence-switch, .gnc-fault-panel [aria-label="Rebuild case controls"] { display: flex; flex-wrap: wrap; gap: 6px; }
+.gnc-evidence-switch p { flex-basis: 100%; }
+.gnc-evidence-label { font-variant-numeric: tabular-nums; }
+.gnc-plot-host { width: 100%; min-width: 0; padding: 0; overflow: hidden; }
+.gnc-signal-plots, .gnc-signal-plot { min-width: 0; margin: 0; }
+.gnc-signal-plot { margin-top: 14px; }
+.gnc-signal-plot figcaption { font-weight: 600; }
+.gnc-signal-plot p, .gnc-signal-plots > p { font-size: 10px; opacity: .85; }
+.gnc-fault-panel { border-top: 1px solid var(--hud-border); margin-top: 16px; padding-top: 10px; }
+.gnc-fault-panel > button { margin-top: 6px; }
+.gnc-fault-panel details { margin-top: 8px; }
+.gnc-fault-panel summary { cursor: pointer; }
+.gnc-run-files { border-top: 1px solid var(--hud-border); margin-top: 12px; padding-top: 10px; }
+.gnc-run-files summary { cursor: pointer; }
+.gnc-run-files a { display: inline-block; margin: 6px 16px 6px 0; color: inherit; }
+.gnc-run-files fieldset { border: 1px solid var(--hud-border); margin: 12px 0; min-width: 0; }
+.gnc-run-files label { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.gnc-run-files input { max-width: 100%; font: inherit; color: inherit; }
+.gnc-file-summary dl { margin: 8px 0; }
+.gnc-file-summary dl > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.gnc-file-summary dd { margin: 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) {
+  .gnc-header, .gnc-diagram { left: 8px; right: 8px; }
+  .gnc-header { max-height: 32vh; overflow-y: auto; padding: 8px; }
+  .gnc-controls small { margin-left: 0; }
+  .gnc-diagram { bottom: 8px; max-height: 38vh; }
+}

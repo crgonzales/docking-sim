@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.15.0` | 7 | feat: Under the Hood — GNC lab, native MATLAB plant and verified simulation tools |
 | `0.14.3` | 7   | hotfix: open the bare URL on the first-docking mission; sandbox, analysis and flight stay explicit modes |
 | `0.14.2` | 7   | chore: retire the v0.8.0 renderer — remove the legacy cloud stack, starfield, bloom composer, water overlay and unused textures |
 | `0.14.1` | 7   | hotfix: make the library atmosphere pipeline and volumetric weather the only renderer for ordinary play |
@@ -18,6 +19,13 @@
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
 # Changelog Summary
+
+- **v0.15.0 — Under the Hood (Week 7, 17-09-2026)**:
+  - GNC mode with traced live diagram, inspector, plots, stepping, nominal/fault cases and recorded JSON/CSV import/export.
+  - Local paired-seed Monte Carlo CLI and actual native MATLAB/Simulink plant verification.
+  - Reviewed mount/calibration, IMU and procedural ascent foundations; first-docking guidance, precision, geometry and retry corrections.
+  - Existing production weather retained. No new rocket-launch UI, remote Runpod campaign, full replay or live MATLAB/HWIL claim.
+  - Detailed scope and validation: `w7_v0.15.0.md`; review: `../3-code-review/CR_w7_v0.15.0.md`.
 
 - **v0.14.3 (Hotfix - Week 7, 15-09-2026)**:
   - **Issue**: the live site opened on the autopilot SANDBOX; the owner wants visitors to land in the guided first-docking mission

@@ -154,6 +154,53 @@ export function slerp(a: Quat, b: Quat, fraction: number): Quat {
 }
 
 /**
+ * Build the quaternion of a rotation from an orthonormal destination basis
+ * expressed in the source frame. `quaternionFromBasis(f, r, d)` returns q_BN
+ * when `f`, `r` and `d` are the destination frame's x, y and z axes written in
+ * source-frame components: `rotateVector(q_BN, v_N) = v_B`, matching the
+ * destination-first convention of `rotateVector`.
+ *
+ * This exists because axis triads stay regular where Euler angles do not — a
+ * launch vehicle standing vertically is exactly the singular pose for a
+ * pitch/yaw/roll parameterization. Uses the branch-on-trace construction, which
+ * selects the largest pivot and so avoids the cancellation the naive
+ * trace-only formula suffers near 180°.
+ */
+export function quaternionFromBasis(f: Vec3, r: Vec3, d: Vec3): Quat {
+  [f, r, d].forEach(finiteVector);
+  const rows: readonly Vec3[] = [f, r, d];
+  rows.forEach((row) => {
+    if (Math.abs(Math.hypot(...row) - 1) > 1e-6) throw new RangeError('basis vectors must be unit length');
+  });
+  const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  if (Math.abs(dot(f, r)) > 1e-6 || Math.abs(dot(f, d)) > 1e-6 || Math.abs(dot(r, d)) > 1e-6) {
+    throw new RangeError('basis vectors must be mutually orthogonal');
+  }
+  const handedness = dot([
+    f[1] * r[2] - f[2] * r[1],
+    f[2] * r[0] - f[0] * r[2],
+    f[0] * r[1] - f[1] * r[0],
+  ], d);
+  if (handedness < 0.999) throw new RangeError('basis must be right-handed: f × r = d');
+  const m = (row: 0 | 1 | 2, column: 0 | 1 | 2): number => rows[row]![column]!;
+  const trace = m(0, 0) + m(1, 1) + m(2, 2);
+  if (trace > 0) {
+    const s = Math.sqrt(trace + 1) * 2;
+    return normalizeQuaternion([0.25 * s, (m(2, 1) - m(1, 2)) / s, (m(0, 2) - m(2, 0)) / s, (m(1, 0) - m(0, 1)) / s]);
+  }
+  if (m(0, 0) > m(1, 1) && m(0, 0) > m(2, 2)) {
+    const s = Math.sqrt(1 + m(0, 0) - m(1, 1) - m(2, 2)) * 2;
+    return normalizeQuaternion([(m(2, 1) - m(1, 2)) / s, 0.25 * s, (m(0, 1) + m(1, 0)) / s, (m(0, 2) + m(2, 0)) / s]);
+  }
+  if (m(1, 1) > m(2, 2)) {
+    const s = Math.sqrt(1 + m(1, 1) - m(0, 0) - m(2, 2)) * 2;
+    return normalizeQuaternion([(m(0, 2) - m(2, 0)) / s, (m(0, 1) + m(1, 0)) / s, 0.25 * s, (m(1, 2) + m(2, 1)) / s]);
+  }
+  const s = Math.sqrt(1 + m(2, 2) - m(0, 0) - m(1, 1)) * 2;
+  return normalizeQuaternion([(m(1, 0) - m(0, 1)) / s, (m(0, 2) + m(2, 0)) / s, (m(1, 2) + m(2, 1)) / s, 0.25 * s]);
+}
+
+/**
  * Return q_IH, the epoch-aligned rotation of vectors Hill→inertial. At t=0
  * the Hill and inertial axes coincide; thereafter Hill rotates +z by n·t.
  */

@@ -229,6 +229,8 @@ function Chaser({ worldFrame }: { worldFrame: WorldFrame }) {
   const targetQuaternion = useRef(new Quaternion());
   const previousAnchor = useRef(worldFrame.anchor);
   const renderState = useTelemetryBus((state) => state.renderState);
+  const poseEpoch = useTelemetryBus((state) => state.gnc?.poseEpoch ?? null);
+  const previousPoseEpoch = useRef<number | null>(null);
 
   useFrame((_, dt) => {
     const group = ref.current;
@@ -237,7 +239,9 @@ function Chaser({ worldFrame }: { worldFrame: WorldFrame }) {
     const desired = worldFrame.toRender([x, y, z]);
     const anchor = worldFrame.anchor;
     const anchorChanged = anchor.some((value, index) => value !== previousAnchor.current[index]);
-    if (anchorChanged) {
+    const poseChanged = poseEpoch !== null && poseEpoch !== previousPoseEpoch.current;
+    previousPoseEpoch.current = poseEpoch;
+    if (anchorChanged || poseChanged) {
       group.position.set(desired[0], desired[1], desired[2]);
       previousAnchor.current = anchor;
     } else {
@@ -247,7 +251,8 @@ function Chaser({ worldFrame }: { worldFrame: WorldFrame }) {
     }
     const q_HB = conjugateQuaternion(renderState.q_BH);
     targetQuaternion.current.set(q_HB[1], q_HB[2], q_HB[3], q_HB[0]);
-    group.quaternion.slerp(targetQuaternion.current, 1 - Math.exp(-4 * dt));
+    if (poseChanged) group.quaternion.copy(targetQuaternion.current);
+    else group.quaternion.slerp(targetQuaternion.current, 1 - Math.exp(-4 * dt));
   });
 
   return (

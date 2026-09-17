@@ -9,6 +9,7 @@ import type { NavDiag } from './ekf.js';
 import type { AttDiag } from './mekf.js';
 import type { AbortState } from './monitors.js';
 import type { ManualAuthority } from './control.js';
+import type { ImuRawSample } from './imuFrames.js';
 
 export type { NavDiag } from './ekf.js';
 export type { AttDiag } from './mekf.js';
@@ -62,6 +63,8 @@ export interface SensorFrame {
   /** IMU window-mean rate for attitude propagation. Endpoint gyro_rps remains
    * the instantaneous control feedback; short RCS pulses need both. */
   gyro_mean_rps?: Vec3;
+  /** Optional mounted measurement; gyro_rps/gyro_mean_rps above stay body-frame. */
+  imu_raw?: ImuRawSample;
   /** Star-tracker quaternion, rotating inertial-frame vectors into body axes. */
   star_tracker_q_BI?: Quat | null;
   /** @deprecated Use star_tracker_q_BI. */

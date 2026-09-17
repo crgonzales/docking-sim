@@ -5,7 +5,7 @@ describe('app mode entry', () => {
   it.each([null, undefined, '', 'mission', 'unknown'])('opens the guided mission for %s', value => {
     expect(resolveAppMode(value)).toBe('MISSION');
   });
-  it.each([['sandbox', 'SANDBOX'], ['analysis', 'ANALYSIS'], ['flight', 'FLIGHT']] as const)('keeps ?mode=%s explicit', (value, mode) => {
+  it.each([['sandbox', 'SANDBOX'], ['analysis', 'ANALYSIS'], ['flight', 'FLIGHT'], ['gnc', 'GNC']] as const)('keeps ?mode=%s explicit', (value, mode) => {
     expect(resolveAppMode(value)).toBe(mode);
   });
   it('initialises the store from the same resolver', () => {

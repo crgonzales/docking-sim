@@ -72,6 +72,6 @@ describe('scenario Section 7 acceptance', () => {
       .replace(/export type ScenarioSimPort = Omit<SimLoop, 'getTruthState' \| 'getRenderState'>;/g, '');
     expect(production).not.toMatch(/@docking\/sim-core\//);
     expect(production).not.toMatch(/sim-core\/src/);
-    expect(production).not.toMatch(/getTruthState|getRenderState/);
+    expect(production).not.toMatch(/getTruthState|getRenderState|createTracedSimLoop/);
   });
 });

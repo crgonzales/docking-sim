@@ -15,7 +15,7 @@ export const BINDINGS: readonly Binding[] = [
   { id: 'lessonHold', code: 'Space', label: 'SPACE', group: 'SAFETY', description: 'brake and hold position', lessonOnly: true },
   { id: 'lessonPrecision', code: 'KeyX', label: 'X', group: 'MODE', description: 'toggle precision thrust', lessonOnly: true },
   { id: 'lessonPause', code: 'KeyP', label: 'P', group: 'MODE', description: 'pause / resume flight', lessonOnly: true },
-  { id: 'lessonRetry', code: 'KeyR', label: 'R', group: 'MODE', description: 'restart the approach', lessonOnly: true },
+  { id: 'lessonRetry', code: 'KeyR', label: 'R', group: 'MODE', description: 'restart this exercise', lessonOnly: true },
   { id: 'toggleControlMode', code: 'KeyM', label: 'M', group: 'MODE', description: 'toggle AUTO / MANUAL' },
   { id: 'toggleManualSubMode', code: 'KeyT', label: 'T', group: 'MODE', description: 'toggle RATE / PULSE' },
   { id: 'toggleManualAuthority', code: 'KeyG', label: 'G', group: 'MODE', description: 'toggle LOW / HIGH manual authority' },
@@ -48,6 +48,11 @@ export const BINDINGS: readonly Binding[] = [
   { id: 'translateRight', code: 'KeyL', label: 'L', group: 'TRANSLATE', description: 'translate right' },
   { id: 'orbit', code: null, label: 'RIGHT DRAG', group: 'CAMERA', description: 'orbit camera' },
   { id: 'zoom', code: null, label: 'WHEEL', group: 'CAMERA', description: 'zoom camera' },
+];
+
+/** Bindings the first-docking lesson neither handles nor advertises. */
+export const EXPERT_ONLY_BINDING_IDS: readonly string[] = [
+  'toggleControlMode', 'toggleManualSubMode', 'toggleManualAuthority', 'cycleController', 'abort',
 ];
 
 export const HANDLED_CODES = BINDINGS

@@ -23,6 +23,7 @@ cinematic Three.js front end, verified by analytic oracle tests and Monte Carlo.
 - `apps/web` — Vite + React + react-three-fiber. Rendering, HUD, switch
   panel, scenario/Monte Carlo UI. Consumes sim-core/scenario through public
   APIs only. App modes: SANDBOX / MISSION / ANALYSIS / FLIGHT (`appModeStore`).
+  GNC is an explicit lazy-loaded mode for the traced demonstration session.
   Optional FLIGHT owns its input, camera and fixed-step session; no orbital
   SimLoop, FSW or spacecraft audio runs while it is selected.
 - FSW is a pure function of sensor data: `FswTick(SensorFrame) →
@@ -146,6 +147,35 @@ pause/retry tests cover the new seams. See `6-memo/first-docking-gameplay.md`.
 6. ~~Flight feel: manual authority, thruster plumes, procedural audio~~ ✅ v0.7.0 (`MANUAL_AUTHORITY_PRESETS` LOW/HIGH resolving through `getResolvedManualLimits()`, manual gains isolated on `stepManualDamping` so `step()`/`stepAuto()` — and the shared ABORT COASTING damping path — keep AUTO gains; `setManualAuthority` deterministic command; truth-side per-jet duty in `RenderState`, accumulated across truth ticks and latched at the FSW boundary; shader plumes + pooled-voice WebAudio over a shared master gain. Open items closed in v0.8.0: FPS counter + GPU-verified 60 fps checkpoints)
 7. ~~Sky overhaul: physically-based atmosphere, volumetric clouds, relief, debug camera~~ ✅ v0.8.0 (`sky/skyConfig.ts` single source + derivation oracles; baked transmittance/multiple-scattering LUTs driving limb raymarch, aerial perspective, and sun extinction tint; deck + cirrus + 12k seeded volumetric puffs off one shared coverage function and mask; GEBCO relief normals, orbit-correct ocean, camera-relative sun at derived infinity; debug camera `B` + arrow-key orbit + FPS counter; owner accepts a 30 fps floor for visual quality — measured 60 at every checkpoint. Craft stay primitive — glTF hull bake too dark, flip deferred)
 8. ~~Space-to-ground world, volumetric weather, FLIGHT mode, first docking~~ ✅ v0.14.0 (quadtree ETOPO/USGS terrain + inside-atmosphere sky; library renderer with canonical volumetric clouds, shared light cache, orbital column atlas, temporal reconstruction and moving weather under neutral naming; FLIGHT with the licensed Hornet, airfield/on-foot start, environment clock, Balanced/High presets and final SMAA; Crew Dragon RCS registration and `FIRST_DOCKING_01` manual mission with hold/pause/retry; full-update audit APPROVED, 825 tests)
+
+## v0.15.0 GNC and simulation additions
+
+- `createTracedSimLoop` exposes detached plant/window/FSW trace records for
+  observation; the ordinary SimLoop and scenario port keep their existing
+  measurement-only interfaces. Trace observers do not provide truth to FSW.
+- `apps/web/src/gncLab` owns the opt-in GNC mode, fixed-step session, bounded
+  recorder, signal graph, inspector/plots and validated JSON/CSV run files.
+  `gncEmitter` publishes an atomic stamped tick on the telemetry bus. Run and
+  pose epochs reject stale publishers and snap only discontinuous GNC poses.
+  Imported evidence stays separate from live telemetry; full replay is pending.
+- `gncLab/mc` bundles as a Node-only worker-thread CLI via `vite.mc.config.ts`.
+  Paired seeded runs, manifest/bundle identity and failure-aware aggregation
+  work locally; no Runpod deployment is implied. Default worker count is two.
+- `worldAnchor.ts`, `mounts.ts` and `imuFrames.ts` define frame/geometry seams.
+  Actual IMU mounting stays on the sensor side; the inverse assumed calibration
+  maps measured sensor-axis endpoint/window rates to existing body-frame fields.
+  Legacy unmounted trajectories retain their byte-level regression fingerprints.
+- `vehicle.ts` and `ascent.ts` are pure-core procedural geometry and ascent
+  foundations, separate from orbital GNC. Their approximate forces, fuel,
+  separation, parachute and contact logic are not a playable launch mode.
+- `tools/matlab-port` computes the native MATLAB/Simulink spacecraft plant and
+  independent dynamics/LQR checks. Source-hashed fixtures guard freshness.
+  Sensors/FSW, live twin/SIL/HWIL and C/C++ generation remain outside that port.
+
+The new gates cover trace purity and tick causality, legacy determinism,
+mount/calibration transforms, independent ascent force/contact oracles,
+session teardown and run-file validation, Monte Carlo identity/aggregation,
+and native MATLAB/Simulink plant parity. See `6-memo/gnc-v0.15.0.md`.
 
 ## Testing gate (oracle tests, not vibes)
 

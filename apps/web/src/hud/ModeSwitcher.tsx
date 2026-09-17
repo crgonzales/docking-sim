@@ -1,6 +1,6 @@
 import { useAppModeStore, type AppMode } from '../appModeStore';
 
-const MODES: AppMode[] = ['SANDBOX', 'MISSION', 'ANALYSIS', 'FLIGHT'];
+const MODES: AppMode[] = ['SANDBOX', 'MISSION', 'ANALYSIS', 'FLIGHT', 'GNC'];
 
 export function ModeSwitcher() {
   const mode = useAppModeStore((state) => state.mode);

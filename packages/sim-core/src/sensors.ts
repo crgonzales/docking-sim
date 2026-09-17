@@ -1,5 +1,7 @@
 import { createRng, type SeededRng } from './rng.js';
-import { hillToBody, multiplyQuaternion, normalizeQuaternion, rotateVector, smallAngleExp } from './attitude.js';
+import { conjugateQuaternion, DEFAULT_MEAN_MOTION_RAD_S, hillToBody, multiplyQuaternion, normalizeQuaternion, rotateVector, smallAngleExp } from './attitude.js';
+import { createImuBodyAdapter } from './imuFrames.js';
+import { createMountTables, type MountSet, type MountCalibration, type SensorMount } from './mounts.js';
 import type { Quat, SensorFrame, TruthState, Vec3 } from './types.js';
 
 export interface SensorBiasRamp {
@@ -36,6 +38,12 @@ export interface SensorDegradeConfig {
 }
 
 export interface SensorModelConfig {
+  /** Truth-privileged physical geometry. No mount is installed by default. */
+  mounts?: MountSet;
+  /** Required if the set contains more than one IMU. */
+  imuMountId?: string;
+  /** Hill → legacy I0 rotation rate; resolved from SimConfig.anchor when enabled. */
+  meanMotionRadS?: number;
   /** Range sigma = floor + scale * range. */
   range_sigma_floor_m?: number;
   range_sigma_scale?: number;
@@ -51,13 +59,17 @@ export interface SensorModelConfig {
 
 export interface SensorModel {
   sample(truth: TruthState): SensorFrame;
-  /** Truth-privileged current gyro bias, including configured bias ramps. */
+  /** Truth-privileged bias in sensor axes when mounted, otherwise body axes.
+   * Noise sigma, random walk and gyro bias ramps use these same axes. */
   getTrueGyroBias(): Vec3;
+  /** Truth-only diagnostic: actual sensor→body transform, never calibration. */
+  getTrueGyroBiasBody(): Vec3;
   setDegrade(degrade: SensorDegradeConfig | null): void;
   clearDegrade(): void;
 }
 
-const DEFAULT_CONFIG: Required<Omit<SensorModelConfig, 'degrade'>> = {
+const DEFAULT_CONFIG: Required<Omit<SensorModelConfig, 'degrade' | 'mounts' | 'imuMountId'>> = {
+  meanMotionRadS: DEFAULT_MEAN_MOTION_RAD_S,
   range_sigma_floor_m: 0.01,
   range_sigma_scale: 0.001,
   bearing_sigma_rad: 0.0005,
@@ -145,6 +157,9 @@ function dropoutActive(dropout: SensorDegradeConfig['dropout'], field: keyof Sen
 }
 
 function validateConfig(config: SensorModelConfig): void {
+  if (config.meanMotionRadS !== undefined && (!Number.isFinite(config.meanMotionRadS) || config.meanMotionRadS <= 0)) {
+    throw new RangeError('sensor meanMotionRadS must be finite and positive');
+  }
   const rangeFloor = config.range_sigma_floor_m ?? DEFAULT_CONFIG.range_sigma_floor_m;
   const rangeScale = config.range_sigma_scale ?? DEFAULT_CONFIG.range_sigma_scale;
   const bearingSigma = bearingSigmaConfig(config.bearing_sigma_rad);
@@ -165,9 +180,26 @@ function validateConfig(config: SensorModelConfig): void {
   }
 }
 
-/** Create a deterministic, sim-time-driven sensor sampler. */
-export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng = createRng(0)): SensorModel {
+/** Resolve a detached actual IMU on the truth side; no implicit installation. */
+export function resolveActualImu(config: Pick<SensorModelConfig, 'mounts' | 'imuMountId'>): SensorMount | undefined {
+  if (config.mounts === undefined) {
+    if (config.imuMountId !== undefined) throw new RangeError('imuMountId requires actual mounts');
+    return undefined;
+  }
+  if (config.mounts.role !== 'ACTUAL') throw new RangeError('Sensor model requires ACTUAL mounts');
+  const mounts = createMountTables(config.mounts).actual.sensors.filter(m => m.kind === 'IMU');
+  const selected = config.imuMountId === undefined ? mounts : mounts.filter(m => m.id === config.imuMountId);
+  if (selected.length > 1 || (config.imuMountId !== undefined && selected.length !== 1)) throw new RangeError('Select exactly one actual IMU with imuMountId');
+  return selected[0];
+}
+
+/** Create a deterministic sampler. With an IMU, the producer first measures in
+ * sensor axes, then uses ONLY the supplied assumed calibration for body fields. */
+export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng = createRng(0), calibration?: MountCalibration): SensorModel {
   validateConfig(config);
+  const imu = resolveActualImu(config);
+  const adaptImu = imu === undefined ? undefined : createImuBodyAdapter(calibration!, imu.id);
+  const meanMotionRadS = config.meanMotionRadS ?? DEFAULT_CONFIG.meanMotionRadS;
   const rangeRng = rng.substream('sensors.range');
   const bearingRng = rng.substream('sensors.bearing');
   const gyroRng = rng.substream('sensors.gyro');
@@ -211,6 +243,10 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
     getTrueGyroBias() {
       return [...currentGyroBias(lastSampleTime_s ?? 0)];
     },
+    getTrueGyroBiasBody() {
+      const bias = currentGyroBias(lastSampleTime_s ?? 0);
+      return imu === undefined ? [...bias] : rotateVector(conjugateQuaternion(imu.q_SB), bias);
+    },
     setDegrade(nextDegrade) {
       if (nextDegrade?.noiseMultiplier !== undefined && (nextDegrade.noiseMultiplier < 0 || !Number.isFinite(nextDegrade.noiseMultiplier))) {
         throw new RangeError('noiseMultiplier must be finite and non-negative');
@@ -242,7 +278,7 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
         -truth.r_hill_m[1] / range_m,
         -truth.r_hill_m[2] / range_m,
       ];
-      const los_body = rotateVector(hillToBody(truth.q_BI, truth.t_s), los_hill);
+      const los_body = rotateVector(hillToBody(truth.q_BI, truth.t_s, meanMotionRadS), los_hill);
       const [trueAzimuth_rad, trueElevation_rad] = losToBearing(los_body);
       const rangeBias_m = (currentDegrade?.biasRamp?.range_m ?? 0) * ramp;
       const bearingBias_rad = scaledVec3([
@@ -267,7 +303,9 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
         gyroRng.gaussian(0, gyroSigma_rps[1] * (channel === 'ALL' ? noiseMultiplier : 1)),
         gyroRng.gaussian(0, gyroSigma_rps[2] * (channel === 'ALL' ? noiseMultiplier : 1)),
       ];
-      const gyro_rps = addVec3(addVec3(truth.w_body_rps, gyroBias_rps), gyroNoise);
+      const measuredRate = imu === undefined ? truth.w_body_rps : rotateVector(imu.q_SB, truth.w_body_rps);
+      const gyro_rps = addVec3(addVec3(measuredRate, gyroBias_rps), gyroNoise);
+      const imu_raw = imu === undefined ? undefined : { mount_id: imu.id, gyro_sensor_rps: gyro_rps };
       const attitudeNoise_rad: Vec3 = [
         attitudeBias_rad[0] + attitudeRng.gaussian(0, attitudeSigma_rad * attitudeNoiseMultiplier),
         attitudeBias_rad[1] + attitudeRng.gaussian(0, attitudeSigma_rad * attitudeNoiseMultiplier),
@@ -286,6 +324,7 @@ export function createSensorModel(config: SensorModelConfig = {}, rng: SeededRng
         range_m: dropoutActive(dropout, 'range') ? null : noisyRange_m,
         bearing_body_rad: dropoutActive(dropout, 'bearing') ? null : noisyBearing,
         gyro_rps,
+        ...(imu_raw === undefined ? {} : { imu_raw, ...adaptImu!(imu_raw) }),
         star_tracker_q_BI: dropoutActive(dropout, 'attitude') ? null : star_tracker_q_BI,
         // Compatibility alias for the Phase 2 attitude channel name.
         attitude_q_BI: dropoutActive(dropout, 'attitude') ? null : star_tracker_q_BI,

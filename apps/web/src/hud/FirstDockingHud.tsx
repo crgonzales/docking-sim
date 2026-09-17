@@ -72,7 +72,7 @@ export function DockingLesson() {
       </section>
       <div className="lesson-progress" aria-label="approach progress"><span>{startPoint === 'FINAL' ? 'FINAL 2 m PRACTICE' : '6 m APPROACH'}</span><progress max={startPoint === 'FINAL' ? 2 : 6} value={Math.max(0, (startPoint === 'FINAL' ? 2 : 6) - (lesson?.gap ?? 6))} /><span>DOCK</span></div>
       {systems && <div className="lesson-extra"><TelemetryStrip /></div>}
-      {paused && <div className="mission-overlay lesson-pause" role="dialog" aria-label="mission paused"><section className="mission-card"><div className="mission-card-kicker">FLIGHT PAUSED</div><h1>Take your time.</h1><p>The spacecraft and mission clock are paused. Your controls have been released.</p><button type="button" className="mission-primary-button" onClick={resumeScenario}>Resume flight</button><button type="button" className="lesson-secondary" onClick={() => retryScenario('FINAL')}>Practise final 2 m</button><button type="button" className="lesson-secondary" onClick={() => retryScenario()}>Restart approach</button></section></div>}
+      {paused && <div className="mission-overlay lesson-pause" role="dialog" aria-label="mission paused"><section className="mission-card"><div className="mission-card-kicker">FLIGHT PAUSED</div><h1>Take your time.</h1><p>The spacecraft and mission clock are paused. Your controls have been released.</p><button type="button" className="mission-primary-button" onClick={resumeScenario}>Resume flight</button><button type="button" className="lesson-secondary" onClick={() => retryScenario('FINAL')}>Practise final 2 m</button><button type="button" className="lesson-secondary" onClick={() => retryScenario('APPROACH')}>Restart approach</button></section></div>}
     </>}
   </>;
 }

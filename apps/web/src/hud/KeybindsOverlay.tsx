@@ -1,4 +1,4 @@
-import { BINDINGS, type BindingGroup } from '../input/bindings';
+import { BINDINGS, EXPERT_ONLY_BINDING_IDS, type BindingGroup } from '../input/bindings';
 import { useScenarioStore } from '../telemetry/scenarioStore';
 import { useAppModeStore } from '../appModeStore';
 import { useViewStore } from '../viewStore';
@@ -30,7 +30,7 @@ export function KeybindsOverlay() {
       {GROUPS.map((group) => (
         <section className="hud-keybinds-group" key={group}>
           <div className="hud-keybinds-group-title">{group}</div>
-          {BINDINGS.filter((binding) => binding.group === group && (!binding.lessonOnly || lesson) && !(lesson && ['toggleControlMode', 'toggleManualSubMode', 'toggleManualAuthority', 'cycleController'].includes(binding.id))).map((binding) => (
+          {BINDINGS.filter((binding) => binding.group === group && (!binding.lessonOnly || lesson) && !(lesson && EXPERT_ONLY_BINDING_IDS.includes(binding.id))).map((binding) => (
             <div className="hud-keybind" key={binding.id}>
               <span className="hud-keybind-code">{binding.label}</span>
               <span>{descriptionFor(binding.id, binding.description)}</span>

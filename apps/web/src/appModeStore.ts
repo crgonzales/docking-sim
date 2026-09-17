@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type AppMode = 'SANDBOX' | 'MISSION' | 'ANALYSIS' | 'FLIGHT';
+export type AppMode = 'SANDBOX' | 'MISSION' | 'ANALYSIS' | 'FLIGHT' | 'GNC';
 
 interface AppModeState {
   mode: AppMode;
@@ -17,6 +17,7 @@ export function resolveAppMode(value: string | null | undefined): AppMode {
     case 'sandbox': return 'SANDBOX';
     case 'analysis': return 'ANALYSIS';
     case 'flight': return 'FLIGHT';
+    case 'gnc': return 'GNC';
     default: return 'MISSION';
   }
 }

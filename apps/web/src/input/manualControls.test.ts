@@ -3,7 +3,7 @@ import { attachManualControls } from './manualControls';
 import { useAppModeStore } from '../appModeStore';
 import { useScenarioStore } from '../telemetry/scenarioStore';
 import { useTelemetryBus } from '../telemetry/bus';
-import { startScenario, stopScenario, launchScenario } from '../telemetry/scenarioEmitter';
+import { launchScenario, selectMission, startScenario, stopScenario } from '../telemetry/scenarioEmitter';
 
 class Element extends EventTarget { tagName = 'DIV'; isContentEditable = false; }
 let win: EventTarget;
@@ -59,6 +59,18 @@ it('retains a short thrust tap that occurs entirely between input ticks', () => 
   key('KeyR'); vi.advanceTimersByTime(2000);
   const neutral = useTelemetryBus.getState().frame!;
   expect(afterTap.nav_r_hill_m[0]).toBeLessThan(neutral.nav_r_hill_m[0] - 0.001);
+});
+
+it('ignores Backspace in the lesson and still commands abort in the emergency mission', () => {
+  launchScenario(); vi.advanceTimersByTime(500);
+  const event = key('Backspace'); vi.advanceTimersByTime(1000);
+  expect(event.defaultPrevented).toBe(true);
+  expect(useTelemetryBus.getState().frame!.outcome).toBe('NONE');
+  expect(useScenarioStore.getState().phase).toBe('RUNNING');
+  selectMission('EMERGENCY'); launchScenario(); vi.advanceTimersByTime(500);
+  key('Backspace'); vi.advanceTimersByTime(1000);
+  expect(useTelemetryBus.getState().frame!.outcome).toBe('ABORT');
+  expect(useScenarioStore.getState().state?.outcome).toBe('PASSIVE_ABORT');
 });
 
 it('preserves native Space activation on a focused mission button', () => {

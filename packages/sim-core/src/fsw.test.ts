@@ -7,6 +7,7 @@ import { stepTruth } from './dynamics.js';
 import { createRng } from './rng.js';
 import { createSensorModel } from './sensors.js';
 import { applyThrusterCommand } from './thrusters.js';
+import type { FswTraceRecord } from './trace.js';
 import type { TruthState } from './types.js';
 
 const initialState: [number, number, number, number, number, number] = [0, -220, 12, 0, 0, 0];
@@ -224,6 +225,99 @@ describe('FSW composition', () => {
   it('keeps TruthState out of the FSW implementation', () => {
     const source = readFileSync(new URL('./fsw.ts', import.meta.url), 'utf8');
     expect(source).not.toContain('TruthState');
+  });
+
+  it('emits a trace record per tick with the FSW ordinal and sample tick, without changing the output', () => {
+    const records: FswTraceRecord[] = [];
+    const traced = createFsw({ ...makeConfig(), onTrace: (record) => records.push(record) });
+    const untraced = createFsw(makeConfig());
+    const sensorsA = zeroNoiseSensor(26);
+    const sensorsB = zeroNoiseSensor(26);
+    const truth = makeTruth();
+    // The SimLoop's first FSW tick runs at t = 0.1 s (plant tick 10), then every 0.1 s.
+    const outputs = [1, 2, 3].map((window) => {
+      const t_s = window * 0.1;
+      const sensorA = { ...sensorsA.sample({ ...truth, t_s }), t_s };
+      const sensorB = { ...sensorsB.sample({ ...truth, t_s }), t_s };
+      return [traced(sensorA), untraced(sensorB)] as const;
+    });
+    for (const [tracedOutput, untracedOutput] of outputs) expect(tracedOutput).toEqual(untracedOutput);
+
+    expect(records).toHaveLength(3);
+    const first = records[0]!;
+    expect(first.fswSequence).toBe(1);
+    expect(first.samplePlantTick).toBe(10);
+    expect(first.sampleTime_s).toBeCloseTo(0.1, 12);
+    expect(first.commandInterval_tick).toEqual([10, 20]);
+    expect(records[1]!.fswSequence).toBe(2);
+    expect(records[1]!.samplePlantTick).toBe(20);
+    expect(records[2]!.commandInterval_tick).toEqual([30, 40]);
+    expect(first.mode.branch).toBe('AUTO');
+    expect(first.mode.controller).toBe('LQR');
+    expect(first.allocation.onTimes).toEqual(outputs[0]![0].thrusters);
+    expect(first.nav.state).toEqual(outputs[0]![0].nav_diag.state);
+    expect(first.mekf.q_ref_BI).toEqual(outputs[0]![0].att_diag.q_ref_BI);
+    expect(first.sensor.t_s).toBe(first.sampleTime_s);
+    expect(first.manual.rateReference).toBeNull();
+    expect(first.mpc.result).toBeNull();
+    expect(Object.keys(first)).not.toContain('truth');
+  });
+
+  it.each(['LQR', 'MPC'] as const)('isolates live outputs and future ticks from a mutating %s trace observer', (controller) => {
+    const records: FswTraceRecord[] = [];
+    function corruptNumbers(value: unknown): void {
+      if (value === null || typeof value !== 'object') return;
+      const fields = value as Record<string, unknown>;
+      for (const [key, entry] of Object.entries(fields)) {
+        if (typeof entry === 'number') fields[key] = entry + 1_000_000;
+        else corruptNumbers(entry);
+      }
+    }
+    const config = { ...makeConfig(controller), mpcConfig: { horizonSteps: 4, maxIterations: 150 } };
+    const traced = createFsw({ ...config, onTrace: (record) => {
+      records.push(record);
+      corruptNumbers(record);
+    } });
+    const untraced = createFsw(config);
+    const sensorsA = zeroNoiseSensor(28);
+    const sensorsB = zeroNoiseSensor(28);
+    const truth = makeTruth();
+    // Include both cached MPC commands and a subsequent one-second re-solve.
+    for (let window = 0; window <= 11; window += 1) {
+      const state = { ...truth, t_s: window / 10 };
+      const sensorA = sensorsA.sample(state);
+      const sensorB = sensorsB.sample(state);
+      const output = traced(sensorA);
+      const expected = untraced(sensorB);
+      expect(sensorA).toEqual(sensorB);
+      expect(output).toEqual(expected);
+      if (controller === 'MPC') expect(output.telemetry.mpc_fallback).toBe(false);
+      // A retained record must not share data with returned or cached output.
+      corruptNumbers(records[window]);
+      expect(output).toEqual(expected);
+    }
+    expect(records).toHaveLength(12);
+  });
+
+  it('reports the manual branches and the manual force clamp in the trace', () => {
+    const records: FswTraceRecord[] = [];
+    const fsw = createFsw({ ...makeConfig(), onTrace: (record) => records.push(record) });
+    const sensors = zeroNoiseSensor(27);
+    const truth = makeTruth();
+    fsw.setControlMode('MANUAL');
+    fsw.setManualSubMode('RATE');
+    fsw.setManualCommand({ translation: [1, 0, 0], rotation: [0, 0, 0] });
+    fsw({ ...sensors.sample({ ...truth, t_s: 0.1 }), t_s: 0.1 });
+    fsw.setManualSubMode('PULSE');
+    fsw({ ...sensors.sample({ ...truth, t_s: 0.2 }), t_s: 0.2 });
+
+    expect(records[0]!.mode.branch).toBe('MANUAL_RATE');
+    expect(records[0]!.mode.manualSub).toBe('RATE');
+    expect(records[0]!.manual.rateReference).not.toBeNull();
+    expect(records[1]!.mode.branch).toBe('MANUAL_PULSE');
+    expect(records[1]!.manual.rateReference).toBeNull();
+    expect(records[1]!.manual.forceLimit_N).toBeGreaterThan(0);
+    expect(records.every((record) => typeof record.manual.forceClamped === 'boolean')).toBe(true);
   });
 
   it('selects MPC and reports a non-fallback solve in AUTO', () => {

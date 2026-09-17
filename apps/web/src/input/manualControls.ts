@@ -17,7 +17,7 @@ import {
   setManualAuthority as scenarioSetManualAuthority,
   setManualSubMode as scenarioSetManualSubMode,
 } from '../telemetry/scenarioEmitter';
-import { bindingForCode, bindingForKey, codesFor } from './bindings';
+import { EXPERT_ONLY_BINDING_IDS, bindingForCode, bindingForKey, codesFor } from './bindings';
 import { useViewStore } from '../viewStore';
 import { useScenarioStore } from '../telemetry/scenarioStore';
 import { holdPosition, togglePrecision, toggleScenarioPause, retryScenario } from '../telemetry/scenarioEmitter';
@@ -148,7 +148,7 @@ export function attachManualControls(element: HTMLElement): () => void {
     if (event.code === 'Space' && event.target instanceof HTMLElement && event.target.tagName === 'BUTTON') return;
     const binding = bindingForCode(event.code) ?? bindingForKey(event.key);
     if (!binding || (binding.lessonOnly && !lessonActive())) return;
-    if (lessonActive() && ['toggleControlMode', 'toggleManualSubMode', 'toggleManualAuthority', 'cycleController'].includes(binding.id)) {
+    if (lessonActive() && EXPERT_ONLY_BINDING_IDS.includes(binding.id)) {
       event.preventDefault();
       return;
     }

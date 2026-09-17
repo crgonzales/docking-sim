@@ -16,6 +16,7 @@ import {
   type AttitudeControllerConfig,
   type LqrConfig,
   type ManualAuthority,
+  type ManualRateReference,
   type PidGains,
   type StateController,
 } from './control.js';
@@ -23,8 +24,10 @@ import { createMekf, type MekfConfig } from './mekf.js';
 import { applyThrusterCommand } from './thrusters.js';
 import { DRACO_THRUSTER_SPECS } from './thrusters.js';
 import { probeAccelerationAuthority } from './authority.js';
-import { createMpc, type MpcConfig, type MpcController } from './mpc.js';
+import { createMpc, type MpcConfig, type MpcController, type MpcStepResult } from './mpc.js';
 import { computeSafingBurn, createCorridorMonitor, type AbortState } from './monitors.js';
+import type { FswBranch, FswTraceRecord } from './trace.js';
+import type { MountCalibration } from './mounts.js';
 import type {
   ControlMode,
   FswTick,
@@ -43,6 +46,8 @@ export interface FswMassModel {
 }
 
 export interface FswConfig {
+  /** Assumed geometry only; IMU input is adapted before the existing FSW tick. */
+  mountCalibration?: MountCalibration;
   controller: 'PID' | 'LQR' | 'MPC';
   pidGains?: PidGains;
   allocatorConfig?: AllocatorConfig;
@@ -63,6 +68,12 @@ export interface FswConfig {
    */
   manualForceLimit_N?: number;
   navSource?: NavSource;
+  /**
+   * Optional read-only trace sink, invoked once per tick after the command
+   * latches. Built from sensor-derived locals only; absent means nothing is
+   * assembled, so the untraced path is unchanged.
+   */
+  onTrace?: (record: FswTraceRecord) => void;
 }
 
 const DEFAULT_GUIDANCE_STATE: [number, number, number, number, number, number] = [0, -250, 12, 0, 0, 0];
@@ -123,6 +134,16 @@ function cloneGuidanceReference(reference: GuidanceReference): GuidanceReference
     r_hill_m: [...reference.r_hill_m],
     v_hill_mps: [...reference.v_hill_mps],
     state: [...reference.state] as State6,
+  };
+}
+
+function cloneRateReference(reference: ManualRateReference): ManualRateReference {
+  return {
+    q_target_BH: [...reference.q_target_BH],
+    omega_ref_body_rps: [...reference.omega_ref_body_rps],
+    r_target_hill_m: [...reference.r_target_hill_m],
+    velocity_ref_body_mps: [...reference.velocity_ref_body_mps],
+    velocity_ref_hill_mps: [...reference.velocity_ref_hill_mps],
   };
 }
 
@@ -222,10 +243,14 @@ export function createFsw(config: FswConfig): FswTick {
     });
   };
   let mpcUnavailable = false;
+  // Trace clocks: the FSW ordinal and the truth-tick span of one command window.
+  let fswSequence = 0;
+  const truthTicksPerWindow = Math.round(commandWindow_s * truthHz);
 
   const tick = ((sensor: SensorFrame) => {
     const dt_s = finiteDt(sensor, lastSensorTime_s, commandWindow_s);
     lastSensorTime_s = sensor.t_s;
+    fswSequence += 1;
     mekf.step(sensor, dt_s, navSource);
     const att_diag = mekf.getAttDiag();
     const q_BH = hillToBody(
@@ -283,7 +308,12 @@ export function createFsw(config: FswConfig): FswTick {
     const translationController: StateController = selectedController === 'PID' ? pid : lqr;
     let commandedForce_hill_N: Vec3;
     let commandedTorque_body_Nm: Vec3 = [...ZERO_VECTOR];
+    let branch: FswBranch = 'AUTO';
+    let mpcResult: MpcStepResult | null = null;
+    let rateReference: ManualRateReference | null = null;
+    let forceClamped = false;
     if (abortState === 'BURNING') {
+      branch = 'ABORT_BURN';
       const velocityError = abortTargetVelocity_hill_mps.map((value, index) => value - nav_diag.state[index + 3]!) as Vec3;
       const errorNorm_mps = Math.hypot(...velocityError);
       if (errorNorm_mps <= ABORT_COMPLETION_TOLERANCE_MPS || abortElapsed_s >= ABORT_TIMEOUT_S) {
@@ -299,6 +329,7 @@ export function createFsw(config: FswConfig): FswTick {
       // the −ŷ-facing station port) — no MPC-specific attitude target exists.
       commandedTorque_body_Nm = attitudeController.stepAuto(att_diag.q_ref_BI, sensor.t_s, omega_est_body_rps);
     } else if (abortState === 'COASTING') {
+      branch = 'ABORT_COAST';
       commandedForce_hill_N = [...ZERO_VECTOR];
       const rateDamping_Nm = attitudeController.step(
         q_BH,
@@ -308,12 +339,13 @@ export function createFsw(config: FswConfig): FswTick {
       );
       commandedTorque_body_Nm = rateDamping_Nm;
     } else if (controlMode === 'AUTO') {
+      branch = 'AUTO';
       if (selectedController === 'MPC' && !guidanceFrozen) {
         if (mpc === null && !mpcUnavailable) {
           mpc = createConfiguredMpc();
           mpcUnavailable = mpc === null;
         }
-        const mpcResult = mpc?.step(nav_diag.state, sensor.t_s) ?? null;
+        mpcResult = mpc?.step(nav_diag.state, sensor.t_s) ?? null;
         if (mpcResult !== null && mpcResult.status === 'optimal') {
           const massEstimate_kg = config.massModel.dryMass_kg + propEstimate_kg;
           commandedForce_hill_N = mpcResult.accel_hill_mps2.map((value) => value * massEstimate_kg) as Vec3;
@@ -328,6 +360,7 @@ export function createFsw(config: FswConfig): FswTick {
       }
       commandedTorque_body_Nm = attitudeController.stepAuto(att_diag.q_ref_BI, sensor.t_s, omega_est_body_rps);
     } else if (manualSubMode === 'RATE') {
+      branch = 'MANUAL_RATE';
       const captureRequested = manualHoldPending;
       manualHoldPending = false;
       if (captureRequested || lastAppliedMode !== 'MANUAL' || lastAppliedSubMode !== 'RATE') {
@@ -358,7 +391,9 @@ export function createFsw(config: FswConfig): FswTick {
       ];
       commandedForce_hill_N = translationController.step(nav_diag.state, manualReference, dt_s);
       commandedTorque_body_Nm = rateOutput.torque_body_Nm;
+      rateReference = rateOutput.reference;
     } else {
+      branch = 'MANUAL_PULSE';
       const pulse = attitudeController.shapePulse(manualCommand);
       commandedForce_hill_N = rotateVector(conjugateQuaternion(q_BH), pulse.force_body_N);
       // PULSE is direct translation/torque with no attitude or position HOLD,
@@ -388,6 +423,7 @@ export function createFsw(config: FswConfig): FswTick {
       if (forceNorm_N > manualForceLimit_N) {
         const scale = manualForceLimit_N / forceNorm_N;
         commandedForce_hill_N = commandedForce_hill_N.map((value) => value * scale) as Vec3;
+        forceClamped = true;
       }
     }
     const commandedForce_body_N = rotateVector(q_BH, commandedForce_hill_N);
@@ -400,6 +436,62 @@ export function createFsw(config: FswConfig): FswTick {
     previousQ_HB = conjugateQuaternion(q_BH);
     lastAppliedMode = controlMode;
     lastAppliedSubMode = manualSubMode;
+
+    if (config.onTrace !== undefined) {
+      // Detach every nested value from live sensors, filter state and cached
+      // commands so observer mutations cannot feed back into control.
+      const samplePlantTick = Math.round(sensor.t_s * truthHz);
+      config.onTrace(structuredClone<FswTraceRecord>({
+        fswSequence,
+        samplePlantTick,
+        sampleTime_s: sensor.t_s,
+        dt_s,
+        commandInterval_tick: [samplePlantTick, samplePlantTick + truthTicksPerWindow],
+        sensor,
+        mekf: att_diag,
+        q_BH: [q_BH[0], q_BH[1], q_BH[2], q_BH[3]],
+        omega_est_body_rps: [...omega_est_body_rps] as Vec3,
+        guidance: {
+          reference: cloneGuidanceReference(reference),
+          frozen: guidanceFrozen,
+          generated: cloneGuidanceReference(generatedReference),
+        },
+        feedforward_specificForce_hill_mps2: [...previousSpecificForce_mps2] as Vec3,
+        nav: nav_diag,
+        corridor: { ...corridor },
+        abort: {
+          state: abortState,
+          targetVelocity_hill_mps: [...abortTargetVelocity_hill_mps] as Vec3,
+          elapsed_s: abortElapsed_s,
+        },
+        mode: {
+          control: controlMode,
+          manualSub: controlMode === 'MANUAL' ? manualSubMode : null,
+          controller: selectedController,
+          authority: attitudeController.getAuthority(),
+          navSource,
+          branch,
+        },
+        manual: {
+          command: cloneManualCommand(manualCommand),
+          rateReference: rateReference === null ? null : cloneRateReference(rateReference),
+          forceClamped,
+          forceLimit_N: attitudeController.getResolvedManualLimits().manualForceLimit_N,
+        },
+        mpc: {
+          result: mpcResult,
+          fallback: selectedController === 'MPC' && controlMode === 'AUTO' ? mpcFallback : false,
+          unavailable: mpcUnavailable,
+        },
+        command: {
+          force_hill_N: [...commandedForce_hill_N] as Vec3,
+          force_body_N: [...commandedForce_body_N] as Vec3,
+          torque_body_Nm: [...commandedTorque_body_Nm] as Vec3,
+        },
+        allocation,
+        propEstimate_kg,
+      }));
+    }
 
     const navCovPos_m2: Vec3 = [
       nav_diag.covariance[0]?.[0] ?? 0,

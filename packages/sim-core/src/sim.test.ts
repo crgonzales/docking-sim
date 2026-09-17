@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 import { errorQuaternion, hillToBody, rotateVector, smallAngleExp, smallAngleLog } from './attitude.js';
 import { CREW_DRAGON_THRUSTERS } from './crewDragon.js';
-import { createSimLoop, type SimConfig } from './sim.js';
+import { createSimLoop, createTracedSimLoop, type SimConfig } from './sim.js';
+import { createFsw } from './fsw.js';
+import { losToBearing } from './sensors.js';
+import { createWorldAnchor, type WorldAnchorConfig, type FswTraceRecord } from './index.js';
 import { propagateCW } from './cw.js';
 import { MEAN_MOTION_RAD_S, stepTruth } from './dynamics.js';
 import { computeSafingBurn } from './monitors.js';
@@ -42,6 +46,145 @@ function config(): SimConfig {
 function holdDistance(state: ReturnType<ReturnType<typeof createSimLoop>['getTruthState']>): number {
   return Math.hypot(state.r_hill_m[0], state.r_hill_m[1] + 30, state.r_hill_m[2]);
 }
+
+function legacyDigest(controller: 'PID' | 'LQR' | 'MPC', custom: boolean): string {
+  const base = config();
+  const legacy: SimConfig = { ...base, sensors: undefined, fsw: { ...base.fsw, controller,
+    ...(custom ? {
+      attitudeControllerConfig: { meanMotionRadS: 0.002 },
+      ekfConfig: { ...base.fsw.ekfConfig, meanMotionRadS: 0.0018 },
+      lqrConfig: { meanMotionRadS: 0.0015 },
+      mpcConfig: { meanMotionRadS: 0.0013 },
+    } : {}),
+  } };
+  const { sim, trace } = createTracedSimLoop(legacy, 1701);
+  const history: unknown[] = [];
+  trace.subscribeFsw(record => history.push(record));
+  trace.subscribePlantWindow(record => history.push(record));
+  for (const t of [0.1, 0.3, 0.6]) {
+    if (t === 0.3) sim.injectVelocityBias([0.001, -0.002, 0.003]);
+    history.push(sim.stepTo(t), sim.getTruthState(), sim.getRenderState());
+  }
+  return createHash('sha256').update(JSON.stringify(history, (_key, value: unknown) => {
+    if (typeof value !== 'number') return value;
+    const bits = Buffer.allocUnsafe(8);
+    bits.writeDoubleBE(value);
+    return bits.toString('hex'); // Preserve signed zero and every floating-point bit.
+  })).digest('hex');
+}
+
+const anchorConfig: WorldAnchorConfig = {
+  inclination_rad: 0.9, raan_rad: 0.4, argumentOfLatitude_rad: 0.7, gmstAtEpoch_rad: 1.2,
+  epoch: { gpsWeek: 2400, secondsOfWeek_s: 50, utcMinusGps_leapSeconds: -18 },
+};
+
+describe('optional world anchor integration', () => {
+  // Captured from the dirty pre-integration tree, including its approved trace code.
+  it.each([
+    ['PID', false, '7390b70bef1279050ad107c6bca1c99cbbc2886cfd5441e6c0493f26784505c8'],
+    ['PID', true, '2404957ec52d2169827f7a01939cf2bb03e7f4ff8003bbc3fd3cb486a07552d4'],
+    ['LQR', false, 'a180a0bb9153aa355310c9e641e803b5fb4a33fd3c93eb49f219428f3a9ef749'],
+    ['LQR', true, 'f64959ed3ceb067e83d50dfa9ff3509524a52ee377802c2770d0b197a8fe5204'],
+    ['MPC', false, 'd64ee67d0ea6eddef496bceab14ca9c775d293af7a1977a32c660e6d29be65ae'],
+    ['MPC', true, '06113e562298f0ffa6bf2d02134d9cf377074ccb5a6f806a0f5c4d03de02779a'],
+  ] as const)('preserves pre-anchor %s output exactly (divergent legacy rates: %s)', (controller, custom, digest) => {
+    expect(legacyDigest(controller, custom)).toBe(digest);
+  });
+
+  it('defaults to the legacy rate and leaves I0 geometry, frames and traces identical', () => {
+    expect(createWorldAnchor(anchorConfig).meanMotionRadS).toBe(MEAN_MOTION_RAD_S);
+    const base = config();
+    const before = structuredClone(base);
+    const legacy = createTracedSimLoop(base, 1702);
+    const anchored = createTracedSimLoop({ ...base, anchor: anchorConfig }, 1702);
+    const explicitAbsent = createSimLoop({ ...base, anchor: undefined }, 1702);
+    const frames = legacy.sim.stepTo(0.6);
+    expect(anchored.sim.stepTo(0.6)).toEqual(frames);
+    expect(explicitAbsent.stepTo(0.6)).toEqual(frames);
+    expect(anchored.sim.getTruthState()).toEqual(legacy.sim.getTruthState());
+    expect(anchored.sim.getRenderState()).toEqual(legacy.sim.getRenderState());
+    expect(anchored.trace.latestFsw()).toEqual(legacy.trace.latestFsw());
+    expect(anchored.trace.latestPlantWindow()).toEqual(legacy.trace.latestPlantWindow());
+    expect(base).toEqual(before);
+  });
+
+  it.each(['PID', 'LQR', 'MPC'] as const)('runs %s with one custom rate through the real FSW modules', (controller) => {
+    const n = 0.002;
+    const base = config();
+    const enabled = { ...base, anchor: { ...anchorConfig, meanMotionRadS: n },
+      fsw: { ...base.fsw, controller } };
+    const before = structuredClone(enabled);
+    const expected: FswTraceRecord[] = [];
+    // Independently configure every existing FSW consumer, then replay exactly
+    // the real sensor stream. Missing EKF/LQR/attitude/MPC inheritance diverges.
+    const reference = createFsw({ ...base.fsw, controller,
+      ekfConfig: { ...base.fsw.ekfConfig, meanMotionRadS: n },
+      attitudeControllerConfig: { meanMotionRadS: n },
+      lqrConfig: { meanMotionRadS: n }, mpcConfig: { meanMotionRadS: n },
+      onTrace: record => expected.push(record),
+    });
+    const { sim, trace } = createTracedSimLoop(enabled, 1703);
+    const plain = createSimLoop(enabled, 1703);
+    const actual: FswTraceRecord[] = [];
+    trace.subscribeFsw(record => { actual.push(record); reference(record.sensor); });
+    expect(sim.stepTo(0.6)).toEqual(plain.stepTo(0.6));
+    expect(actual).toHaveLength(6);
+    expect(actual).toEqual(expected);
+    if (controller === 'MPC') expect(actual[0]!.mpc.result).not.toBeNull();
+    expect(enabled).toEqual(before);
+  });
+
+  it('uses custom n for unforced CW truth, sensor bearings and render rotation at nonzero time', () => {
+    const n = 0.006, base = config();
+    const initial = { ...base.initial, t_s: 100,
+      r_hill_m: [2, -250, 12] as [number, number, number],
+      v_hill_mps: [0.01, 0.02, -0.03] as [number, number, number] };
+    const { sim, trace } = createTracedSimLoop({ ...base, initial,
+      anchor: { ...anchorConfig, meanMotionRadS: n } }, 1704);
+    sim.stepTo(100.1); // First command is only latched after these ten unforced slices.
+    const truth = sim.getTruthState(), oracle = propagateCW(initial.r_hill_m, initial.v_hill_mps, n, 0.1);
+    for (let axis = 0; axis < 3; axis++) {
+      expect(truth.r_hill_m[axis]).toBeCloseTo(oracle.r[axis]!, 9);
+      expect(truth.v_hill_mps[axis]).toBeCloseTo(oracle.v[axis]!, 9);
+    }
+    expect(truth.q_BI).toEqual([1, 0, 0, 0]); // Anchor placement never rotates I0.
+    const theta = n * truth.t_s;
+    expect(sim.getRenderState().q_BH).toEqual([Math.cos(theta / 2), 0, 0, Math.sin(theta / 2)]);
+    const [x, y, z] = truth.r_hill_m;
+    const expectedBearing = losToBearing([
+      -Math.cos(theta) * x + Math.sin(theta) * y,
+      -Math.sin(theta) * x - Math.cos(theta) * y, -z,
+    ]);
+    trace.latestFsw()!.sensor.bearing_body_rad!.forEach((v, axis) =>
+      expect(v).toBeCloseTo(expectedBearing[axis]!, 14));
+  });
+
+  const sites = ['attitudeControllerConfig', 'ekfConfig', 'lqrConfig', 'mpcConfig', 'sensors'] as const;
+  it.each(sites)('rejects divergent or invalid enabled overrides naming %s', (site) => {
+    const base = config(), n = 0.002;
+    for (const value of [0.003, 0, -n, NaN, Infinity]) {
+      const enabled: SimConfig = { ...base, anchor: { ...anchorConfig, meanMotionRadS: n } };
+      if (site === 'sensors') enabled.sensors = { ...base.sensors, meanMotionRadS: value };
+      else enabled.fsw = { ...base.fsw, [site]: { ...base.fsw[site], meanMotionRadS: value } };
+      const label = `SimConfig.${site === 'sensors' ? site : 'fsw.' + site}.meanMotionRadS`;
+      expect(() => createSimLoop(enabled, 1)).toThrow(RangeError);
+      expect(() => createSimLoop(enabled, 1)).toThrow(label);
+    }
+  });
+
+  it('canonicalizes within-tolerance overrides and rejects just outside tolerance', () => {
+    const base = config(), n = 0.002;
+    const enabled = { ...base, anchor: { ...anchorConfig, meanMotionRadS: n } };
+    const near = { ...enabled, fsw: { ...base.fsw,
+      attitudeControllerConfig: { meanMotionRadS: n * (1 + 5e-13) },
+      ekfConfig: { ...base.fsw.ekfConfig, meanMotionRadS: n * (1 - 5e-13) },
+      lqrConfig: { meanMotionRadS: n }, mpcConfig: { meanMotionRadS: n },
+    }, sensors: { ...base.sensors, meanMotionRadS: n } };
+    expect(createSimLoop(near, 1).stepTo(0.6)).toEqual(createSimLoop(enabled, 1).stepTo(0.6));
+    near.fsw.attitudeControllerConfig.meanMotionRadS = n * (1 + 2e-12);
+    expect(() => createSimLoop(near, 1)).toThrow('fsw.attitudeControllerConfig.meanMotionRadS');
+  });
+});
 
 describe('SimLoop', () => {
   it.each([[0.08, 'DOCKED'], [0.15, 'COLLISION'], [0.9, 'NONE']] as const)(

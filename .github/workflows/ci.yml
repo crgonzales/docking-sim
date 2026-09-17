@@ -9,6 +9,8 @@ jobs:
         with: { node-version: 22 }
       - run: corepack enable
       - run: pnpm install --frozen-lockfile=false
+      # Include the real worker-thread bundle equivalence check in the test gate.
+      - run: pnpm --filter @docking/web mc:build
       - run: pnpm -r test
       # Production build, including the checksum-verified Takram asset provisioning the Pages build relies on.
       - run: pnpm -r build
