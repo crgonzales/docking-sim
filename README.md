@@ -167,11 +167,18 @@ commands, the MATLAB entry point and the limits of each delivered feature.
 
 Each feature release adds another piece of the simulator. Patch releases keep
 the same name; their fixes are recorded in the [full changelog](docs/2-changelog/changelog_table.md).
+The 0.9–0.13 entries are development milestones that shipped together in
+v0.14.0, rather than separately tagged releases.
 
-| Release | Name | What it brought to life |
+| Release / build | Name | What it brought to life |
 | --- | --- | --- |
 | **v0.15.0** | **Under the Hood** | A view inside the GNC loop: live signals, fault demonstrations, recorded runs, local Monte Carlo tools and the native MATLAB/Simulink plant. |
 | **v0.14.0–0.14.3** | **Marlin One** | The first manual docking mission, Crew Dragon thrusters, a Hornet and walkable airfield, and the current space-to-ground environment. |
+| **0.13 development** | **Wings Out** | F/A-18-style flight dynamics, controls and instruments, followed by a licensed Hornet model and integration with the shared world. |
+| **0.12 development** | **Silver Linings** | A shared cloud-density field, cloud lighting and shadows, orbital cloud representation and temporal reconstruction. |
+| **0.11 development** | **Puff Piece** | The move to raymarched volumetric clouds and a library atmosphere; later flight visual work improved aircraft lighting, ground detail and quality settings. |
+| **0.10 development** | **Here Comes the Sun** | A real-time day/night cycle and moving weather around the airfield. |
+| **0.9 development** | **Down to Earth** | Continuous space-to-ground travel, streamed terrain patches, a floating origin and the free-flight debug camera. |
 | **v0.8.0** | **Head in the Clouds** | The first atmosphere, cloud and terrain overhaul, with a debug camera for exploring Earth. That early renderer was later retired. |
 | **v0.7.0** | **Feel the Burn** | Selectable manual authority, visible thruster plumes and procedural thruster audio. |
 | **v0.6.0** | **Mission Control** | Guided scenarios, a mission switch panel and seeded Monte Carlo analysis. |

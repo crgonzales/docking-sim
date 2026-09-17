@@ -18,6 +18,27 @@
 | `0.2.0` | 1    | feat: Phase 1 cinematic visual base — Earth terminator scene, HUD skeleton, stub telemetry bus |
 | `0.1.1` | 1    | chore: initialize project docs structure |
 
+## Development milestones between v0.8.0 and v0.14.0
+
+Versions 0.9–0.13 were planning/build labels, not separately published releases.
+Their completed work was first released in v0.14.0. Some labels were reused for
+later plans, so these entries describe delivered work rather than implying an
+unbroken sequence of release tags. The separate 0.10 time-warp proposal is not
+included as a shipped feature.
+
+| Build label | Name | Delivered work included in v0.14.0 |
+| --- | --- | --- |
+| 0.9 | Down to Earth | Space-to-ground terrain streaming, floating origin, inside-atmosphere viewing and DEBUG FLY. |
+| 0.10 | Here Comes the Sun | Ground environment clock, real-time daylight and moving volumetric weather. |
+| 0.11 | Puff Piece | Raymarched cloud/library-atmosphere transition; later aircraft lighting, ground-detail and graphics-quality work reused this label. |
+| 0.12 | Silver Linings | Shared cloud density, lighting, shadows, orbital representation and temporal reconstruction. |
+| 0.13 | Wings Out | F/A-18-style flight prototype, controls and instruments, followed by the Hornet model and environment integration. |
+
+See the [v0.14.0 integration changelog](w7_v0.14.0.md) for exact scope and
+validation, and the [README Build History](../../README.md#build-history) for
+the full named timeline. Historical release tags and detailed changelogs are
+unchanged.
+
 # Changelog Summary
 
 - **v0.15.0 — Under the Hood (Week 7, 17-09-2026)**:
