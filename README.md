@@ -9,7 +9,7 @@ autopilot, or test how navigation and control respond to sensor and thruster fau
 [Architecture](docs/ARCHI.md) ·
 [Release history](docs/2-changelog/changelog_table.md)
 
-The release version is **v0.15.0 — Under the Hood**. The development map below also includes work
+The release version is **v0.15.1 — Under the Hood**. The development map below also includes work
 beyond that release; its colors describe the scope of each block, not deployment status.
 
 ## What it demonstrates
@@ -172,7 +172,7 @@ v0.14.0, rather than separately tagged releases.
 
 | Release / build | Name | What it brought to life |
 | --- | --- | --- |
-| **v0.15.0** | **Under the Hood** | A view inside the GNC loop: live signals, fault demonstrations, recorded runs, local Monte Carlo tools and the native MATLAB/Simulink plant. |
+| **v0.15.0–0.15.1** | **Under the Hood** | A view inside the GNC loop: live signals, fault demonstrations, recorded runs, local Monte Carlo tools and the native MATLAB/Simulink plant. The patch improves orbital cloud reconstruction around spacecraft. |
 | **v0.14.0–0.14.3** | **Marlin One** | The first manual docking mission, Crew Dragon thrusters, a Hornet and walkable airfield, and the current space-to-ground environment. |
 | **0.13 development** | **Wings Out** | F/A-18-style flight dynamics, controls and instruments, followed by a licensed Hornet model and integration with the shared world. |
 | **0.12 development** | **Silver Linings** | A shared cloud-density field, cloud lighting and shadows, orbital cloud representation and temporal reconstruction. |

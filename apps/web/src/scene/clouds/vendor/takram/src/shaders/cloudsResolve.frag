@@ -14,6 +14,8 @@ uniform bool historyValid;
 uniform bool historyEnabled;
 uniform bool stationaryCamera;
 uniform bool accumulateFreshSamples;
+// Opt-in for the fully prepared orbital column representation.
+uniform bool orbitalReconstruction;
 uniform sampler2D sceneDepthBuffer;
 uniform bool sceneDepthEnabled;
 uniform vec2 sceneCameraRange;
@@ -94,7 +96,23 @@ vec2 currentRayUv(const ivec2 tap) {
 }
 
 bool compatibleRay(const ivec2 tap) {
-  return sameOpaqueSurface(sceneViewDepth(currentRayUv(tap)), sceneViewDepth(vUv));
+  if (!sceneDepthEnabled) return true;
+  float target = sceneViewDepth(vUv);
+  if (orbitalReconstruction) {
+    vec4 color = texelFetch(colorBuffer, tap, 0);
+    float front = texelFetch(depthVelocityBuffer, tap, 0).r * 1e4;
+    // An unclipped empty ray carries the far-plane depth. A scene-clipped
+    // empty ray is useful only as far as its measured endpoint; never spread
+    // an occluded zero into background behind terrain or embedded geometry.
+    if (any(isnan(color)) || any(isinf(color)) || !(front > 0.0) || isinf(front) || isnan(front)) return false;
+    if (color.a <= historyOpacityThreshold)
+      return target == 0.0 ? front >= sceneCameraRange.y * 0.999 :
+        front >= target - max(0.5, 0.02 * target);
+    // Carve cloudy taps using each destination's full-resolution depth.
+    if (color.a > historyOpacityThreshold && front > 0.0)
+      return target == 0.0 || front <= target + 0.5;
+  }
+  return sameOpaqueSurface(sceneViewDepth(currentRayUv(tap)), target);
 }
 
 bool positiveDepth(const float depth) {
@@ -193,15 +211,17 @@ bool sampleHistory(
   }
 
   // Reconstruct the same bilinear footprint for color/depth/shadow. Validating
-  // only a nearest depth then filtering color can admit a different surface or
-  // clear gap from another tap. Reject the footprint if any contributing tap
-  // is incompatible; never interpolate depths across a disocclusion.
+  // only a nearest depth then filtering color can admit a different surface.
+  // Near volumes retain strict rejection. Orbital clear gaps are valid only
+  // when their previous opaque depth lies behind the expected cloud front;
+  // renormalize compatible taps, never interpolate incompatible depths.
   vec2 position = prevUv * vec2(textureSize(colorHistoryBuffer, 0)) - 0.5;
   // An unchanged physical camera has an exact same-pixel correspondence.
   // ECEF roundoff (or UV multiplication alone) must not introduce a tiny tap
   // across a clear/depth edge and reject all useful history. Keep the checks
   // above and below: this changes the footprint, never depth/opacity tolerance.
   if (stationaryCamera) position = floor(gl_FragCoord.xy);
+  float historyWeight = 0.0;
   ivec2 baseCoord = ivec2(floor(position));
   vec2 fraction = fract(position);
   for (int y = 0; y < 2; ++y) {
@@ -214,10 +234,18 @@ bool sampleHistory(
       ivec2 tap = clampCoord(colorHistoryBuffer, baseCoord + ivec2(x, y));
       vec4 color = texelFetch(colorHistoryBuffer, tap, 0);
       float depth = texelFetch(depthHistoryBuffer, tap, 0).r;
-      if (!(color.a > historyOpacityThreshold) || any(isnan(color)) || any(isinf(color)) ||
-          !historyDepthMatches(depth, expectedDepth)) {
+      float opaqueDepth = texelFetch(depthHistoryBuffer, tap, 0).g;
+      bool clear = color.a <= historyOpacityThreshold && depth == 0.0;
+      bool valid = !any(isnan(color)) && !any(isinf(color)) &&
+        (orbitalReconstruction
+          ? (opaqueDepth <= 0.0 || expectedDepth <= opaqueDepth + 0.00005) &&
+            (clear || historyDepthMatches(depth, expectedDepth))
+          : color.a > historyOpacityThreshold && historyDepthMatches(depth, expectedDepth));
+      if (!valid) {
+        if (orbitalReconstruction) continue;
         return false;
       }
+      historyWeight += weight;
       historyColor += color * weight;
       #ifdef SHADOW_LENGTH
       float shadowLength = texelFetch(shadowLengthHistoryBuffer, tap, 0).r;
@@ -228,6 +256,36 @@ bool sampleHistory(
       #endif // SHADOW_LENGTH
     }
   }
+  if (historyWeight < 0.25) return false;
+  historyColor /= historyWeight;
+  // Sharper history only when every contributing texel is compatible. Fall
+  // back to the guarded positive bilinear footprint at depth disocclusions.
+  if (orbitalReconstruction && !stationaryCamera && historyWeight > 0.999) {
+    vec2 f = fraction;
+    vec2 w[4];
+    w[0] = f * (-0.5 + f * (1.0 - 0.5 * f));
+    w[1] = 1.0 + f * f * (-2.5 + 1.5 * f);
+    w[2] = f * (0.5 + f * (2.0 - 1.5 * f));
+    w[3] = f * f * (-0.5 + 0.5 * f);
+    vec4 cubic = vec4(0.0);
+    vec4 lo = vec4(1e20), hi = vec4(-1e20);
+    bool compatible = true;
+    for (int y = 0; y < 4; ++y) for (int x = 0; x < 4; ++x) {
+      float weight = w[x].x * w[y].y;
+      if (abs(weight) < 1e-6) continue;
+      ivec2 tap = clampCoord(colorHistoryBuffer, baseCoord + ivec2(x - 1, y - 1));
+      vec4 color = texelFetch(colorHistoryBuffer, tap, 0);
+      vec2 depths = texelFetch(depthHistoryBuffer, tap, 0).rg;
+      bool clear = color.a <= historyOpacityThreshold && depths.r == 0.0;
+      if (any(isnan(color)) || any(isinf(color)) ||
+          (depths.g > 0.0 && expectedDepth > depths.g + 0.00005) ||
+          (!clear && !historyDepthMatches(depths.r, expectedDepth))) compatible = false;
+      cubic += color * weight;
+      lo = min(lo, color); hi = max(hi, color);
+    }
+    if (compatible) historyColor = clamp(cubic, max(lo, vec4(0.0)), hi);
+  }
+  historyShadowLength /= historyWeight;
   return true;
 }
 
@@ -369,7 +427,7 @@ void temporalUpscale(
   }
 
   if (!historyEnabled || !historyValid || !currentCloud || !positiveDepth(centerDepthVelocity.a) ||
-      (currentFrame && !accumulateFreshSamples)) {
+      (currentFrame && !accumulateFreshSamples && !(orbitalReconstruction && stationaryCamera))) {
     // First use, clear gaps, reference mode, and optionally fresh Bayer texels
     // never read history. The current color/depth/shadow remain matched.
     return;

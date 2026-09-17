@@ -55,6 +55,7 @@ export interface CloudsResolveMaterialUniforms {
   /** Consecutive Bayer frames with the same physical camera and projection. */
   stationaryCamera: Uniform<boolean>
   accumulateFreshSamples: Uniform<boolean>
+  orbitalReconstruction: Uniform<boolean>
   depthAbsoluteThresholdM: Uniform<number>
   stationaryDepthAbsoluteThresholdM: Uniform<number>
   depthRelativeThreshold: Uniform<number>
@@ -110,6 +111,7 @@ export class CloudsResolveMaterial extends RawShaderMaterial {
         historyEnabled: new Uniform(historyEnabled),
         stationaryCamera: new Uniform(false),
         accumulateFreshSamples: new Uniform(accumulateFreshSamples),
+        orbitalReconstruction: new Uniform(false),
         depthAbsoluteThresholdM: new Uniform(depthAbsoluteThresholdM),
         stationaryDepthAbsoluteThresholdM: new Uniform(stationaryDepthAbsoluteThresholdM),
         depthRelativeThreshold: new Uniform(depthRelativeThreshold),

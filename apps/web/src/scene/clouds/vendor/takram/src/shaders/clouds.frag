@@ -1031,7 +1031,19 @@ void main() {
 
   float sceneViewZ;
   float rayDistanceToScene = getRayDistanceToScene(rayDirection, sceneViewZ);
-  if (rayDistanceToScene > 0.0) {
+  // A foreground object before the orbital cloud entry must not punch a
+  // coarse 4x4 hole into the cloud background. Resolve carves that object at
+  // full scene depth. Keep clipping terrain/objects INSIDE the cloud segment,
+  // and preserve the near-volume and reference paths.
+  bool retainOrbitalBackground = false;
+  #ifdef TEMPORAL_UPSCALE
+  retainOrbitalBackground = farRepresentationMix >= 1.0 && referenceSampling == 0 &&
+    rayDistanceToScene > 0.0 && rayDistanceToScene < rayNearFar.x;
+  #endif
+  // An unclipped clear ray is valid to the far plane, not to the foreground
+  // object's depth; keep its metadata paired with the interval just traced.
+  if (retainOrbitalBackground) sceneViewZ = 0.0;
+  if (rayDistanceToScene > 0.0 && !retainOrbitalBackground) {
     rayNearFar.y = min(rayNearFar.y, rayDistanceToScene);
     #ifdef SHADOW_LENGTH
     shadowRayNearFar.y = min(shadowRayNearFar.y, rayDistanceToScene);

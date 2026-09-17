@@ -204,6 +204,12 @@ export class VolumetricCloudSystem {
     else if (this.requestedView === 'scaled' && altitudeM > this.weather.bounds.maxAltitudeM) transition = 1;
     const farWeight = transition * transition * (3 - 2 * transition) * readyBlend;
     effect.clouds.farRepresentationMix = farWeight;
+    // The prepared column has deterministic coverage. Fresh orbital rays own
+    // their pixel immediately; only unsampled pixels need reconstruction.
+    // Keep the established stochastic-volume accumulation below this endpoint.
+    const orbitalReconstruction = farWeight >= 1;
+    effect.cloudsPass.resolveMaterial.uniforms.orbitalReconstruction.value = orbitalReconstruction;
+    effect.cloudsPass.resolveMaterial.uniforms.accumulateFreshSamples.value = !orbitalReconstruction;
     this.status.farWeight = farWeight;
     this.status.representation = farWeight >= 1 ? 'scaled' : farWeight > 0 ? 'transition' : 'volume';
     effect.clouds.farIterationCount = this.quality === 'low' ? 24 : 32;

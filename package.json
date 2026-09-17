@@ -1,6 +1,6 @@
 {
   "name": "docking-sim",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "private": true,
   "scripts": {
     "dev": "pnpm --filter @docking/web dev",

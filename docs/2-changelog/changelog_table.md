@@ -2,6 +2,7 @@
 
 | Version | Week | Commit Message                          |
 | ------- | ---- | --------------------------------------- |
+| `0.15.1` | 7 | hotfix: reduce orbital cloud blockiness and spacecraft-edge halos |
 | `0.15.0` | 7 | feat: Under the Hood — GNC lab, native MATLAB plant and verified simulation tools |
 | `0.14.3` | 7   | hotfix: open the bare URL on the first-docking mission; sandbox, analysis and flight stay explicit modes |
 | `0.14.2` | 7   | chore: retire the v0.8.0 renderer — remove the legacy cloud stack, starfield, bloom composer, water overlay and unused textures |
@@ -40,6 +41,12 @@ the full named timeline. Historical release tags and detailed changelogs are
 unchanged.
 
 # Changelog Summary
+
+- **v0.15.1 — Under the Hood (Hotfix - Week 7, 17-09-2026)**:
+  - **Issue**: sparse orbital cloud reconstruction produced coarse moving clouds and cloud-free fringes around foreground spacecraft.
+  - **Fix**: retain cloud background behind foreground geometry, resolve against full-resolution object depth, reuse compatible history and preserve stationary accumulation.
+  - **Limits**: newly revealed clouds still sharpen over subsequent frames. GPU cost increases; cloud ray counts and user quality settings are unchanged. This is a correction to the existing renderer, not the replacement weather port.
+  - Detailed scope, checks and measured cost: `w7_v0.15.1.md`.
 
 - **v0.15.0 — Under the Hood (Week 7, 17-09-2026)**:
   - GNC mode with traced live diagram, inspector, plots, stepping, nominal/fault cases and recorded JSON/CSV import/export.
